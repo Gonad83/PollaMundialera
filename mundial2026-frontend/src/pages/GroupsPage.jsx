@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, Link2, Copy, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const PLAN_GROUP_LIMIT = { FREE: 1, CLASICO: 1, PRO: 99 }
-const PLAN_MEMBER_LIMIT = { FREE: 5, CLASICO: 15, PRO: 150 }
+const PLAN_GROUP_LIMIT = { FREE: 1, CLASICO: 1, DT: 3, PRO: 99 }
+const PLAN_MEMBER_LIMIT = { FREE: 3, CLASICO: 15, DT: 15, PRO: 150 }
 
 export default function GroupsPage() {
   const qc = useQueryClient()

@@ -16,23 +16,39 @@ const PLANS_COMPARE = [
     name: 'AMATEUR',
     price: 'Gratis',
     priceNum: null,
+    tierId: null,
     desc: 'Para tu círculo íntimo.',
-    features: ['1 grupo', 'Hasta 5 miembros', 'Pronósticos básicos', 'Ranking en tiempo real'],
+    features: ['1 grupo', 'Hasta 3 miembros', 'Pronósticos básicos', 'Ranking en tiempo real'],
     style: 'ghost',
+  },
+  {
+    id: 'capitan',
+    name: 'CAPITÁN',
+    price: '$2.990',
+    priceNum: 2990,
+    tierId: 'tier1',
+    desc: 'Para grupos de trabajo y familia.',
+    features: ['1 grupo', 'Hasta 15 miembros', 'Pronósticos avanzados', 'Predicciones de torneo'],
+    style: 'steel',
+  },
+  {
+    id: 'dt',
+    name: 'DT',
+    price: '$4.990',
+    priceNum: 4990,
+    tierId: 'tier2',
+    desc: 'Para múltiples torneos.',
+    features: ['3 grupos', '15 miembros c/u', 'Pronósticos avanzados', 'Predicciones de torneo'],
+    style: 'steel',
   },
   {
     id: 'elite',
     name: 'ELITE',
     price: '$9.990',
     priceNum: 9990,
+    tierId: 'tier3',
     desc: 'Para grandes ligas y empresas.',
-    features: [
-      'Grupos ilimitados',
-      'Hasta 150 miembros',
-      'Reglas personalizadas',
-      'Descarga PDF/Excel',
-      'Soporte WhatsApp 24/7',
-    ],
+    features: ['Grupos ilimitados', 'Hasta 150 miembros', 'Reglas personalizadas', 'Descarga PDF/Excel'],
     style: 'elite',
     badge: 'RECOMENDADO',
   },
@@ -72,14 +88,13 @@ export default function WelcomePage() {
       updateUser({ groupCount: (user?.groupCount || 0) + 1 })
       qc.invalidateQueries({ queryKey: ['my-groups'] })
 
-      // Si eligió ELITE → iniciar pago
-      if (selectedPlan === 'elite') {
+      const plan = PLANS_COMPARE.find(p => p.id === selectedPlan)
+      if (plan?.tierId) {
         setLoadingPayment(true)
         try {
-          const { data } = await paymentApi.createPreference(group.id, 'tier2')
+          const { data } = await paymentApi.createPreference(group.id, plan.tierId)
           window.location.href = data.initPoint
         } catch {
-          // Si falla el pago igual entra al grupo
           navigate(`/groups/${group.id}`)
         }
       } else {
@@ -296,7 +311,7 @@ export default function WelcomePage() {
                 </div>
               )}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 24 }}>
                 {PLANS_COMPARE.map(plan => {
                   const isElite = plan.id === 'elite'
                   const isSelected = selectedPlan === plan.id
@@ -374,13 +389,16 @@ export default function WelcomePage() {
                 }}
               >
                 {createMut.isPending || loadingPayment ? (
-                  <><Loader2 size={16} className="animate-spin" /> {selectedPlan === 'elite' ? 'Redirigiendo al pago...' : 'Creando liga...'}</>
+                  <><Loader2 size={16} className="animate-spin" /> {PLANS_COMPARE.find(p => p.id === selectedPlan)?.tierId ? 'Redirigiendo al pago...' : 'Creando liga...'}</>
                 ) : (
-                  <><Crown size={16} /> {selectedPlan === 'elite' ? 'CREAR Y PAGAR $9.990' : 'CREAR LIGA GRATIS'}</>
+                  (() => {
+                    const p = PLANS_COMPARE.find(x => x.id === selectedPlan)
+                    return <><Crown size={16} /> {p?.tierId ? `CREAR Y PAGAR ${p.price}` : 'CREAR LIGA GRATIS'}</>
+                  })()
                 )}
               </button>
 
-              {selectedPlan === 'elite' && (
+              {PLANS_COMPARE.find(p => p.id === selectedPlan)?.tierId && (
                 <p style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: '#52525b' }}>
                   Pago seguro vía Mercado Pago · Tu liga se activa inmediatamente
                 </p>

@@ -12,9 +12,10 @@ const generateToken = () => crypto.randomBytes(16).toString('hex');
 
 // Límites por plan
 const PLAN_LIMITS = {
-  FREE:    { maxGroups: 1, maxMembers: 3,   allowedRules: ['BASIC'] },
-  CLASICO: { maxGroups: 1, maxMembers: 20,  allowedRules: ['BASIC', 'COMPLETE'] },
-  PRO:     { maxGroups: 3, maxMembers: 100, allowedRules: ['BASIC', 'COMPLETE', 'CUSTOM'] },
+  FREE:    { maxGroups: 1,  maxMembers: 3,   allowedRules: ['BASIC'] },
+  CLASICO: { maxGroups: 1,  maxMembers: 15,  allowedRules: ['BASIC', 'COMPLETE'] },
+  DT:      { maxGroups: 3,  maxMembers: 15,  allowedRules: ['BASIC', 'COMPLETE'] },
+  PRO:     { maxGroups: 99, maxMembers: 150, allowedRules: ['BASIC', 'COMPLETE', 'CUSTOM'] },
 };
 
 // POST /api/groups — Crear grupo

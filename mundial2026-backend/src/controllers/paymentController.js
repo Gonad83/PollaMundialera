@@ -8,16 +8,25 @@ const client = new MercadoPagoConfig({
 
 const Tiers = {
   tier1: {
-    title: 'Liga Pro (10 personas)',
-    price: 5000,
-    limit: 10,
+    title: 'Plan Capitán (15 personas)',
+    price: 2990,
+    limit: 15,
+    plan: 'CLASICO',
     name: 'TIER1'
   },
   tier2: {
-    title: 'Liga Elite (30 personas)',
-    price: 10000,
-    limit: 30,
+    title: 'Plan DT (3 grupos de 15)',
+    price: 4990,
+    limit: 15,
+    plan: 'DT',
     name: 'TIER2'
+  },
+  tier3: {
+    title: 'Plan Elite (150 personas)',
+    price: 9990,
+    limit: 150,
+    plan: 'PRO',
+    name: 'TIER3'
   }
 };
 
@@ -81,16 +90,24 @@ const handleWebhook = async (req, res) => {
         const { groupId, tierId } = JSON.parse(paymentData.external_reference);
         const tier = Tiers[tierId];
 
-        await prisma.group.update({
-          where: { id: groupId },
-          data: {
-            isPremium: true,
-            maxMembers: tier.limit,
-            activePlan: tier.name,
-            paymentId: String(paymentData.id),
-            paymentStatus: 'approved'
-          }
-        });
+        const group = await prisma.group.findUnique({ where: { id: groupId }, select: { creatorId: true } });
+
+        await prisma.$transaction([
+          prisma.group.update({
+            where: { id: groupId },
+            data: {
+              isPremium: true,
+              maxMembers: tier.limit,
+              activePlan: tier.name,
+              paymentId: String(paymentData.id),
+              paymentStatus: 'approved',
+            },
+          }),
+          prisma.user.update({
+            where: { id: group.creatorId },
+            data: { plan: tier.plan },
+          }),
+        ]);
         
         console.log(`[PAYMENT] Grupo ${groupId} mejorado a ${tier.name} ($${tier.price} CLP)`);
       }
