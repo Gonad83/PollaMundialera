@@ -337,13 +337,13 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start' }}>
             {PLANS.map((plan) => {
               const s = PLAN_CARD_STYLE[plan.style]
               const isElite = plan.style === 'elite'
               return (
                 <div key={plan.name} style={{
-                  padding: '40px 32px', borderRadius: 28, position: 'relative', overflow: 'hidden',
+                  padding: '28px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden',
                   ...s.card,
                   transition: 'transform 0.3s, box-shadow 0.3s',
                 }}>
@@ -362,40 +362,40 @@ export default function LandingPage() {
                   )}
 
                   <h3 style={{
-                    fontFamily: '"Bebas Neue", cursive', fontSize: 40,
+                    fontFamily: '"Bebas Neue", cursive', fontSize: 32,
                     color: isElite ? '#FFD700' : '#fff',
-                    marginTop: plan.badge ? 32 : 0,
-                    marginBottom: 8, letterSpacing: 2,
+                    marginTop: plan.badge ? 28 : 0,
+                    marginBottom: 6, letterSpacing: 2,
                     textShadow: isElite ? '0 0 30px rgba(255,215,0,0.4)' : 'none',
                   }}>
                     {plan.name}
                   </h3>
 
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 8 }}>
-                    <span style={{ color: '#52525b', fontSize: 20, fontWeight: 700 }}>$</span>
-                    <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: isElite ? 64 : 56, color: s.price, lineHeight: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 6 }}>
+                    <span style={{ color: '#52525b', fontSize: 16, fontWeight: 700 }}>$</span>
+                    <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: isElite ? 48 : 42, color: s.price, lineHeight: 1 }}>
                       {plan.price}
                     </span>
-                    <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#52525b', marginLeft: 4 }}>
+                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#52525b', marginLeft: 3 }}>
                       CLP/mes
                     </span>
                   </div>
 
-                  <p style={{ fontSize: 13, color: '#71717a', marginBottom: 24, lineHeight: 1.6 }}>{plan.desc}</p>
+                  <p style={{ fontSize: 11, color: '#71717a', marginBottom: 16, lineHeight: 1.5 }}>{plan.desc}</p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                     {plan.features.map(f => (
-                      <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <CheckCircle2 size={15} style={{ color: s.check, flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, fontWeight: isElite ? 700 : 600, color: isElite ? '#e4e4e7' : '#a1a1aa' }}>{f}</span>
+                      <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CheckCircle2 size={12} style={{ color: s.check, flexShrink: 0 }} />
+                        <span style={{ fontSize: 11, fontWeight: isElite ? 700 : 600, color: isElite ? '#e4e4e7' : '#a1a1aa' }}>{f}</span>
                       </div>
                     ))}
                   </div>
 
                   <Link to="/register" style={{
-                    display: 'block', width: '100%', padding: isElite ? '16px' : '13px',
-                    textAlign: 'center', borderRadius: 14, fontSize: 10, fontWeight: 900,
-                    textTransform: 'uppercase', letterSpacing: '0.2em', textDecoration: 'none',
+                    display: 'block', width: '100%', padding: isElite ? '13px' : '11px',
+                    textAlign: 'center', borderRadius: 12, fontSize: 9, fontWeight: 900,
+                    textTransform: 'uppercase', letterSpacing: '0.15em', textDecoration: 'none',
                     transition: 'all 0.2s',
                     boxShadow: isElite ? '0 0 30px rgba(255,215,0,0.35)' : 'none',
                     ...s.btn,
