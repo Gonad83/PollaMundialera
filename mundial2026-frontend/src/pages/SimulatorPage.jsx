@@ -142,7 +142,7 @@ function Flag({ name, size = 'sm' }) {
   return <span className={sz}>{t?.flag || '🏴'}</span>
 }
 
-function ScoreInput({ value, onChange, disabled }) {
+function ScoreInput({ value, onChange, disabled, isWin, isLose }) {
   return (
     <input
       type="number"
@@ -151,7 +151,11 @@ function ScoreInput({ value, onChange, disabled }) {
       value={value}
       onChange={e => onChange(e.target.value)}
       disabled={disabled}
-      className="w-10 h-9 text-center bg-white/8 border border-white/15 rounded-lg font-display text-base text-white focus:outline-none focus:ring-1 focus:ring-mundial-gold focus:border-mundial-gold disabled:opacity-30 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      style={{ colorScheme: 'dark' }}
+      className={`w-10 h-9 text-center bg-zinc-900 border rounded-lg font-display text-base focus:outline-none focus:ring-1 disabled:opacity-30 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors
+        ${isWin  ? 'border-mundial-gold/60 text-mundial-gold  focus:ring-mundial-gold  focus:border-mundial-gold'
+        : isLose ? 'border-red-500/30    text-red-400/70    focus:ring-red-500      focus:border-red-500'
+                 : 'border-white/15       text-white         focus:ring-mundial-gold  focus:border-mundial-gold'}`}
     />
   )
 }
@@ -257,18 +261,18 @@ function GroupCard({ letter, teams, scores, onScoreChange, onTeamChange }) {
           const winAway = hasResult && aScore > hScore
           return (
             <div key={mi} className="flex items-center gap-2 px-3 py-2">
-              <span className={`flex-1 text-right text-[10px] font-bold flex items-center justify-end gap-1 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
-                <span className="truncate max-w-[70px]">{teams[i]}</span>
-                <Flag name={teams[i]} />
+              <span className={`flex-1 text-right text-[11px] font-bold flex items-center justify-end gap-1.5 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
+                <span className="truncate max-w-[65px]">{teams[i]}</span>
+                <Flag name={teams[i]} size="md" />
               </span>
               <div className="flex items-center gap-1 shrink-0">
-                <ScoreInput value={hg} onChange={v => onScoreChange(mi, 0, v)} />
-                <span className="text-zinc-700 font-bold text-xs">–</span>
-                <ScoreInput value={ag} onChange={v => onScoreChange(mi, 1, v)} />
+                <ScoreInput value={hg} onChange={v => onScoreChange(mi, 0, v)} isWin={winHome} isLose={winAway} />
+                <span className="text-zinc-600 font-bold text-xs px-0.5">–</span>
+                <ScoreInput value={ag} onChange={v => onScoreChange(mi, 1, v)} isWin={winAway} isLose={winHome} />
               </div>
-              <span className={`flex-1 text-left text-[10px] font-bold flex items-center gap-1 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
-                <Flag name={teams[j]} />
-                <span className="truncate max-w-[70px]">{teams[j]}</span>
+              <span className={`flex-1 text-left text-[11px] font-bold flex items-center gap-1.5 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
+                <Flag name={teams[j]} size="md" />
+                <span className="truncate max-w-[65px]">{teams[j]}</span>
               </span>
             </div>
           )
@@ -367,7 +371,6 @@ export default function SimulatorPage() {
     const allSecond = q2.map(t => t.name)
     const allThird  = best8.map(t => t.name)
     // 16 partidos de R32: emparejar grupos adyacentes
-    const letters = Object.keys(groups)
     const matches = []
     for (let i = 0; i < 8; i++) {
       matches.push([allFirst[i], allSecond[(i + 4) % 12]])
