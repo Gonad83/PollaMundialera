@@ -12,6 +12,7 @@ import { Trophy, Calendar, Filter, ChevronRight, Star, CheckCircle2 } from 'luci
 const PHASES = [
   { value: '', label: 'TODOS' },
   { value: 'GROUP', label: 'GRUPOS' },
+  { value: 'R32', label: '16vos' },
   { value: 'R16', label: '8vos' },
   { value: 'QF', label: '4tos' },
   { value: 'SF', label: 'Semis' },
