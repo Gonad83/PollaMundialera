@@ -296,26 +296,26 @@ function BracketMatch({ teamA, teamB, scoreA, scoreB, onScore, compact = false }
     <div className={`rounded-xl border overflow-hidden ${hasResult ? (winA || winB ? 'border-mundial-gold/25 bg-mundial-gold/3' : 'border-orange-500/25 bg-orange-500/3') : 'border-white/8 bg-white/3'}`}>
       {/* Team A */}
       <div className={`flex items-center gap-2 px-3 ${compact ? 'py-1.5' : 'py-2'} border-b border-white/8 ${winA ? 'bg-mundial-gold/10' : ''}`}>
-        <Flag name={teamA} />
-        <span className={`flex-1 text-[10px] font-bold truncate ${winA ? 'text-mundial-gold' : teamA ? 'text-zinc-200' : 'text-zinc-600'}`}>
+        <Flag name={teamA} size="md" />
+        <span className={`flex-1 text-[11px] font-bold truncate ${winA ? 'text-mundial-gold' : teamA ? 'text-zinc-200' : 'text-zinc-600'}`}>
           {teamA || 'Por definir'}
           {winA && <span className="ml-1 text-[8px]">✓</span>}
         </span>
         {onScore ? (
-          <ScoreInput value={scoreA} onChange={v => onScore(0, v)} disabled={!teamA || !teamB} />
+          <ScoreInput value={scoreA} onChange={v => onScore(0, v)} disabled={!teamA || !teamB} isWin={winA} isLose={winB} />
         ) : (
           <span className={`font-display text-base w-6 text-center ${winA ? 'text-mundial-gold' : 'text-zinc-400'}`}>{scoreA !== '' ? scoreA : '-'}</span>
         )}
       </div>
       {/* Team B */}
       <div className={`flex items-center gap-2 px-3 ${compact ? 'py-1.5' : 'py-2'} ${winB ? 'bg-mundial-gold/10' : ''}`}>
-        <Flag name={teamB} />
-        <span className={`flex-1 text-[10px] font-bold truncate ${winB ? 'text-mundial-gold' : teamB ? 'text-zinc-200' : 'text-zinc-600'}`}>
+        <Flag name={teamB} size="md" />
+        <span className={`flex-1 text-[11px] font-bold truncate ${winB ? 'text-mundial-gold' : teamB ? 'text-zinc-200' : 'text-zinc-600'}`}>
           {teamB || 'Por definir'}
           {winB && <span className="ml-1 text-[8px]">✓</span>}
         </span>
         {onScore ? (
-          <ScoreInput value={scoreB} onChange={v => onScore(1, v)} disabled={!teamA || !teamB} />
+          <ScoreInput value={scoreB} onChange={v => onScore(1, v)} disabled={!teamA || !teamB} isWin={winB} isLose={winA} />
         ) : (
           <span className={`font-display text-base w-6 text-center ${winB ? 'text-mundial-gold' : 'text-zinc-400'}`}>{scoreB !== '' ? scoreB : '-'}</span>
         )}
