@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, ChevronRight, RotateCcw, Zap, Edit3, Check, X } from 'lucide-react'
 
@@ -465,13 +465,193 @@ function ThirdsTable({ thirds }) {
   )
 }
 
+// ── VISTA BRACKET GRÁFICO ────────────────────────────────────────────────────
+const VB_H  = 512   // alto total del bracket
+const VB_MW = 150   // ancho de cada tarjeta de partido
+const VB_CW = 20    // ancho de los conectores SVG
+
+function VBTeam({ name, score, win, penWin }) {
+  return (
+    <div className={`flex items-center gap-1.5 px-2 h-6 ${win ? 'bg-mundial-gold/15' : ''}`}>
+      {name
+        ? <Flag name={name} size="sm" />
+        : <span className="w-4 h-4 border border-white/10 rounded flex items-center justify-center shrink-0">
+            <span className="text-[5px] text-zinc-700">?</span>
+          </span>
+      }
+      <span className={`flex-1 text-[8px] font-bold truncate ${win ? 'text-mundial-gold' : name ? 'text-zinc-300' : 'text-zinc-700'}`}>
+        {name || 'Por definir'}
+        {penWin && <span className="ml-1 text-[6px] text-orange-400 font-black"> ✦PEN</span>}
+      </span>
+      {score !== '' && (
+        <span className={`shrink-0 text-[9px] font-display w-5 text-center rounded ${win ? 'bg-mundial-gold/25 text-mundial-gold' : 'bg-white/8 text-zinc-500'}`}>
+          {score}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function VBCard({ tA, tB, sA, sB, pw }) {
+  const a = parseInt(sA), b = parseInt(sB)
+  const ok = !isNaN(a) && !isNaN(b) && tA && tB
+  const draw = ok && a === b
+  const wA = ok && (a > b || (draw && pw === tA))
+  const wB = ok && (b > a || (draw && pw === tB))
+  return (
+    <div className={`border rounded overflow-hidden ${ok ? 'border-white/18' : 'border-white/8'} bg-zinc-950`} style={{ width: VB_MW }}>
+      <VBTeam name={tA} score={sA} win={wA} penWin={draw && pw === tA} />
+      <div className="h-px bg-white/8" />
+      <VBTeam name={tB} score={sB} win={wB} penWin={draw && pw === tB} />
+    </div>
+  )
+}
+
+function VBConnector({ fromCount, toCount, totalH, dir = 'ltr' }) {
+  const fH = totalH / fromCount
+  const tH = totalH / toCount
+  const W = VB_CW, mid = W / 2
+  const c = 'rgba(255,255,255,0.13)'
+  return (
+    <svg width={W} height={totalH} className="shrink-0">
+      {Array(toCount).fill(null).map((_, ti) => {
+        const y1 = (ti * 2 + 0.5) * fH
+        const y2 = (ti * 2 + 1.5) * fH
+        const ty = (ti + 0.5) * tH
+        return dir === 'ltr'
+          ? <g key={ti}>
+              <line x1={0}   y1={y1} x2={mid} y2={y1} stroke={c} strokeWidth={1.5}/>
+              <line x1={0}   y1={y2} x2={mid} y2={y2} stroke={c} strokeWidth={1.5}/>
+              <line x1={mid} y1={y1} x2={mid} y2={y2} stroke={c} strokeWidth={1.5}/>
+              <line x1={mid} y1={ty} x2={W}   y2={ty} stroke={c} strokeWidth={1.5}/>
+            </g>
+          : <g key={ti}>
+              <line x1={W}   y1={y1} x2={mid} y2={y1} stroke={c} strokeWidth={1.5}/>
+              <line x1={W}   y1={y2} x2={mid} y2={y2} stroke={c} strokeWidth={1.5}/>
+              <line x1={mid} y1={y1} x2={mid} y2={y2} stroke={c} strokeWidth={1.5}/>
+              <line x1={mid} y1={ty} x2={0}   y2={ty} stroke={c} strokeWidth={1.5}/>
+            </g>
+      })}
+    </svg>
+  )
+}
+
+function VBRoundCol({ data, count, totalH }) {
+  const slotH = totalH / count
+  return (
+    <div className="relative shrink-0" style={{ height: totalH, width: VB_MW }}>
+      {Array(count).fill(null).map((_, i) => (
+        <div key={i} className="absolute flex items-center justify-center"
+          style={{ top: i * slotH, height: slotH, width: VB_MW }}>
+          {data[i]
+            ? <VBCard {...data[i]} />
+            : <div className="border border-white/5 rounded opacity-20 bg-zinc-950" style={{ width: VB_MW }}>
+                <div className="h-6 flex items-center px-2"><span className="text-[7px] text-zinc-700">TBD</span></div>
+                <div className="h-px bg-white/5" />
+                <div className="h-6 flex items-center px-2"><span className="text-[7px] text-zinc-700">TBD</span></div>
+              </div>
+          }
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket }) {
+  if (!bracketTeams || !bracketScores || !bracket) return null
+  const bm = (pairs, scores, round) =>
+    (pairs || []).map(([tA, tB], i) => ({
+      tA, tB,
+      sA: scores?.[i]?.[0] ?? '',
+      sB: scores?.[i]?.[1] ?? '',
+      pw: penaltyWinners[`${round}-${i}`],
+    }))
+  const r32d = bm(bracketTeams.r32, bracketScores.r32, 'r32')
+  const r16d = bm(bracketTeams.r16, bracketScores.r16, 'r16')
+  const qfd  = bm(bracketTeams.qf,  bracketScores.qf,  'qf')
+  const sfd  = bm(bracketTeams.sf,  bracketScores.sf,  'sf')
+  const fin  = {
+    tA: bracketTeams.finalTeams?.[0], tB: bracketTeams.finalTeams?.[1],
+    sA: bracketScores.final?.[0] ?? '', sB: bracketScores.final?.[1] ?? '',
+    pw: penaltyWinners['final-0'],
+  }
+  const L32 = r32d.slice(0, 8); const R32 = [...r32d.slice(8)].reverse()
+  const L16 = r16d.slice(0, 4); const R16 = [...r16d.slice(4)].reverse()
+  const LQF = qfd.slice(0, 2);  const RQF = [...qfd.slice(2)].reverse()
+  const LSF = sfd.slice(0, 1);  const RSF = sfd.slice(1)
+  const H = VB_H, W = VB_MW, c = 'rgba(255,255,255,0.12)'
+  const COLS = [
+    { w: W, t: '16avos' }, { w: VB_CW, t: '' }, { w: W, t: '8avos' }, { w: VB_CW, t: '' },
+    { w: W, t: '4tos' },   { w: VB_CW, t: '' }, { w: W, t: 'Semis' }, { w: 32, t: '' },
+    { w: W, t: '🏆 FINAL' }, { w: 32, t: '' },
+    { w: W, t: 'Semis' },  { w: VB_CW, t: '' }, { w: W, t: '4tos' }, { w: VB_CW, t: '' },
+    { w: W, t: '8avos' },  { w: VB_CW, t: '' }, { w: W, t: '16avos' },
+  ]
+  return (
+    <div className="overflow-x-auto pb-4 pt-1 -mx-2">
+      <div className="flex items-center mb-2 px-2">
+        {COLS.map(({ w, t }, i) => (
+          <div key={i} className={`text-center shrink-0 text-[7px] font-black uppercase tracking-widest ${t ? 'text-zinc-500' : ''}`} style={{ width: w }}>{t}</div>
+        ))}
+      </div>
+      <div className="flex items-stretch">
+        <VBRoundCol data={L32} count={8} totalH={H} />
+        <VBConnector fromCount={8} toCount={4} totalH={H} dir="ltr" />
+        <VBRoundCol data={L16} count={4} totalH={H} />
+        <VBConnector fromCount={4} toCount={2} totalH={H} dir="ltr" />
+        <VBRoundCol data={LQF} count={2} totalH={H} />
+        <VBConnector fromCount={2} toCount={1} totalH={H} dir="ltr" />
+        <VBRoundCol data={LSF} count={1} totalH={H} />
+        <svg width={32} height={H} className="shrink-0">
+          <line x1={0} y1={H/2} x2={32} y2={H/2} stroke={c} strokeWidth={1.5}/>
+        </svg>
+        {/* Centro */}
+        <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ height: H, width: W }}>
+          <div className="w-full">
+            <p className="text-[7px] font-black text-mundial-gold text-center mb-1.5 uppercase tracking-widest">🏆 Gran Final</p>
+            <VBCard {...fin} />
+          </div>
+          {(bracketTeams.sfLosers[0] || bracketTeams.sfLosers[1]) && (
+            <div className="w-full">
+              <p className="text-[7px] font-black text-zinc-600 text-center mb-1.5 uppercase tracking-widest">3° Puesto</p>
+              <div className="border border-white/8 rounded overflow-hidden bg-zinc-950" style={{ width: W }}>
+                <div className="flex items-center gap-1.5 h-6 px-2">
+                  {bracketTeams.sfLosers[0] && <Flag name={bracketTeams.sfLosers[0]} size="sm" />}
+                  <span className="text-[8px] text-zinc-400 font-bold truncate">{bracketTeams.sfLosers[0] || 'TBD'}</span>
+                </div>
+                <div className="h-px bg-white/8" />
+                <div className="flex items-center gap-1.5 h-6 px-2">
+                  {bracketTeams.sfLosers[1] && <Flag name={bracketTeams.sfLosers[1]} size="sm" />}
+                  <span className="text-[8px] text-zinc-400 font-bold truncate">{bracketTeams.sfLosers[1] || 'TBD'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <svg width={32} height={H} className="shrink-0">
+          <line x1={0} y1={H/2} x2={32} y2={H/2} stroke={c} strokeWidth={1.5}/>
+        </svg>
+        <VBRoundCol data={RSF} count={1} totalH={H} />
+        <VBConnector fromCount={2} toCount={1} totalH={H} dir="rtl" />
+        <VBRoundCol data={RQF} count={2} totalH={H} />
+        <VBConnector fromCount={4} toCount={2} totalH={H} dir="rtl" />
+        <VBRoundCol data={R16} count={4} totalH={H} />
+        <VBConnector fromCount={8} toCount={4} totalH={H} dir="rtl" />
+        <VBRoundCol data={R32} count={8} totalH={H} />
+      </div>
+    </div>
+  )
+}
+
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
   const [groups, setGroups] = useState({ ...DEFAULT_GROUPS })
-  const [scores, setScores]  = useState(initScores)
-  const [phase, setPhase]    = useState('groups') // 'groups' | 'bracket'
-  const [bracket, setBracket] = useState(null)
+  const [scores, setScores]       = useState(initScores)
+  const [phase, setPhase]         = useState('groups')
+  const [bracket, setBracket]     = useState(null)
   const [bracketScores, setBracketScores] = useState(null)
+  const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
+  const [bracketView, setBracketView] = useState('list')   // 'list' | 'bracket'
 
   // Cambia un score de grupo
   const handleGroupScore = useCallback((letter, mi, side, val) => {
@@ -505,42 +685,69 @@ export default function SimulatorPage() {
     setPhase('bracket')
   }, [standings])
 
-  // Obtener ganador de un partido del bracket
-  const getWinner = (teamA, teamB, sA, sB) => {
+  // Ganador de un partido (empate → usar penaltyWinner si existe)
+  const resolve = (tA, tB, sA, sB, pw) => {
     const a = parseInt(sA), b = parseInt(sB)
-    if (isNaN(a) || isNaN(b) || a === b) return null
-    return a > b ? teamA : teamB
+    if (isNaN(a) || isNaN(b)) return null
+    if (a > b) return tA
+    if (b > a) return tB
+    return pw || null   // empate → el que ganó penales (o null si no se ha definido)
   }
 
-  // Equipos en cada ronda del bracket (derivados de resultados)
+  // Equipos en cada ronda del bracket
   const bracketTeams = useMemo(() => {
     if (!bracket || !bracketScores) return null
+    const pw = penaltyWinners
     const r32pairs = bracket.r32
-    const r32winners = r32pairs.map(([a, b], i) => {
-      const [sa, sb] = bracketScores.r32[i]
-      return getWinner(a, b, sa, sb)
-    })
-    const r16pairs = []
-    for (let i = 0; i < 8; i++) r16pairs.push([r32winners[i*2], r32winners[i*2+1]])
-    const r16winners = r16pairs.map(([a, b], i) => {
-      const [sa, sb] = bracketScores.r16[i]
-      return getWinner(a, b, sa, sb)
-    })
-    const qfPairs = []
-    for (let i = 0; i < 4; i++) qfPairs.push([r16winners[i*2], r16winners[i*2+1]])
-    const qfWinners = qfPairs.map(([a, b], i) => {
-      const [sa, sb] = bracketScores.qf[i]
-      return getWinner(a, b, sa, sb)
-    })
-    const sfPairs = [[qfWinners[0], qfWinners[1]], [qfWinners[2], qfWinners[3]]]
-    const sfLosers = sfPairs.map(([a, b], i) => {
-      const w = getWinner(a, b, bracketScores.sf[i][0], bracketScores.sf[i][1])
-      return w ? (w === a ? b : a) : null
-    })
-    const sfWinners = sfPairs.map(([a, b], i) => getWinner(a, b, bracketScores.sf[i][0], bracketScores.sf[i][1]))
-    const champion = getWinner(sfWinners[0], sfWinners[1], bracketScores.final[0], bracketScores.final[1])
-    return { r32: r32pairs, r16: r16pairs, qf: qfPairs, sf: sfPairs, sfLosers, sfWinners, finalTeams: [sfWinners[0], sfWinners[1]], champion }
-  }, [bracket, bracketScores])
+    const r32w = r32pairs.map(([a, b], i) => resolve(a, b, bracketScores.r32[i][0], bracketScores.r32[i][1], pw[`r32-${i}`]))
+    const r16pairs = Array.from({ length: 8 }, (_, i) => [r32w[i*2], r32w[i*2+1]])
+    const r16w = r16pairs.map(([a, b], i) => resolve(a, b, bracketScores.r16[i][0], bracketScores.r16[i][1], pw[`r16-${i}`]))
+    const qfPairs = Array.from({ length: 4 }, (_, i) => [r16w[i*2], r16w[i*2+1]])
+    const qfW = qfPairs.map(([a, b], i) => resolve(a, b, bracketScores.qf[i][0], bracketScores.qf[i][1], pw[`qf-${i}`]))
+    const sfPairs = [[qfW[0], qfW[1]], [qfW[2], qfW[3]]]
+    const sfW = sfPairs.map(([a, b], i) => resolve(a, b, bracketScores.sf[i][0], bracketScores.sf[i][1], pw[`sf-${i}`]))
+    const sfLosers = sfPairs.map(([a, b], i) => { const w = sfW[i]; return w ? (w === a ? b : a) : null })
+    const champion = resolve(sfW[0], sfW[1], bracketScores.final[0], bracketScores.final[1], pw['final-0'])
+    return { r32: r32pairs, r16: r16pairs, qf: qfPairs, sf: sfPairs, sfLosers, sfWinners: sfW, finalTeams: [sfW[0], sfW[1]], champion }
+  }, [bracket, bracketScores, penaltyWinners])
+
+  // Auto-simular penales cuando hay empate en eliminatoria
+  useEffect(() => {
+    if (!bracketScores || !bracketTeams) return
+    const newPW = { ...penaltyWinners }
+    let changed = false
+    const check = (round, pairs, scores) => {
+      if (!pairs || !scores) return
+      pairs.forEach(([tA, tB], i) => {
+        const [sA, sB] = scores[i] || []
+        const a = parseInt(sA), b = parseInt(sB)
+        const key = `${round}-${i}`
+        if (!isNaN(a) && !isNaN(b) && a === b && tA && tB) {
+          if (!newPW[key]) {
+            const sa = getStrength(tA), sb = getStrength(tB)
+            newPW[key] = Math.random() < sa / (sa + sb) ? tA : tB
+            changed = true
+          }
+        } else if (newPW[key]) {
+          delete newPW[key]; changed = true
+        }
+      })
+    }
+    check('r32', bracketTeams.r32, bracketScores.r32)
+    check('r16', bracketTeams.r16, bracketScores.r16)
+    check('qf',  bracketTeams.qf,  bracketScores.qf)
+    check('sf',  bracketTeams.sf,  bracketScores.sf)
+    const [fA, fB] = bracketTeams.finalTeams || []
+    const fa = parseInt(bracketScores.final[0]), fb = parseInt(bracketScores.final[1])
+    if (!isNaN(fa) && !isNaN(fb) && fa === fb && fA && fB) {
+      if (!newPW['final-0']) {
+        const sa = getStrength(fA), sb = getStrength(fB)
+        newPW['final-0'] = Math.random() < sa / (sa + sb) ? fA : fB
+        changed = true
+      }
+    } else if (newPW['final-0']) { delete newPW['final-0']; changed = true }
+    if (changed) setPenaltyWinners(newPW)
+  }, [bracketScores])
 
   // Simular todo el torneo
   const handleSimAll = useCallback(() => {
@@ -551,29 +758,35 @@ export default function SimulatorPage() {
     setScores(newScores)
   }, [groups, scores])
 
-  // Simular ronda de bracket
+  // Simular ronda de bracket (guarda penales si empate)
   const simBracketRound = useCallback((round) => {
     if (!bracketTeams || !bracketScores) return
     const pairs = bracketTeams[round]
     if (!pairs) return
     const newScores = { ...bracketScores }
-    newScores[round] = pairs.map(([a, b]) => {
+    const newPW = { ...penaltyWinners }
+    newScores[round] = pairs.map(([a, b], i) => {
       if (!a || !b) return ['', '']
       const sa = getStrength(a), sb = getStrength(b)
       const pA = sa / (sa + sb)
       const r = Math.random()
       const gA = Math.round(Math.random() * 2 + (r < pA ? 1 : 0))
       const gB = Math.round(Math.random() * 2 + (r >= pA ? 1 : 0))
+      const key = `${round}-${i}`
+      if (gA === gB) { newPW[key] = Math.random() < pA ? a : b }
+      else { delete newPW[key] }
       return [String(gA), String(gB)]
     })
     setBracketScores(newScores)
-  }, [bracketTeams, bracketScores])
+    setPenaltyWinners(newPW)
+  }, [bracketTeams, bracketScores, penaltyWinners])
 
   // Reset
   const handleReset = () => {
     setScores(initScores())
     setBracket(null)
     setBracketScores(null)
+    setPenaltyWinners({})
     setPhase('groups')
   }
 
@@ -603,7 +816,7 @@ export default function SimulatorPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-white/8 px-2">
+      <div className="flex flex-wrap gap-1 border-b border-white/8 px-2">
         {[{ id: 'groups', label: 'Fase de Grupos' }, { id: 'bracket', label: 'Eliminatorias' }].map(({ id, label }) => (
           <button key={id} onClick={() => { if (id === 'bracket' && !bracket) buildBracket(); else setPhase(id) }}
             className={`px-4 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all border-b-2 ${phase === id ? 'text-mundial-gold border-mundial-gold' : 'text-zinc-500 border-transparent hover:text-zinc-300'}`}>
@@ -611,9 +824,19 @@ export default function SimulatorPage() {
           </button>
         ))}
         {phase === 'groups' && (
-          <button onClick={buildBracket} className="ml-auto px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors flex items-center gap-1.5 pb-2">
+          <button onClick={buildBracket} className="ml-auto px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors flex items-center gap-1.5">
             Ver Eliminatorias <ChevronRight size={12} />
           </button>
+        )}
+        {phase === 'bracket' && (
+          <div className="ml-auto flex items-center gap-1 pb-1">
+            {[{ id: 'list', label: '☰ Lista' }, { id: 'bracket', label: '⊞ Bracket' }].map(({ id, label }) => (
+              <button key={id} onClick={() => setBracketView(id)}
+                className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${bracketView === id ? 'bg-mundial-gold/20 text-mundial-gold border border-mundial-gold/40' : 'text-zinc-500 hover:text-zinc-300 border border-white/8'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 
@@ -658,8 +881,18 @@ export default function SimulatorPage() {
           {/* Tabla de terceros */}
           {bracket?.thirds && <ThirdsTable thirds={bracket.thirds} />}
 
-          {/* Rounds */}
-          {(['r32', 'r16', 'qf', 'sf']).map(round => {
+          {/* ── Vista Bracket Gráfico ── */}
+          {bracketView === 'bracket' && (
+            <VisualBracket
+              bracketTeams={bracketTeams}
+              bracketScores={bracketScores}
+              penaltyWinners={penaltyWinners}
+              bracket={bracket}
+            />
+          )}
+
+          {/* ── Vista Lista ── */}
+          {bracketView === 'list' && (['r32', 'r16', 'qf', 'sf']).map(round => {
             const pairs = bracketTeams[round]
             const scoresRound = bracketScores[round]
             if (!pairs) return null
@@ -706,45 +939,52 @@ export default function SimulatorPage() {
             )
           })}
 
-          {/* FINAL */}
-          <div>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h3 className="font-display text-2xl text-mundial-gold flex items-center gap-2"><Trophy size={20} /> GRAN FINAL</h3>
-              <button onClick={() => {
-                const [a, b] = bracketTeams.finalTeams
-                if (!a || !b) return
-                const res = simMatch(a, b)
-                setBracketScores(prev => ({ ...prev, final: res.map(String) }))
-              }} className="text-[9px] font-black text-mundial-gold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
-                <Zap size={10} /> Simular final
-              </button>
-            </div>
-            <div className="max-w-sm mx-auto">
-              <BracketMatch
-                teamA={bracketTeams.finalTeams[0]}
-                teamB={bracketTeams.finalTeams[1]}
-                scoreA={bracketScores.final[0]}
-                scoreB={bracketScores.final[1]}
-                onScore={(side, val) => setBracketScores(prev => ({
-                  ...prev, final: side === 0 ? [val, prev.final[1]] : [prev.final[0], val]
-                }))}
-              />
-            </div>
-          </div>
-
-          {/* 3er puesto */}
-          {bracketTeams.sfLosers.some(Boolean) && (
-            <div>
-              <h3 className="font-display text-lg text-zinc-400 mb-3 px-1">3° Y 4° PUESTO</h3>
-              <div className="max-w-sm mx-auto">
-                <BracketMatch
-                  teamA={bracketTeams.sfLosers[0]}
-                  teamB={bracketTeams.sfLosers[1]}
-                  scoreA="" scoreB=""
-                  onScore={() => {}}
-                />
+          {bracketView === 'list' && (
+            <>
+              {/* FINAL */}
+              <div>
+                <div className="flex items-center justify-between mb-3 px-1">
+                  <h3 className="font-display text-2xl text-mundial-gold flex items-center gap-2"><Trophy size={20} /> GRAN FINAL</h3>
+                  <button onClick={() => {
+                    const [a, b] = bracketTeams.finalTeams
+                    if (!a || !b) return
+                    const res = simMatch(a, b)
+                    const newPW = { ...penaltyWinners }
+                    if (res[0] === res[1]) {
+                      const sa = getStrength(a), sb = getStrength(b)
+                      newPW['final-0'] = Math.random() < sa / (sa + sb) ? a : b
+                    } else { delete newPW['final-0'] }
+                    setPenaltyWinners(newPW)
+                    setBracketScores(prev => ({ ...prev, final: res.map(String) }))
+                  }} className="text-[9px] font-black text-mundial-gold uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
+                    <Zap size={10} /> Simular final
+                  </button>
+                </div>
+                <div className="max-w-sm mx-auto">
+                  <BracketMatch
+                    teamA={bracketTeams.finalTeams[0]} teamB={bracketTeams.finalTeams[1]}
+                    scoreA={bracketScores.final[0]} scoreB={bracketScores.final[1]}
+                    onScore={(side, val) => setBracketScores(prev => ({
+                      ...prev, final: side === 0 ? [val, prev.final[1]] : [prev.final[0], val]
+                    }))}
+                  />
+                  {penaltyWinners['final-0'] && (
+                    <p className="text-center text-[9px] font-black text-orange-400 mt-2 uppercase tracking-widest">
+                      ⚽ Penales: {penaltyWinners['final-0']} avanza a la final
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+              {/* 3er puesto */}
+              {bracketTeams.sfLosers.some(Boolean) && (
+                <div>
+                  <h3 className="font-display text-lg text-zinc-400 mb-3 px-1">3° Y 4° PUESTO</h3>
+                  <div className="max-w-sm mx-auto">
+                    <BracketMatch teamA={bracketTeams.sfLosers[0]} teamB={bracketTeams.sfLosers[1]} scoreA="" scoreB="" onScore={() => {}} />
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Regenerar bracket */}
