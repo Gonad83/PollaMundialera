@@ -1,0 +1,347 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { matchApi } from '../lib/api'
+import { format, isAfter } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { motion } from 'framer-motion'
+import { Trophy, Calendar, Filter, ChevronRight, Star } from 'lucide-react'
+
+// --- Constants & Utils ---
+
+const PHASES = [
+  { value: '', label: 'TODOS' },
+  { value: 'GROUP', label: 'GRUPOS' },
+  { value: 'R16', label: '8vos' },
+  { value: 'QF', label: '4tos' },
+  { value: 'SF', label: 'Semis' },
+  { value: 'FINAL', label: 'Final' },
+]
+
+const STATUS_COLORS = {
+  SCHEDULED: 'text-zinc-500 bg-white/5 border-white/5',
+  LIVE: 'text-mundial-red bg-mundial-red/10 border-mundial-red/20',
+  FINISHED: 'text-zinc-400 bg-white/5 border-white/5',
+}
+
+const STATUS_LABELS = {
+  SCHEDULED: 'PRÓXIMO',
+  LIVE: 'EN VIVO',
+  FINISHED: 'FINALIZADO',
+}
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 }
+  }
+}
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1 }
+}
+
+export default function MatchesPage() {
+  const [phase, setPhase] = useState('')
+
+  const { data: allMatches = [], isLoading } = useQuery({
+    queryKey: ['matches-all'],
+    queryFn: () => matchApi.list({}).then(r => r.data),
+  })
+
+  const matches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
+
+  const grouped = matches.reduce((acc, m) => {
+    const day = format(new Date(m.dateUtc), 'EEEE d MMM', { locale: es })
+    if (!acc[day]) acc[day] = []
+    acc[day].push(m)
+    return acc
+  }, {})
+
+  const groupMatches = allMatches.filter(m => m.phase === 'GROUP')
+  const standings = buildStandings(groupMatches)
+
+  return (
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="pb-24 max-w-4xl mx-auto px-4"
+    >
+      {/* Header Section */}
+      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pt-4">
+        <div>
+          <h1 className="font-display text-5xl text-white tracking-tight flex items-center gap-4">
+            PRÓXIMOS ENCUENTROS
+          </h1>
+          <p className="text-[10px] text-mundial-gold font-extrabold uppercase tracking-[0.4em] mt-2 opacity-80">
+            United 2026 • Road to the Final
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+           <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+              <Calendar size={14} className="text-mundial-gold" />
+              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{allMatches.length} PARTIDOS</span>
+           </div>
+        </div>
+      </motion.div>
+
+      {/* Advanced Filters */}
+      <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-8 border-b border-white/5">
+        <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-zinc-500 mr-2">
+          <Filter size={16} />
+        </div>
+        {PHASES.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setPhase(value)}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-extrabold whitespace-nowrap transition-all uppercase tracking-widest border ${
+              phase === value
+                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-2xl shadow-mundial-gold/20'
+                : 'bg-white/5 text-zinc-500 border-white/5 hover:border-white/10 hover:text-zinc-300'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </motion.div>
+
+      {isLoading ? (
+        <div className="grid gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card h-28 animate-pulse bg-white/5 border-white/5" />
+          ))}
+        </div>
+      ) : phase === 'GROUP' ? (
+        /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
+        <div className="space-y-12">
+          {standings.length === 0 ? (
+            <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
+               <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Sin datos para mostrar</p>
+            </div>
+          ) : standings.map(({ letter, rows }) => (
+            <motion.div key={letter} variants={itemVariants}>
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-[1.25rem] bg-gradient-to-br from-mundial-gold to-mundial-gold/70 text-mundial-navy flex items-center justify-center text-2xl font-black shadow-xl shadow-mundial-gold/10">
+                  {letter}
+                </div>
+                <h2 className="font-display text-2xl text-white uppercase tracking-tighter">
+                  GRUPO <span className="text-mundial-gold">{letter}</span>
+                </h2>
+              </div>
+
+              <div className="card overflow-hidden border-b-4 border-b-mundial-gold/20">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest bg-white/5">
+                        <th className="text-left px-6 py-4 w-12">#</th>
+                        <th className="text-left px-2 py-4">Selección</th>
+                        <th className="text-center px-4 py-4 w-12">PJ</th>
+                        <th className="text-center px-4 py-4 w-12">DG</th>
+                        <th className="text-center px-6 py-4 w-16 font-bold text-mundial-gold">PTS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, idx) => (
+                        <tr
+                          key={row.team.id}
+                          className={`border-b border-white/5 last:border-0 transition-all group ${
+                            idx < 2 ? 'bg-mundial-gold/[0.03]' : ''
+                          }`}
+                        >
+                          <td className="px-6 py-5 font-mono text-zinc-500 text-xs">
+                             {idx < 2 ? <Star size={10} className="text-mundial-gold" /> : idx + 1}
+                          </td>
+                          <td className="px-2 py-5">
+                            <div className="flex items-center gap-4">
+                              <TeamFlag team={row.team} size="sm" />
+                              <span className={`font-bold transition-colors ${idx < 2 ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
+                                {row.team.name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-center px-4 py-5 text-zinc-400 font-mono text-xs">{row.pj}</td>
+                          <td className="text-center px-4 py-5 font-mono text-xs text-zinc-500">
+                            {row.gf - row.gc > 0 ? '+' : ''}{row.gf - row.gc}
+                          </td>
+                          <td className="text-center px-6 py-5 font-display text-xl font-bold text-white">
+                            {row.pts}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        /* ── MATCH LIST VIEW ──────────────────────────────────── */
+        <div className="space-y-12">
+          {Object.entries(grouped).map(([day, dayMatches]) => (
+            <div key={day}>
+              <div className="flex items-center gap-3 mb-6 px-2">
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/5" />
+                <h2 className="font-mono text-[10px] text-mundial-gold uppercase tracking-[0.3em] font-black whitespace-nowrap">
+                  {day}
+                </h2>
+                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/5" />
+              </div>
+              <div className="grid gap-4">
+                {dayMatches.map(match => (
+                  <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                    <MatchRow match={match} />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          ))}
+          {matches.length === 0 && (
+            <div className="text-center py-32 bg-white/5 rounded-[3rem] border border-white/5">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Trophy size={40} className="text-zinc-700" />
+              </div>
+              <p className="text-zinc-500 uppercase tracking-widest text-xs font-bold font-mono">No hay jornadas programadas</p>
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+function MatchRow({ match }) {
+  const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
+  const isDeadlinePassed = isAfter(new Date(), new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000))
+  const isLive = status === 'LIVE'
+  const isFinished = status === 'FINISHED'
+
+  return (
+    <Link to={`/matches/${match.id}`} className="group block">
+      <div className={`card-hover p-6 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden ${isLive ? 'border-mundial-red/30' : ''}`}>
+        
+        {/* Mobile Header: Time/Status */}
+        <div className="w-full sm:w-24 shrink-0 flex sm:flex-col items-center justify-between sm:justify-center border-b sm:border-b-0 sm:border-r border-white/5 pb-4 sm:pb-0 sm:pr-4 gap-1">
+           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-tighter uppercase border ${STATUS_COLORS[status]}`}>
+            {isLive && <span className="mr-1 inline-block w-1.5 h-1.5 bg-mundial-red rounded-full animate-pulse" />}
+            {STATUS_LABELS[status]}
+          </span>
+          {!isFinished && (
+            <p className={`text-lg font-display tracking-tight mt-1 ${isLive ? 'text-mundial-red' : 'text-white'}`}>
+              {format(new Date(dateUtc), 'HH:mm')}
+            </p>
+          )}
+        </div>
+
+        {/* Global Body: Team + Score */}
+        <div className="flex-1 w-full flex items-center justify-between gap-2 sm:gap-8">
+           {/* Home Selection */}
+           <div className="flex-1 flex flex-col sm:flex-row items-center justify-end gap-3 text-center sm:text-right">
+             <span className="order-2 sm:order-1 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamHome?.name}</span>
+             <div className="order-1 sm:order-2">
+                <TeamFlag team={teamHome} size="md" />
+             </div>
+           </div>
+
+           {/* Score Box */}
+           <div className="shrink-0 flex items-center gap-2">
+              {isFinished || isLive ? (
+                <div className="flex items-center gap-1.5">
+                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg font-display text-white border border-white/10">{scoreHome ?? 0}</div>
+                   <span className="text-zinc-600 font-bold">:</span>
+                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg font-display text-white border border-white/10">{scoreAway ?? 0}</div>
+                </div>
+              ) : (
+                <div className="px-4 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
+              )}
+           </div>
+
+           {/* Away Selection */}
+           <div className="flex-1 flex flex-col sm:flex-row items-center justify-start gap-3 text-center sm:text-left">
+             <div className="order-1">
+                <TeamFlag team={teamAway} size="md" />
+             </div>
+             <span className="order-2 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamAway?.name}</span>
+           </div>
+        </div>
+
+        {/* Action Button Desktop */}
+        <div className="w-full sm:w-32 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 text-center">
+           {!isDeadlinePassed && !isFinished ? (
+              <div className="flex items-center justify-center gap-1 text-[10px] font-black text-mundial-gold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+                Apostar <ChevronRight size={14} />
+              </div>
+           ) : (
+              <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
+                VER DETALLE
+              </div>
+           )}
+        </div>
+
+        {/* Visual Flair */}
+        {isLive && <div className="absolute top-0 right-0 w-32 h-32 bg-mundial-red/5 blur-3xl rounded-full -mr-16 -mt-16" />}
+      </div>
+    </Link>
+  )
+}
+
+function TeamFlag({ team, size = 'md' }) {
+  const flag = team?.flagUrl
+  const cls = size === 'sm' ? 'w-6 h-5' : 'w-10 h-8'
+  if (flag && (flag.startsWith('http') || flag.startsWith('/'))) {
+    return (
+      <img
+        src={flag}
+        alt={team?.name || ''}
+        className={`${cls} object-contain drop-shadow-lg`}
+        onError={e => { e.currentTarget.style.display = 'none' }}
+      />
+    )
+  }
+  return <span className={size === 'sm' ? 'text-lg' : 'text-3xl'}>🏴</span>
+}
+
+function buildStandings(matches) {
+  const groups = {}
+
+  matches.forEach((m) => {
+    const gl = m.groupLetter
+    if (!gl) return
+    if (!groups[gl]) groups[gl] = {}
+
+    const update = (team, myG, opG) => {
+      if (!team) return
+      if (!groups[gl][team.id]) {
+        groups[gl][team.id] = { team, pj: 0, pts: 0, gf: 0, gc: 0 }
+      }
+      const st = groups[gl][team.id]
+      if (m.status === 'FINISHED') {
+        st.pj += 1
+        st.gf += (myG || 0)
+        st.gc += (opG || 0)
+        if (myG > opG) st.pts += 3
+        else if (myG === opG) st.pts += 1
+      }
+    }
+
+    update(m.teamHome, m.scoreHome, m.scoreAway)
+    update(m.teamAway, m.scoreAway, m.scoreHome)
+  })
+
+  return Object.keys(groups).sort().map((letter) => ({
+    letter,
+    rows: Object.values(groups[letter]).sort((a, b) => {
+      if (b.pts !== a.pts) return b.pts - a.pts
+      const dgA = a.gf - a.gc
+      const dgB = b.gf - b.gc
+      if (dgB !== dgA) return dgB - dgA
+      return b.gf - a.gf
+    })
+  }))
+}
+

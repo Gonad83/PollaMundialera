@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum MatchPhase {
+  GROUP
+  R32
+  R16
+  QF
+  SF
+  THIRD
+  FINAL
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  CANCELLED
+}
+
+enum Role {
+  SUPER_ADMIN
+  USER
+}
+
+enum Plan {
+  FREE
+  CLASICO
+  PRO
+}
+
+enum RuleSetType {
+  BASIC
+  COMPLETE
+  CUSTOM
+}
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  role         Role     @default(USER)
+  plan         Plan     @default(FREE)
+  planActivatedAt DateTime?
+  planExpiresAt   DateTime?
+  totalPoints  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLogin    DateTime?
+
+  predictions       Prediction[]
+  tournamentPicks   TournamentPicks?
+  groupMemberships  GroupMember[]
+  createdGroups     Group[]          @relation("GroupCreator")
+  refreshTokens     RefreshToken[]
+  leaderboardEntries LeaderboardEntry[]
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+
+model Group {
+  id            String      @id @default(cuid())
+  name          String
+  inviteCode    String      @unique
+  inviteToken   String?     @unique
+  inviteActive  Boolean     @default(true)
+  creatorId     String
+  creator       User        @relation("GroupCreator", fields: [creatorId], references: [id])
+  maxMembers    Int         @default(3)
+  isPublic      Boolean     @default(false)
+  isPremium     Boolean     @default(false)
+  activePlan    String?
+  paymentId     String?     @unique
+  paymentStatus String?
+  ruleSet       RuleSetType @default(BASIC)
+  customRules   Json?
+  announcements Json?       @default("[]")
+  createdAt     DateTime    @default(now())
+
+  members    GroupMember[]
+  leaderboard LeaderboardEntry[]
+}
+
+model GroupMember {
+  id       String @id @default(cuid())
+  userId   String
+  groupId  String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+}
+
+// ─── Teams & Players ──────────────────────────────────────────────────────────
+
+model Team {
+  id            String @id @default(cuid())
+  name          String
+  code          String @unique
+  flagUrl       String?
+  confederation String
+  fifaRanking   Int?
+
+  homeMatches Match[]  @relation("HomeTeam")
+  awayMatches Match[]  @relation("AwayTeam")
+  players     Player[]
+}
+
+model Player {
+  id                 String @id @default(cuid())
+  name               String
+  teamId             String
+  team               Team   @relation(fields: [teamId], references: [id])
+  position           String
+  shirtNumber        Int?
+  goalsInTournament  Int    @default(0)
+
+  @@index([teamId])
+}
+
+// ─── Matches ──────────────────────────────────────────────────────────────────
+
+model Match {
+  id           String      @id @default(cuid())
+  phase        MatchPhase
+  groupLetter  String?
+  teamHomeId   String
+  teamAwayId   String
+  teamHome     Team        @relation("HomeTeam", fields: [teamHomeId], references: [id])
+  teamAway     Team        @relation("AwayTeam", fields: [teamAwayId], references: [id])
+  scoreHome    Int?
+  scoreAway    Int?
+  wentToPenalties Boolean  @default(false)
+  venue        String?
+  city         String?
+  dateUtc      DateTime
+  status       MatchStatus @default(SCHEDULED)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  predictions  Prediction[]
+}
+
+// ─── Predictions ──────────────────────────────────────────────────────────────
+
+model Prediction {
+  id              String  @id @default(cuid())
+  userId          String
+  matchId         String
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match           Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  predHome        Int
+  predAway        Int
+  predScorerId    String?
+  predBtts        Boolean?
+  predOverUnder   String?
+  predPenalties   Boolean?
+
+  pointsExact     Int     @default(0)
+  pointsWinner    Int     @default(0)
+  pointsBonus     Int     @default(0)
+  pointsTotal     Int     @default(0)
+
+  lockedAt        DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, matchId])
+  @@index([matchId])
+  @@index([userId])
+}
+
+// ─── Tournament Picks ─────────────────────────────────────────────────────────
+
+model TournamentPicks {
+  id              String  @id @default(cuid())
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  champion        String?
+  finalist1       String?
+  finalist2       String?
+  semifinalists   String[]
+  quarterfinalists String[]
+  groupQualifiers  String[]
+
+  topScorerId     String?
+  bestPlayerId    String?
+  bestKeeperId    String?
+  bestYoungId     String?
+
+  totalGoals      Int?
+  mostGoalsTeamId String?
+  leastGoalsTeamId String?
+  hostFurthest    String?
+
+  ptsChampion       Int @default(0)
+  ptsFinalists      Int @default(0)
+  ptsSemifinals     Int @default(0)
+  ptsQuarters       Int @default(0)
+  ptsGroups         Int @default(0)
+  ptsTopScorer      Int @default(0)
+  ptsBestPlayer     Int @default(0)
+  ptsBestKeeper     Int @default(0)
+  ptsBestYoung      Int @default(0)
+  ptsTotalGoals     Int @default(0)
+  ptsTeamStats      Int @default(0)
+  ptsHostFurthest   Int @default(0)
+  pointsTotal       Int @default(0)
+
+  lockedAt   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── Leaderboard Cache ────────────────────────────────────────────────────────
+
+model LeaderboardEntry {
+  id              String @id @default(cuid())
+  userId          String
+  groupId         String?
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group           Group?  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  rank            Int
+  totalPoints     Int     @default(0)
+  matchPoints     Int     @default(0)
+  tournamentPoints Int    @default(0)
+  bonusPoints     Int     @default(0)
+  streak          Int     @default(0)
+  lastUpdated     DateTime @default(now())
+
+  @@unique([userId, groupId])
+  @@index([groupId, totalPoints])
+}

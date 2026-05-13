@@ -1,0 +1,85 @@
+version: '3.9'
+
+services:
+  # ─── Base de datos ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: mundial2026_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mundial2026
+      POSTGRES_USER: polla
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mundial2026secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U polla -d mundial2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend ────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./mundial2026-backend
+      dockerfile: Dockerfile
+    container_name: mundial2026_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://polla:${POSTGRES_PASSWORD:-mundial2026secret}@postgres:5432/mundial2026
+      JWT_SECRET: ${JWT_SECRET:-cambia_esto_en_produccion_jwt}
+      JWT_EXPIRES_IN: 15m
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:-cambia_esto_en_produccion_refresh}
+      REFRESH_TOKEN_EXPIRES_IN: 7d
+      PORT: 3001
+      NODE_ENV: ${NODE_ENV:-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:80}
+      # Email (opcional)
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      # Football API (opcional)
+      FOOTBALL_API_KEY: ${FOOTBALL_API_KEY:-}
+      WC_2026_LEAGUE_ID: ${WC_2026_LEAGUE_ID:-1}
+      TOURNAMENT_DEADLINE: ${TOURNAMENT_DEADLINE:-2026-06-11T14:00:00Z}
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./mundial2026-frontend
+      dockerfile: Dockerfile
+    container_name: mundial2026_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+
+  # ─── Adminer (DB visual, solo en desarrollo) ────────────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: mundial2026_adminer
+    restart: unless-stopped
+    profiles: ["dev"]  # Solo se levanta con: docker compose --profile dev up
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
