@@ -77,4 +77,21 @@
   .rank-1 { @apply text-gold-400; }
   .rank-2 { @apply text-zinc-300; }
   .rank-3 { @apply text-amber-700; }
+
+  /* Plans grid – responsive */
+  .plans-grid {
+    display: grid;
+    gap: 16px;
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 640px) {
+    .plans-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1024px) {
+    .plans-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 1023px) {
+    .plans-grid > * { transform: none !important; }
+  }
 }

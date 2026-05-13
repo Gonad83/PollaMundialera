@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function BottomNav({ user, filteredNav }) {
@@ -8,22 +8,26 @@ export default function BottomNav({ user, filteredNav }) {
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {filteredNav.map(({ to, label }) => {
           const Icon = getIcon(label)
+          const isSim = to === '/simulator'
           return (
             <NavLink
               key={to}
               to={to}
-              className={({ isActive }) => 
+              className={({ isActive }) =>
                 `flex flex-col items-center gap-1 p-2 transition-all relative ${
-                  isActive ? 'text-mundial-gold' : 'text-zinc-500'
+                  isActive ? 'text-mundial-gold' : isSim ? 'text-mundial-gold/50' : 'text-zinc-500'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                  {isSim && !isActive && (
+                    <span className="absolute -top-1 -right-0.5 w-1.5 h-1.5 bg-mundial-gold rounded-full animate-pulse" />
+                  )}
+                  <Icon size={20} strokeWidth={isActive ? 2.5 : isSim ? 2 : 2} />
                   <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
                   {isActive && (
-                    <motion.div 
+                    <motion.div
                       layoutId="bottomTab"
                       className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
                     />
@@ -53,11 +57,12 @@ export default function BottomNav({ user, filteredNav }) {
 
 function getIcon(label) {
   switch (label.toLowerCase()) {
-    case 'partidos': return Calendar
-    case 'torneo': return Trophy
-    case 'ranking': return BarChart3
-    case 'grupos': return Users
-    case 'reglas': return BookOpen
-    default: return Calendar
+    case 'partidos':  return Calendar
+    case 'torneo':    return Trophy
+    case 'ranking':   return BarChart3
+    case 'grupos':    return Users
+    case 'simulador': return Shuffle
+    case 'reglas':    return BookOpen
+    default:          return Calendar
   }
 }

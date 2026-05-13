@@ -255,7 +255,7 @@ export default function MatchDetailPage() {
 
       {/* Sticky Bottom Action Bar (Functional) */}
       {!isLocked && !isFinished && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-mundial-navy/80 backdrop-blur-xl border-t border-white/10 z-50 flex justify-center">
+        <div className="fixed bottom-20 md:bottom-0 left-0 right-0 p-4 bg-mundial-navy/80 backdrop-blur-xl border-t border-white/10 z-[60] flex justify-center">
            <div className="max-w-2xl w-full">
             <motion.button 
               whileTap={{ scale: 0.98 }}
@@ -316,7 +316,7 @@ export default function MatchDetailPage() {
         <div className="card p-8">
           <h2 className="font-display text-xl text-white mb-6 uppercase tracking-widest">Comunidad ({allPreds.length})</h2>
           <div className="space-y-3">
-            {allPreds.slice(0, 15).map((p, idx) => (
+            {allPreds.slice(0, 15).map((p) => (
               <div key={p.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-mundial-navyLight flex items-center justify-center text-xs font-bold text-mundial-gold border border-white/10">

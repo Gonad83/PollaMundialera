@@ -337,7 +337,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start' }}>
+          <div className="plans-grid">
             {PLANS.map((plan) => {
               const s = PLAN_CARD_STYLE[plan.style]
               const isElite = plan.style === 'elite'

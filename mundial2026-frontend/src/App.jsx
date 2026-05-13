@@ -22,6 +22,7 @@ import WelcomePage from './pages/WelcomePage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import PaymentSuccessPage from './pages/PaymentSuccessPage'
 import JoinPage from './pages/JoinPage'
+import SimulatorPage from './pages/SimulatorPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -72,6 +73,7 @@ export default function App() {
                 <Route path="/groups" element={<Protected><GroupsPage /></Protected>} />
                 <Route path="/groups/:id" element={<Protected><GroupDetailPage /></Protected>} />
                 <Route path="/profile/:id" element={<Protected><ProfilePage /></Protected>} />
+                <Route path="/simulator" element={<Protected><SimulatorPage /></Protected>} />
                 <Route path="/rules" element={<Protected><RulesPage /></Protected>} />
                 <Route path="/payment-success" element={<Protected><PaymentSuccessPage /></Protected>} />
                 <Route path="/admin" element={<Protected adminOnly><AdminPage /></Protected>} />

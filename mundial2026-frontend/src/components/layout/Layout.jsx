@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle } from 'lucide-react'
 
 // ── Plan Badge ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
@@ -27,11 +27,12 @@ import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
 const NAV = [
-  { to: '/matches',     label: 'Partidos', icon: Calendar },
-  { to: '/tournament',  label: 'Torneo',   icon: Trophy },
-  { to: '/leaderboard', label: 'Ranking',  icon: BarChart3 },
-  { to: '/groups',      label: 'Grupos',   icon: Users },
-  { to: '/rules',       label: 'Reglas',   icon: BookOpen },
+  { to: '/matches',     label: 'Partidos',  icon: Calendar },
+  { to: '/tournament',  label: 'Torneo',    icon: Trophy },
+  { to: '/leaderboard', label: 'Ranking',   icon: BarChart3 },
+  { to: '/groups',      label: 'Grupos',    icon: Users },
+  { to: '/simulator',   label: 'Simulador', icon: Shuffle },
+  { to: '/rules',       label: 'Reglas',    icon: BookOpen },
 ]
 
 export default function Layout() {
@@ -142,9 +143,9 @@ export default function Layout() {
             </div>
           </NavLink>
 
-          {/* Menú Superior (Desktop) */}
+          {/* Menú Superior (Desktop) — sin Simulador, va como botón aparte */}
           <nav className="hidden md:flex items-center justify-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/5">
-            {filteredNav.map(({ to, label, icon: Icon }) => (
+            {filteredNav.filter(item => item.to !== '/simulator').map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -161,6 +162,23 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
+
+          {/* Botón Simulador Desktop — siempre visible con borde dorado */}
+          {!isRestricted && (
+            <NavLink
+              to="/simulator"
+              className={({ isActive }) =>
+                `hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shrink-0 ${
+                  isActive
+                    ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
+                    : 'text-mundial-gold border-mundial-gold/40 hover:bg-mundial-gold/10'
+                }`
+              }
+            >
+              <Shuffle size={14} />
+              Simular
+            </NavLink>
+          )}
 
           {/* Usuario / Logout (Desktop) */}
           <div className="flex items-center gap-3 shrink-0">
@@ -227,7 +245,7 @@ export default function Layout() {
       </header>
 
       {/* Main Container */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 py-6 md:py-12">
+      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pt-6 pb-32 md:py-12">
         
         {/* Banner de Bienvenida Premium */}
         <motion.div 

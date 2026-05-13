@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { matchApi } from '../lib/api'
+import { matchApi, predictionApi } from '../lib/api'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-import { Trophy, Calendar, Filter, ChevronRight, Star } from 'lucide-react'
+import { Trophy, Calendar, Filter, ChevronRight, Star, CheckCircle2 } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -51,6 +51,16 @@ export default function MatchesPage() {
     queryKey: ['matches-all'],
     queryFn: () => matchApi.list({}).then(r => r.data),
   })
+
+  const { data: myPreds = [] } = useQuery({
+    queryKey: ['my-predictions'],
+    queryFn: () => predictionApi.my({}).then(r => r.data),
+  })
+
+  const predMap = myPreds.reduce((acc, p) => {
+    acc[p.matchId] = p
+    return acc
+  }, {})
 
   const matches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
 
@@ -195,7 +205,7 @@ export default function MatchesPage() {
               <div className="grid gap-4">
                 {dayMatches.map(match => (
                   <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                    <MatchRow match={match} />
+                    <MatchRow match={match} pred={predMap[match.id]} />
                   </motion.div>
                 ))}
               </div>
@@ -215,76 +225,102 @@ export default function MatchesPage() {
   )
 }
 
-function MatchRow({ match }) {
+function MatchRow({ match, pred }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isDeadlinePassed = isAfter(new Date(), new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000))
-  const isLive = status === 'LIVE'
+  const isLive   = status === 'LIVE'
   const isFinished = status === 'FINISHED'
+  const hasPred  = !!pred
+  const hasBonus = hasPred && (pred.predBtts !== null || pred.predOverUnder !== null)
 
   return (
     <Link to={`/matches/${match.id}`} className="group block">
-      <div className={`card-hover p-6 flex flex-col sm:flex-row items-center gap-6 relative overflow-hidden ${isLive ? 'border-mundial-red/30' : ''}`}>
-        
-        {/* Mobile Header: Time/Status */}
-        <div className="w-full sm:w-24 shrink-0 flex sm:flex-col items-center justify-between sm:justify-center border-b sm:border-b-0 sm:border-r border-white/5 pb-4 sm:pb-0 sm:pr-4 gap-1">
-           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-tighter uppercase border ${STATUS_COLORS[status]}`}>
-            {isLive && <span className="mr-1 inline-block w-1.5 h-1.5 bg-mundial-red rounded-full animate-pulse" />}
-            {STATUS_LABELS[status]}
-          </span>
-          {!isFinished && (
-            <p className={`text-lg font-display tracking-tight mt-1 ${isLive ? 'text-mundial-red' : 'text-white'}`}>
-              {format(new Date(dateUtc), 'HH:mm')}
-            </p>
-          )}
-        </div>
+      <div className={`card-hover flex flex-col relative overflow-hidden
+        ${isLive ? 'border-mundial-red/30' : hasPred && !isFinished ? 'border-green-500/20' : ''}`}>
 
-        {/* Global Body: Team + Score */}
-        <div className="flex-1 w-full flex items-center justify-between gap-2 sm:gap-8">
-           {/* Home Selection */}
-           <div className="flex-1 flex flex-col sm:flex-row items-center justify-end gap-3 text-center sm:text-right">
-             <span className="order-2 sm:order-1 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamHome?.name}</span>
-             <div className="order-1 sm:order-2">
-                <TeamFlag team={teamHome} size="md" />
-             </div>
-           </div>
+        {/* Main row */}
+        <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
 
-           {/* Score Box */}
-           <div className="shrink-0 flex items-center gap-2">
+          {/* Time / Status */}
+          <div className="w-full sm:w-24 shrink-0 flex sm:flex-col items-center justify-between sm:justify-center border-b sm:border-b-0 sm:border-r border-white/5 pb-4 sm:pb-0 sm:pr-4 gap-1">
+            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-tighter uppercase border ${STATUS_COLORS[status]}`}>
+              {isLive && <span className="mr-1 inline-block w-1.5 h-1.5 bg-mundial-red rounded-full animate-pulse" />}
+              {STATUS_LABELS[status]}
+            </span>
+            {!isFinished && (
+              <p className={`text-lg font-display tracking-tight mt-1 ${isLive ? 'text-mundial-red' : 'text-white'}`}>
+                {format(new Date(dateUtc), 'HH:mm')}
+              </p>
+            )}
+          </div>
+
+          {/* Teams + Score */}
+          <div className="flex-1 w-full flex items-center justify-between gap-2 sm:gap-6">
+            <div className="flex-1 flex flex-col sm:flex-row items-center justify-end gap-2 sm:gap-3 text-center sm:text-right">
+              <span className="order-2 sm:order-1 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamHome?.name}</span>
+              <div className="order-1 sm:order-2"><TeamFlag team={teamHome} size="md" /></div>
+            </div>
+
+            {/* Center: score real / pronóstico / VS */}
+            <div className="shrink-0">
               {isFinished || isLive ? (
                 <div className="flex items-center gap-1.5">
-                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg font-display text-white border border-white/10">{scoreHome ?? 0}</div>
-                   <span className="text-zinc-600 font-bold">:</span>
-                   <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-lg font-display text-white border border-white/10">{scoreAway ?? 0}</div>
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
+                  <span className="text-zinc-600 font-bold text-sm">:</span>
+                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
+                </div>
+              ) : hasPred ? (
+                <div className="flex items-center gap-1">
+                  <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predHome}</div>
+                  <span className="text-green-700 font-black text-xs">–</span>
+                  <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predAway}</div>
                 </div>
               ) : (
-                <div className="px-4 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
+                <div className="px-3 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
               )}
-           </div>
+            </div>
 
-           {/* Away Selection */}
-           <div className="flex-1 flex flex-col sm:flex-row items-center justify-start gap-3 text-center sm:text-left">
-             <div className="order-1">
-                <TeamFlag team={teamAway} size="md" />
-             </div>
-             <span className="order-2 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamAway?.name}</span>
-           </div>
-        </div>
+            <div className="flex-1 flex flex-col sm:flex-row items-center justify-start gap-2 sm:gap-3 text-center sm:text-left">
+              <div className="order-1"><TeamFlag team={teamAway} size="md" /></div>
+              <span className="order-2 text-sm font-extrabold text-zinc-100 uppercase tracking-tight line-clamp-1">{teamAway?.name}</span>
+            </div>
+          </div>
 
-        {/* Action Button Desktop */}
-        <div className="w-full sm:w-32 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 text-center">
-           {!isDeadlinePassed && !isFinished ? (
-              <div className="flex items-center justify-center gap-1 text-[10px] font-black text-mundial-gold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+          {/* Action */}
+          <div className="w-full sm:w-36 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 flex items-center justify-center">
+            {hasPred && !isFinished ? (
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
+                <CheckCircle2 size={13} /> PRONÓSTICO REGISTRADO
+              </span>
+            ) : !isDeadlinePassed && !isFinished ? (
+              <span className="flex items-center gap-1 text-[10px] font-black text-mundial-gold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
                 Apostar <ChevronRight size={14} />
-              </div>
-           ) : (
-              <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                VER DETALLE
-              </div>
-           )}
+              </span>
+            ) : (
+              <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">VER DETALLE</span>
+            )}
+          </div>
         </div>
 
-        {/* Visual Flair */}
-        {isLive && <div className="absolute top-0 right-0 w-32 h-32 bg-mundial-red/5 blur-3xl rounded-full -mr-16 -mt-16" />}
+        {/* Bonus chips */}
+        {hasBonus && !isFinished && (
+          <div className="px-5 sm:px-6 pb-4 pt-3 flex flex-wrap gap-2 border-t border-white/5">
+            {pred.predBtts !== null && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
+                <CheckCircle2 size={9} />
+                ¿Marcan ambos? <strong>{pred.predBtts ? 'SÍ' : 'NO'}</strong>
+              </span>
+            )}
+            {pred.predOverUnder !== null && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
+                <CheckCircle2 size={9} />
+                Total Goles (+2.5): <strong>{pred.predOverUnder === 'over' ? 'MÁS' : 'MENOS'}</strong>
+              </span>
+            )}
+          </div>
+        )}
+
+        {isLive && <div className="absolute top-0 right-0 w-32 h-32 bg-mundial-red/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />}
       </div>
     </Link>
   )
