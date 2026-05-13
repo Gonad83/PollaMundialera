@@ -134,6 +134,78 @@ function simMatch(a, b) {
   return [goA, Math.max(goB, goA + 1)]
 }
 
+// ── REGLAS OFICIALES FIFA · R32 (P73–P88) ────────────────────────────────────
+function buildR32(standings) {
+  const f = {}, s = {}
+  const thirdsArr = []
+
+  Object.entries(standings).forEach(([g, rows]) => {
+    f[g] = rows[0].name
+    s[g] = rows[1].name
+    thirdsArr.push({ name: rows[2].name, group: g, pts: rows[2].pts, gd: rows[2].gf - rows[2].gc, gf: rows[2].gf })
+  })
+
+  // Mejores 8 terceros: Pts → GD → GF
+  thirdsArr.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
+  const best8 = thirdsArr.slice(0, 8)
+
+  // Grupos válidos por slot (anti-repetición: 1º de X no enfrenta a 3º de X)
+  const VALID = {
+    74: ['A','B','C','D','F'],
+    77: ['C','D','F','G','H'],
+    79: ['C','E','F','H','I'],
+    80: ['E','H','I','J','K'],
+    81: ['B','E','F','I','J'],
+    82: ['A','E','H','I','J'],
+    85: ['E','F','G','I','J'],
+    87: ['D','E','I','J','L'],
+  }
+
+  // Asignación greedy: mejor tercero disponible → primer slot válido
+  const thirdFor = {}
+  const used = new Set()
+  for (const slot of [74, 77, 79, 80, 81, 82, 85, 87]) {
+    for (const t of best8) {
+      if (!used.has(t.name) && VALID[slot].includes(t.group)) {
+        thirdFor[slot] = t.name; used.add(t.name); break
+      }
+    }
+    if (thirdFor[slot] === undefined) thirdFor[slot] = null
+  }
+
+  const F = g => f[g] ?? '?'
+  const S = g => s[g] ?? '?'
+  const T = p => thirdFor[p] ?? '?'
+
+  // Partidos P73-P88 en orden oficial FIFA 2026
+  const RAW = [
+    { label: 'P73', desc: '2A vs 2B',  teams: [S('A'), S('B')] },
+    { label: 'P74', desc: '1E vs 3°',  teams: [F('E'), T(74)]  },
+    { label: 'P75', desc: '1F vs 2C',  teams: [F('F'), S('C')] },
+    { label: 'P76', desc: '1C vs 2F',  teams: [F('C'), S('F')] },
+    { label: 'P77', desc: '1I vs 3°',  teams: [F('I'), T(77)]  },
+    { label: 'P78', desc: '2E vs 2I',  teams: [S('E'), S('I')] },
+    { label: 'P79', desc: '1A vs 3°',  teams: [F('A'), T(79)]  },
+    { label: 'P80', desc: '1L vs 3°',  teams: [F('L'), T(80)]  },
+    { label: 'P81', desc: '1D vs 3°',  teams: [F('D'), T(81)]  },
+    { label: 'P82', desc: '1G vs 3°',  teams: [F('G'), T(82)]  },
+    { label: 'P83', desc: '2K vs 2L',  teams: [S('K'), S('L')] },
+    { label: 'P84', desc: '1H vs 2J',  teams: [F('H'), S('J')] },
+    { label: 'P85', desc: '1B vs 3°',  teams: [F('B'), T(85)]  },
+    { label: 'P86', desc: '1J vs 2H',  teams: [F('J'), S('H')] },
+    { label: 'P87', desc: '1K vs 3°',  teams: [F('K'), T(87)]  },
+    { label: 'P88', desc: '2D vs 2G',  teams: [S('D'), S('G')] },
+  ]
+
+  return {
+    matches: RAW.map(m => m.teams),
+    labels:  RAW.map(m => m.label),
+    descs:   RAW.map(m => m.desc),
+    thirds:  thirdsArr,
+    best8,
+  }
+}
+
 // ── SUBCOMPONENTES ────────────────────────────────────────────────────────────
 
 function Flag({ name, size = 'sm' }) {
@@ -329,6 +401,70 @@ function BracketMatch({ teamA, teamB, scoreA, scoreB, onScore, compact = false }
   )
 }
 
+// Tabla de transparencia de mejores terceros
+function ThirdsTable({ thirds }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="card overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/3 transition-colors"
+      >
+        <span className="font-display text-base text-white flex items-center gap-2">
+          <span className="text-mundial-gold text-sm">{open ? '▲' : '▼'}</span>
+          Tabla de Mejores Terceros · Criterio FIFA
+        </span>
+        <span className="text-[8px] text-zinc-500 font-black uppercase tracking-widest">{open ? 'OCULTAR' : 'VER'}</span>
+      </button>
+      {open && (
+        <div className="border-t border-white/8 overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-[8px] text-zinc-600 uppercase tracking-widest bg-white/3">
+                <th className="text-center px-3 py-1.5 w-8">#</th>
+                <th className="text-left px-2 py-1.5">Equipo</th>
+                <th className="text-center px-2 py-1.5">Grp</th>
+                <th className="text-center px-2 py-1.5">Pts</th>
+                <th className="text-center px-2 py-1.5">GD</th>
+                <th className="text-center px-2 py-1.5">GF</th>
+                <th className="text-center px-3 py-1.5">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thirds.map((t, i) => {
+                const ok = i < 8
+                return (
+                  <tr key={t.name} className={`border-t border-white/5 ${ok ? '' : 'opacity-35'}`}>
+                    <td className="text-center px-3 py-2 text-zinc-600 text-[10px]">{i + 1}</td>
+                    <td className="px-2 py-2">
+                      <span className="flex items-center gap-1.5">
+                        <Flag name={t.name} size="md" />
+                        <span className={`text-[10px] font-bold ${ok ? 'text-white' : 'text-zinc-500'}`}>{t.name}</span>
+                      </span>
+                    </td>
+                    <td className="text-center px-2 py-2 text-mundial-gold font-black text-[10px]">{t.group}</td>
+                    <td className="text-center px-2 py-2 font-display text-base text-white">{t.pts}</td>
+                    <td className={`text-center px-2 py-2 text-[10px] font-mono font-bold ${t.gd > 0 ? 'text-green-500' : t.gd < 0 ? 'text-red-400' : 'text-zinc-600'}`}>
+                      {t.gd > 0 ? '+' : ''}{t.gd}
+                    </td>
+                    <td className="text-center px-2 py-2 text-zinc-400 text-[10px]">{t.gf}</td>
+                    <td className="text-center px-3 py-2">
+                      {ok
+                        ? <span className="text-[8px] font-black text-mundial-gold uppercase tracking-widest">✓ Clasifica</span>
+                        : <span className="text-[8px] text-zinc-700 uppercase tracking-widest">Eliminado</span>
+                      }
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
   const [groups, setGroups] = useState({ ...DEFAULT_GROUPS })
@@ -356,46 +492,18 @@ export default function SimulatorPage() {
       Object.entries(groups).map(([l, teams]) => [l, computeStandings(teams, scores[l])])
     ), [groups, scores])
 
-  const getQualifiers = useCallback(() => {
-    const q1 = [], q2 = [], thirds = []
-    Object.entries(standings).forEach(([letter, rows]) => {
-      q1.push({ name: rows[0].name, group: letter, pos: 1, pts: rows[0].pts, gd: rows[0].gf - rows[0].gc, gf: rows[0].gf })
-      q2.push({ name: rows[1].name, group: letter, pos: 2, pts: rows[1].pts, gd: rows[1].gf - rows[1].gc, gf: rows[1].gf })
-      thirds.push({ name: rows[2].name, group: letter, pos: 3, pts: rows[2].pts, gd: rows[2].gf - rows[2].gc, gf: rows[2].gf })
-    })
-    thirds.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
-    const best8 = thirds.slice(0, 8)
-    // 32 clasificados: 12 primeros + 12 segundos + 8 mejores terceros
-    // Bracket: 1A vs B3, 1B vs A3, etc. (simplificado: emparejar 1ros con 2dos y 3ros)
-    const allFirst  = q1.map(t => t.name)
-    const allSecond = q2.map(t => t.name)
-    const allThird  = best8.map(t => t.name)
-    // 16 partidos de R32: emparejar grupos adyacentes
-    const matches = []
-    for (let i = 0; i < 8; i++) {
-      matches.push([allFirst[i], allSecond[(i + 4) % 12]])
-    }
-    // 8 partidos restantes con 2dos y 3ros
-    for (let i = 8; i < 16; i++) {
-      const a = allSecond[i - 8 + 4] || allSecond[i - 8]
-      const b = allThird[i - 8] || allThird[0]
-      matches.push([a, b])
-    }
-    return matches // 16 pares [teamA, teamB]
-  }, [standings, groups])
-
   const buildBracket = useCallback(() => {
-    const r32pairs = getQualifiers()
-    setBracket({ r32: r32pairs })
+    const { matches, labels, descs, thirds } = buildR32(standings)
+    setBracket({ r32: matches, r32labels: labels, r32descs: descs, thirds })
     setBracketScores({
-      r32: r32pairs.map(() => ['', '']),
-      r16: Array(8).fill(null).map(() => ['', '']),
-      qf:  Array(4).fill(null).map(() => ['', '']),
-      sf:  Array(2).fill(null).map(() => ['', '']),
+      r32:   matches.map(() => ['', '']),
+      r16:   Array(8).fill(null).map(() => ['', '']),
+      qf:    Array(4).fill(null).map(() => ['', '']),
+      sf:    Array(2).fill(null).map(() => ['', '']),
       final: ['', ''],
     })
     setPhase('bracket')
-  }, [getQualifiers])
+  }, [standings])
 
   // Obtener ganador de un partido del bracket
   const getWinner = (teamA, teamB, sA, sB) => {
@@ -547,12 +655,18 @@ export default function SimulatorPage() {
             )}
           </AnimatePresence>
 
+          {/* Tabla de terceros */}
+          {bracket?.thirds && <ThirdsTable thirds={bracket.thirds} />}
+
           {/* Rounds */}
-          {(['r32', 'r16', 'qf', 'sf'] ).map(round => {
+          {(['r32', 'r16', 'qf', 'sf']).map(round => {
             const pairs = bracketTeams[round]
             const scoresRound = bracketScores[round]
             if (!pairs) return null
-            const cols = round === 'r32' ? 'grid-cols-2 sm:grid-cols-4' : round === 'r16' ? 'grid-cols-2 sm:grid-cols-4' : round === 'qf' ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'
+            const cols = round === 'r32' ? 'grid-cols-2 sm:grid-cols-4'
+                       : round === 'r16' ? 'grid-cols-2 sm:grid-cols-4'
+                       : round === 'qf'  ? 'grid-cols-2'
+                       : 'grid-cols-1 sm:grid-cols-2'
             return (
               <div key={round}>
                 <div className="flex items-center justify-between mb-3 px-1">
@@ -563,18 +677,29 @@ export default function SimulatorPage() {
                 </div>
                 <div className={`grid ${cols} gap-3`}>
                   {pairs.map(([a, b], i) => (
-                    <BracketMatch
-                      key={i}
-                      teamA={a} teamB={b}
-                      scoreA={scoresRound[i][0]} scoreB={scoresRound[i][1]}
-                      onScore={(side, val) => {
-                        setBracketScores(prev => ({
-                          ...prev,
-                          [round]: prev[round].map((s, si) => si === i ? (side === 0 ? [val, s[1]] : [s[0], val]) : s)
-                        }))
-                      }}
-                      compact={round === 'r32'}
-                    />
+                    <div key={i} className="flex flex-col gap-1">
+                      {round === 'r32' && (
+                        <div className="flex items-center justify-between px-1">
+                          <span className="text-[9px] font-black text-mundial-gold/80 uppercase tracking-widest">
+                            {bracket?.r32labels?.[i]}
+                          </span>
+                          <span className="text-[8px] text-zinc-600 uppercase tracking-wider">
+                            {bracket?.r32descs?.[i]}
+                          </span>
+                        </div>
+                      )}
+                      <BracketMatch
+                        teamA={a} teamB={b}
+                        scoreA={scoresRound[i][0]} scoreB={scoresRound[i][1]}
+                        onScore={(side, val) => {
+                          setBracketScores(prev => ({
+                            ...prev,
+                            [round]: prev[round].map((s, si) => si === i ? (side === 0 ? [val, s[1]] : [s[0], val]) : s)
+                          }))
+                        }}
+                        compact={round === 'r32'}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
