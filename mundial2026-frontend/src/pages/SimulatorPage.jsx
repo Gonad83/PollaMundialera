@@ -3,55 +3,56 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, ChevronRight, RotateCcw, Zap, Edit3, Check, X } from 'lucide-react'
 
 // ── EQUIPOS ───────────────────────────────────────────────────────────────────
+// code = ISO 3166-1 alpha-2 para flagcdn.com (gb-eng / gb-sct para naciones UK)
 const TEAMS = {
-  'España':          { flag: '🇪🇸', opta: 16.3, titles: 1 },
-  'Francia':         { flag: '🇫🇷', opta: 12.4, titles: 2 },
-  'Inglaterra':      { flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', opta: 11.3, titles: 1 },
-  'Argentina':       { flag: '🇦🇷', opta: 10.7, titles: 3 },
-  'Portugal':        { flag: '🇵🇹', opta: 6.9,  titles: 0 },
-  'Brasil':          { flag: '🇧🇷', opta: 6.1,  titles: 5 },
-  'Alemania':        { flag: '🇩🇪', opta: 5.7,  titles: 4 },
-  'Países Bajos':    { flag: '🇳🇱', opta: 3.9,  titles: 0 },
-  'Noruega':         { flag: '🇳🇴', opta: 3.4,  titles: 0 },
-  'Bélgica':         { flag: '🇧🇪', opta: 2.3,  titles: 0 },
-  'Colombia':        { flag: '🇨🇴', opta: 2.0,  titles: 0 },
-  'Marruecos':       { flag: '🇲🇦', opta: 1.7,  titles: 0 },
-  'Uruguay':         { flag: '🇺🇾', opta: 1.7,  titles: 2 },
-  'México':          { flag: '🇲🇽', opta: 1.6,  titles: 0 },
-  'Ecuador':         { flag: '🇪🇨', opta: 1.6,  titles: 0 },
-  'Suiza':           { flag: '🇨🇭', opta: 1.5,  titles: 0 },
-  'Croacia':         { flag: '🇭🇷', opta: 1.3,  titles: 0 },
-  'USA':             { flag: '🇺🇸', opta: 1.3,  titles: 0 },
-  'Japón':           { flag: '🇯🇵', opta: 1.2,  titles: 0 },
-  'Turquía':         { flag: '🇹🇷', opta: 1.0,  titles: 0 },
-  'Senegal':         { flag: '🇸🇳', opta: 0.9,  titles: 0 },
-  'Canadá':          { flag: '🇨🇦', opta: 0.9,  titles: 0 },
-  'Paraguay':        { flag: '🇵🇾', opta: 0.5,  titles: 0 },
-  'Suecia':          { flag: '🇸🇪', opta: 0.5,  titles: 0 },
-  'Austria':         { flag: '🇦🇹', opta: 0.4,  titles: 0 },
-  'Corea del Sur':   { flag: '🇰🇷', opta: 0.4,  titles: 0 },
-  'Australia':       { flag: '🇦🇺', opta: 0.3,  titles: 0 },
-  'Irán':            { flag: '🇮🇷', opta: 0.3,  titles: 0 },
-  'Rep. Checa':      { flag: '🇨🇿', opta: 0.3,  titles: 0 },
-  'Escocia':         { flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', opta: 0.2,  titles: 0 },
-  'Egipto':          { flag: '🇪🇬', opta: 0.2,  titles: 0 },
-  'Bosnia y Herz.':  { flag: '🇧🇦', opta: 0.2,  titles: 0 },
-  'Costa de Marfil': { flag: '🇨🇮', opta: 0.2,  titles: 0 },
-  'Argelia':         { flag: '🇩🇿', opta: 0.2,  titles: 0 },
-  'Ghana':           { flag: '🇬🇭', opta: 0.2,  titles: 0 },
-  'Sudáfrica':       { flag: '🇿🇦', opta: 0.1,  titles: 0 },
-  'Túnez':           { flag: '🇹🇳', opta: 0.1,  titles: 0 },
-  'Uzbekistán':      { flag: '🇺🇿', opta: 0.1,  titles: 0 },
-  'Panamá':          { flag: '🇵🇦', opta: 0.1,  titles: 0 },
-  'Nueva Zelanda':   { flag: '🇳🇿', opta: 0.1,  titles: 0 },
-  'Irak':            { flag: '🇮🇶', opta: 0.1,  titles: 0 },
-  'Jordania':        { flag: '🇯🇴', opta: 0.1,  titles: 0 },
-  'RD Congo':        { flag: '🇨🇩', opta: 0.1,  titles: 0 },
-  'Catar':           { flag: '🇶🇦', opta: 0.05, titles: 0 },
-  'Arabia Saudita':  { flag: '🇸🇦', opta: 0.05, titles: 0 },
-  'Cabo Verde':      { flag: '🇨🇻', opta: 0.05, titles: 0 },
-  'Haití':           { flag: '🇭🇹', opta: 0.05, titles: 0 },
-  'Curazao':         { flag: '🇨🇼', opta: 0.05, titles: 0 },
+  'España':          { code: 'es',     opta: 16.3, titles: 1 },
+  'Francia':         { code: 'fr',     opta: 12.4, titles: 2 },
+  'Inglaterra':      { code: 'gb-eng', opta: 11.3, titles: 1 },
+  'Argentina':       { code: 'ar',     opta: 10.7, titles: 3 },
+  'Portugal':        { code: 'pt',     opta: 6.9,  titles: 0 },
+  'Brasil':          { code: 'br',     opta: 6.1,  titles: 5 },
+  'Alemania':        { code: 'de',     opta: 5.7,  titles: 4 },
+  'Países Bajos':    { code: 'nl',     opta: 3.9,  titles: 0 },
+  'Noruega':         { code: 'no',     opta: 3.4,  titles: 0 },
+  'Bélgica':         { code: 'be',     opta: 2.3,  titles: 0 },
+  'Colombia':        { code: 'co',     opta: 2.0,  titles: 0 },
+  'Marruecos':       { code: 'ma',     opta: 1.7,  titles: 0 },
+  'Uruguay':         { code: 'uy',     opta: 1.7,  titles: 2 },
+  'México':          { code: 'mx',     opta: 1.6,  titles: 0 },
+  'Ecuador':         { code: 'ec',     opta: 1.6,  titles: 0 },
+  'Suiza':           { code: 'ch',     opta: 1.5,  titles: 0 },
+  'Croacia':         { code: 'hr',     opta: 1.3,  titles: 0 },
+  'USA':             { code: 'us',     opta: 1.3,  titles: 0 },
+  'Japón':           { code: 'jp',     opta: 1.2,  titles: 0 },
+  'Turquía':         { code: 'tr',     opta: 1.0,  titles: 0 },
+  'Senegal':         { code: 'sn',     opta: 0.9,  titles: 0 },
+  'Canadá':          { code: 'ca',     opta: 0.9,  titles: 0 },
+  'Paraguay':        { code: 'py',     opta: 0.5,  titles: 0 },
+  'Suecia':          { code: 'se',     opta: 0.5,  titles: 0 },
+  'Austria':         { code: 'at',     opta: 0.4,  titles: 0 },
+  'Corea del Sur':   { code: 'kr',     opta: 0.4,  titles: 0 },
+  'Australia':       { code: 'au',     opta: 0.3,  titles: 0 },
+  'Irán':            { code: 'ir',     opta: 0.3,  titles: 0 },
+  'Rep. Checa':      { code: 'cz',     opta: 0.3,  titles: 0 },
+  'Escocia':         { code: 'gb-sct', opta: 0.2,  titles: 0 },
+  'Egipto':          { code: 'eg',     opta: 0.2,  titles: 0 },
+  'Bosnia y Herz.':  { code: 'ba',     opta: 0.2,  titles: 0 },
+  'Costa de Marfil': { code: 'ci',     opta: 0.2,  titles: 0 },
+  'Argelia':         { code: 'dz',     opta: 0.2,  titles: 0 },
+  'Ghana':           { code: 'gh',     opta: 0.2,  titles: 0 },
+  'Sudáfrica':       { code: 'za',     opta: 0.1,  titles: 0 },
+  'Túnez':           { code: 'tn',     opta: 0.1,  titles: 0 },
+  'Uzbekistán':      { code: 'uz',     opta: 0.1,  titles: 0 },
+  'Panamá':          { code: 'pa',     opta: 0.1,  titles: 0 },
+  'Nueva Zelanda':   { code: 'nz',     opta: 0.1,  titles: 0 },
+  'Irak':            { code: 'iq',     opta: 0.1,  titles: 0 },
+  'Jordania':        { code: 'jo',     opta: 0.1,  titles: 0 },
+  'RD Congo':        { code: 'cd',     opta: 0.1,  titles: 0 },
+  'Catar':           { code: 'qa',     opta: 0.05, titles: 0 },
+  'Arabia Saudita':  { code: 'sa',     opta: 0.05, titles: 0 },
+  'Cabo Verde':      { code: 'cv',     opta: 0.05, titles: 0 },
+  'Haití':           { code: 'ht',     opta: 0.05, titles: 0 },
+  'Curazao':         { code: 'cw',     opta: 0.05, titles: 0 },
 }
 
 // ── GRUPOS MUNDIAL 2026 (Sorteo oficial FIFA – 4 dic. 2024) ───────────────────
@@ -209,9 +210,17 @@ function buildR32(standings) {
 // ── SUBCOMPONENTES ────────────────────────────────────────────────────────────
 
 function Flag({ name, size = 'sm' }) {
-  const t = TEAMS[name]
-  const sz = size === 'lg' ? 'text-3xl' : size === 'md' ? 'text-xl' : 'text-base'
-  return <span className={sz}>{t?.flag || '🏴'}</span>
+  const code = TEAMS[name]?.code
+  const cls = size === 'lg' ? 'w-10 h-7' : size === 'md' ? 'w-7 h-5' : 'w-5 h-4'
+  if (!code) return <span className="text-sm">🏴</span>
+  return (
+    <img
+      src={`https://flagcdn.com/32x24/${code}.png`}
+      alt={name}
+      className={`${cls} object-cover rounded-sm shadow-sm shrink-0`}
+      onError={e => { e.currentTarget.style.display = 'none' }}
+    />
+  )
 }
 
 function ScoreInput({ value, onChange, disabled, isWin, isLose }) {
@@ -866,7 +875,13 @@ export default function SimulatorPage() {
               <motion.div key={champion} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                 className="p-[1.5px] rounded-[1.5rem]" style={{ background: 'linear-gradient(135deg,#b8860b,#FFD700,#b8860b)' }}>
                 <div className="bg-mundial-navy rounded-[calc(1.5rem-1.5px)] p-6 flex flex-col sm:flex-row items-center gap-5">
-                  <div className="text-6xl">{champData?.flag}</div>
+                  {champData?.code && (
+                    <img
+                      src={`https://flagcdn.com/64x48/${champData.code}.png`}
+                      alt={champion}
+                      className="w-24 h-16 object-cover rounded-lg shadow-lg shrink-0"
+                    />
+                  )}
                   <div className="text-center sm:text-left">
                     <p className="text-[9px] font-black text-mundial-gold uppercase tracking-[0.4em]">🏆 CAMPEÓN MUNDIAL 2026</p>
                     <h2 className="font-display text-4xl sm:text-5xl text-white">{champion}</h2>
