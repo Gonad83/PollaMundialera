@@ -169,9 +169,9 @@ const initScores = () =>
 
 // ── LÓGICA ────────────────────────────────────────────────────────────────────
 
-function computeStandings(teams, scores) {
+function computeStandings(teams, scores, pairs = MATCH_PAIRS) {
   const rows = teams.map(name => ({ name, pts: 0, gf: 0, gc: 0, pj: 0, w: 0, d: 0, l: 0 }))
-  MATCH_PAIRS.forEach(([i, j], mi) => {
+  pairs.forEach(([i, j], mi) => {
     const hg = parseInt(scores[mi][0])
     const ag = parseInt(scores[mi][1])
     if (isNaN(hg) || isNaN(ag)) return
@@ -330,8 +330,9 @@ function ScoreInput({ value, onChange, disabled, isWin, isLose }) {
   )
 }
 
-function GroupCard({ letter, teams, scores, onScoreChange }) {
-  const standings = useMemo(() => computeStandings(teams, scores), [teams, scores])
+function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
+  const pairs = pairOrder || MATCH_PAIRS
+  const standings = useMemo(() => computeStandings(teams, scores, pairs), [teams, scores, pairs])
   const groupComplete = scores.every(([a, b]) => a !== '' && b !== '')
 
   return (
@@ -393,7 +394,7 @@ function GroupCard({ letter, teams, scores, onScoreChange }) {
 
       {/* Matches */}
       <div className="divide-y divide-white/5 flex-1">
-        {MATCH_PAIRS.map(([i, j], mi) => {
+        {pairs.map(([i, j], mi) => {
           const [hg, ag] = scores[mi]
           const hScore = parseInt(hg), aScore = parseInt(ag)
           const hasResult = !isNaN(hScore) && !isNaN(aScore)
@@ -723,7 +724,8 @@ export default function SimulatorPage() {
   const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
   const [bracketView, setBracketView] = useState('list')   // 'list' | 'bracket'
   const [groupsFromApi, setGroupsFromApi] = useState(false)
-  const [savedAt, setSavedAt] = useState(null)             // timestamp último guardado
+  const [groupPairOrders, setGroupPairOrders] = useState({}) // { A: [[i,j],...], ... } orden real de partidos
+  const [savedAt, setSavedAt] = useState(null)              // timestamp último guardado
 
   // Cargar grupos reales del API (idénticos a la página de Partidos)
   const { data: groupMatches = [] } = useQuery({
@@ -751,6 +753,7 @@ export default function SimulatorPage() {
   useEffect(() => {
     if (!groupMatches.length || groupsFromApi) return
     const apiGroups = {}
+    const apiMatchOrder = {} // letter → [[homeIdx, awayIdx], ...]
     groupMatches.forEach(m => {
       const gl = m.groupLetter
       if (!gl) return
@@ -771,6 +774,21 @@ export default function SimulatorPage() {
     if (letters.length < 2) return
     const cleanGroups = {}
     letters.sort().forEach(l => { cleanGroups[l] = apiGroups[l].slice(0, 4) })
+
+    // Construir orden de partidos por grupo según la fecha del API
+    letters.forEach(gl => {
+      apiMatchOrder[gl] = []
+      groupMatches
+        .filter(m => m.groupLetter === gl)
+        .forEach(m => {
+          const hi = cleanGroups[gl].indexOf(m.teamHome?.name)
+          const ai = cleanGroups[gl].indexOf(m.teamAway?.name)
+          if (hi !== -1 && ai !== -1) apiMatchOrder[gl].push([hi, ai])
+        })
+      // Fallback si no hay datos suficientes
+      if (apiMatchOrder[gl].length !== 6) apiMatchOrder[gl] = MATCH_PAIRS
+    })
+    setGroupPairOrders(apiMatchOrder)
     setGroups(cleanGroups)
     // Solo resetear scores si no hay simulación guardada
     if (!localStorage.getItem(SAVE_KEY)) {
@@ -787,11 +805,14 @@ export default function SimulatorPage() {
     })
   }, [])
 
-  // Calcula clasificados de cada grupo
+  // Calcula clasificados de cada grupo (usando el orden de partidos del API)
   const standings = useMemo(() =>
     Object.fromEntries(
-      Object.entries(groups).map(([l, teams]) => [l, computeStandings(teams, scores[l])])
-    ), [groups, scores])
+      Object.entries(groups).map(([l, teams]) => [
+        l,
+        computeStandings(teams, scores[l], groupPairOrders[l] || MATCH_PAIRS)
+      ])
+    ), [groups, scores, groupPairOrders])
 
   const buildBracket = useCallback(() => {
     const { matches, labels, descs, thirds } = buildR32(standings)
@@ -870,14 +891,15 @@ export default function SimulatorPage() {
     if (changed) setPenaltyWinners(newPW)
   }, [bracketScores])
 
-  // Simular todo el torneo
+  // Simular todo el torneo (respetando el orden de partidos del API)
   const handleSimAll = useCallback(() => {
     const newScores = { ...scores }
     Object.entries(groups).forEach(([letter, teams]) => {
-      newScores[letter] = MATCH_PAIRS.map(([i, j]) => simMatch(teams[i], teams[j]).map(String))
+      const pairs = groupPairOrders[letter] || MATCH_PAIRS
+      newScores[letter] = pairs.map(([i, j]) => simMatch(teams[i], teams[j]).map(String))
     })
     setScores(newScores)
-  }, [groups, scores])
+  }, [groups, scores, groupPairOrders])
 
   // Simular ronda de bracket (guarda penales si empate)
   const simBracketRound = useCallback((round) => {
@@ -989,6 +1011,7 @@ export default function SimulatorPage() {
               letter={letter}
               teams={teams}
               scores={scores[letter]}
+              pairOrder={groupPairOrders[letter]}
               onScoreChange={(mi, side, val) => handleGroupScore(letter, mi, side, val)}
             />
           ))}
