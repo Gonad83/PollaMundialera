@@ -56,7 +56,7 @@ const PLANS = [
     name: 'DT',
     price: '4.990',
     desc: 'Para múltiples torneos y grupos.',
-    features: ['3 grupos', 'Hasta 15 miembros c/u', 'Pronósticos avanzados', 'Predicciones de torneo', 'Gestión de premios'],
+    features: ['3 grupos', 'Hasta 50 miembros', 'Pronósticos avanzados', 'Predicciones de torneo', 'Gestión de premios'],
     cta: 'ELEGIR PLAN DT',
     style: 'steel',
     badge: null,
