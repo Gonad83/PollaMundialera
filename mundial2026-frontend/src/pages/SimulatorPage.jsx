@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, ChevronRight, RotateCcw, Zap } from 'lucide-react'
+import { Trophy, ChevronRight, RotateCcw, Zap, Save, CheckCircle2 } from 'lucide-react'
 import { matchApi } from '../lib/api'
 
 // ── EQUIPOS ───────────────────────────────────────────────────────────────────
@@ -224,16 +224,19 @@ function buildR32(standings) {
   thirdsArr.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
   const best8 = thirdsArr.slice(0, 8)
 
-  // Grupos válidos por slot (anti-repetición: 1º de X no enfrenta a 3º de X)
+  // Anti-repetición: el 3° no puede enfrentar al 1° de su mismo grupo
+  // Para cada slot "1X vs 3°", excluir el grupo X
+  const ALL = ['A','B','C','D','E','F','G','H','I','J','K','L']
+  const excl = (g) => ALL.filter(x => x !== g)
   const VALID = {
-    74: ['A','B','C','D','F'],
-    77: ['C','D','F','G','H'],
-    79: ['C','E','F','H','I'],
-    80: ['E','H','I','J','K'],
-    81: ['B','E','F','I','J'],
-    82: ['A','E','H','I','J'],
-    85: ['E','F','G','I','J'],
-    87: ['D','E','I','J','L'],
+    74: excl('E'),  // 1E vs 3°
+    77: excl('I'),  // 1I vs 3°
+    79: excl('A'),  // 1A vs 3°
+    80: excl('L'),  // 1L vs 3°
+    81: excl('D'),  // 1D vs 3°
+    82: excl('G'),  // 1G vs 3°
+    85: excl('B'),  // 1B vs 3°
+    87: excl('K'),  // 1K vs 3°
   }
 
   // Asignación greedy: mejor tercero disponible → primer slot válido
@@ -708,6 +711,8 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
   )
 }
 
+const SAVE_KEY = 'mundial2026_sim_v1'
+
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
   const [groups, setGroups] = useState({ ...DEFAULT_GROUPS })
@@ -718,6 +723,7 @@ export default function SimulatorPage() {
   const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
   const [bracketView, setBracketView] = useState('list')   // 'list' | 'bracket'
   const [groupsFromApi, setGroupsFromApi] = useState(false)
+  const [savedAt, setSavedAt] = useState(null)             // timestamp último guardado
 
   // Cargar grupos reales del API (idénticos a la página de Partidos)
   const { data: groupMatches = [] } = useQuery({
@@ -725,6 +731,22 @@ export default function SimulatorPage() {
     queryFn: () => matchApi.list({ phase: 'GROUP' }).then(r => r.data),
     staleTime: Infinity,
   })
+
+  // Auto-cargar simulación guardada al montar
+  useEffect(() => {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (!raw) return
+    try {
+      const s = JSON.parse(raw)
+      if (s.scores)        setScores(s.scores)
+      if (s.phase)         setPhase(s.phase)
+      if (s.bracket)       setBracket(s.bracket)
+      if (s.bracketScores) setBracketScores(s.bracketScores)
+      if (s.penaltyWinners)setPenaltyWinners(s.penaltyWinners)
+      if (s.bracketView)   setBracketView(s.bracketView)
+      if (s.savedAt)       setSavedAt(s.savedAt)
+    } catch {}
+  }, []) // solo en mount
 
   useEffect(() => {
     if (!groupMatches.length || groupsFromApi) return
@@ -735,7 +757,6 @@ export default function SimulatorPage() {
       if (!apiGroups[gl]) apiGroups[gl] = []
       const addTeam = (team) => {
         if (!team) return
-        // Guardar metadatos para el componente Flag
         _teamMeta[team.name] = {
           fifaCode: team.code,
           iso2: FIFA_TO_ISO2[team.code?.toUpperCase()],
@@ -746,14 +767,15 @@ export default function SimulatorPage() {
       addTeam(m.teamHome)
       addTeam(m.teamAway)
     })
-    // Solo actualizar si obtuvimos grupos válidos
     const letters = Object.keys(apiGroups)
     if (letters.length < 2) return
-    // Ordenar teams por orden de aparición y mantener exactamente 4 por grupo
     const cleanGroups = {}
     letters.sort().forEach(l => { cleanGroups[l] = apiGroups[l].slice(0, 4) })
     setGroups(cleanGroups)
-    setScores(Object.fromEntries(Object.keys(cleanGroups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
+    // Solo resetear scores si no hay simulación guardada
+    if (!localStorage.getItem(SAVE_KEY)) {
+      setScores(Object.fromEntries(Object.keys(cleanGroups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
+    }
     setGroupsFromApi(true)
   }, [groupMatches, groupsFromApi])
 
@@ -880,8 +902,18 @@ export default function SimulatorPage() {
     setPenaltyWinners(newPW)
   }, [bracketTeams, bracketScores, penaltyWinners])
 
-  // Reset
+  // Guardar simulación en localStorage
+  const handleSave = useCallback(() => {
+    const ts = new Date().toISOString()
+    const state = { scores, phase, bracket, bracketScores, penaltyWinners, bracketView, savedAt: ts }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
+    setSavedAt(ts)
+  }, [scores, phase, bracket, bracketScores, penaltyWinners, bracketView])
+
+  // Reset (borra guardado)
   const handleReset = () => {
+    localStorage.removeItem(SAVE_KEY)
+    setSavedAt(null)
     setScores(Object.fromEntries(Object.keys(groups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
     setBracket(null)
     setBracketScores(null)
@@ -902,11 +934,20 @@ export default function SimulatorPage() {
         <div>
           <p className="text-[9px] font-black text-mundial-gold uppercase tracking-[0.4em]">SIMULADOR EDITABLE</p>
           <h1 className="font-display text-4xl sm:text-5xl text-white leading-none">MUNDIAL <span className="text-mundial-gold">2026</span></h1>
-          <p className="text-[10px] text-zinc-500 mt-1">Ingresa los resultados manualmente o simula automáticamente · Haz clic en los equipos para editarlos</p>
+          {savedAt ? (
+            <p className="text-[10px] text-mundial-gold/70 mt-1 flex items-center gap-1">
+              <CheckCircle2 size={10} /> Guardado · {new Date(savedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          ) : (
+            <p className="text-[10px] text-zinc-500 mt-1">Sin guardar — usa el botón para conservar tu simulación</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={handleSimAll} className="btn-gold px-4 py-2.5 text-xs gap-2 justify-center">
             <Zap size={14} /> Simular Grupos
+          </button>
+          <button onClick={handleSave} className="btn-ghost px-4 py-2.5 text-xs gap-2 justify-center border-mundial-gold/30 text-mundial-gold hover:bg-mundial-gold/10">
+            <Save size={14} /> Guardar
           </button>
           <button onClick={handleReset} className="btn-ghost px-4 py-2.5 text-xs gap-2 justify-center">
             <RotateCcw size={14} /> Reiniciar
