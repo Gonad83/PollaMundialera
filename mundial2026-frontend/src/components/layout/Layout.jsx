@@ -46,6 +46,8 @@ export default function Layout() {
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
+  // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
+  const isGroupsListing = pathname === '/groups'
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -72,9 +74,8 @@ export default function Layout() {
   }, [socketRef])
 
   const filteredNav = NAV.filter(item => {
-    if (isRestricted) {
-      return ['/groups', '/rules'].includes(item.to)
-    }
+    if (isRestricted) return ['/groups', '/rules'].includes(item.to)
+    if (isGroupsListing) return item.to === '/groups'
     return true
   })
 
@@ -163,8 +164,8 @@ export default function Layout() {
             ))}
           </nav>
 
-          {/* Botón Simulador Desktop — siempre visible con borde dorado */}
-          {!isRestricted && (
+          {/* Botón Simulador Desktop — visible solo cuando se está dentro de un grupo */}
+          {!isRestricted && !isGroupsListing && (
             <NavLink
               to="/simulator"
               className={({ isActive }) =>
