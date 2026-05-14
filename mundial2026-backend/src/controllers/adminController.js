@@ -400,7 +400,7 @@ const getUsers = async (req, res) => {
 // PATCH /api/admin/users/:id/plan — Cambiar plan manualmente
 const setUserPlan = async (req, res) => {
   const { plan } = req.body;
-  const validPlans = ['FREE', 'CLASICO', 'PRO'];
+  const validPlans = ['FREE', 'CLASICO', 'DT', 'PRO'];
   if (!validPlans.includes(plan)) {
     return res.status(400).json({ error: 'Plan inválido' });
   }

@@ -7,9 +7,10 @@ import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X
 
 // ── Plan Badge ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
-  FREE:    { label: 'Free',     bg: 'bg-zinc-800',          text: 'text-zinc-400',      border: 'border-zinc-700' },
-  CLASICO: { label: 'Clásico', bg: 'bg-blue-900/60',        text: 'text-blue-400',      border: 'border-blue-700/50' },
-  PRO:     { label: 'Pro ⚡',   bg: 'bg-mundial-gold/10',    text: 'text-mundial-gold',  border: 'border-mundial-gold/30' },
+  FREE:    { label: 'Free',      bg: 'bg-zinc-800',           text: 'text-zinc-400',      border: 'border-zinc-700' },
+  CLASICO: { label: 'Clásico',  bg: 'bg-blue-900/60',         text: 'text-blue-400',      border: 'border-blue-700/50' },
+  DT:      { label: 'DT ⚡',    bg: 'bg-amber-900/40',        text: 'text-amber-400',     border: 'border-amber-700/40' },
+  PRO:     { label: 'Elite ⚡', bg: 'bg-mundial-gold/10',     text: 'text-mundial-gold',  border: 'border-mundial-gold/30' },
 }
 
 function PlanBadge({ plan, size = 'sm' }) {
@@ -208,6 +209,9 @@ export default function Layout() {
                 {user?.plan === 'PRO' && (
                   <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-mundial-gold rounded-full border-2 border-mundial-navy" />
                 )}
+                {user?.plan === 'DT' && (
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-amber-400 rounded-full border-2 border-mundial-navy" />
+                )}
                 {user?.plan === 'CLASICO' && (
                   <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-blue-400 rounded-full border-2 border-mundial-navy" />
                 )}
@@ -272,8 +276,8 @@ export default function Layout() {
                   <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
                     {user?.plan === 'FREE'    && '1 grupo · 3 miembros máx'}
                     {user?.plan === 'CLASICO' && '1 grupo · 15 miembros máx'}
-                    {user?.plan === 'PRO'     && '3 grupos · 50 miembros'}
-                    {user?.plan === 'ELITE'   && 'Grupos ilimitados · 150 miembros'}
+                    {user?.plan === 'DT'      && '3 grupos · 50 miembros'}
+                    {user?.plan === 'PRO'     && 'Grupos ilimitados · 150 miembros'}
                   </span>
                   {user?.plan === 'FREE' && !isSuperAdmin && (
                     <NavLink
