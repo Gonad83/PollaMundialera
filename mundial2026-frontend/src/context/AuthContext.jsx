@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     await authApi.logout().catch(() => {})
     localStorage.clear()
     setUser(null)
+    window.location.replace('/')
   }
 
   const updateUser = (updates) => setUser((u) => ({ ...u, ...updates }))
