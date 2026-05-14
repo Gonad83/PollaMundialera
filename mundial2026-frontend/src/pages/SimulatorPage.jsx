@@ -74,6 +74,60 @@ const FIFA_TO_ISO2 = {
 // Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre
 const _teamMeta = {}
 
+// ── PROBABILIDADES REALES (hoja de cálculo) ───────────────────────────────────
+// win = % de ganar el torneo — fuente principal para la simulación
+const TEAM_PROBS = {
+  'España':          { win: 21.1, final: 35.6, sf: 48.5, qf: 78.1, r16: 85.2, groups: 98.9 },
+  'Francia':         { win: 15.7, final: 28.4, sf: 44.2, qf: 72.4, r16: 82.4, groups: 98.1 },
+  'Inglaterra':      { win: 14.7, final: 26.8, sf: 41.5, qf: 71.0, r16: 80.1, groups: 97.5 },
+  'Brasil':          { win: 11.6, final: 21.7, sf: 38.4, qf: 67.2, r16: 78.5, groups: 96.8 },
+  'Argentina':       { win: 10.0, final: 19.4, sf: 35.1, qf: 64.2, r16: 76.9, groups: 96.2 },
+  'Portugal':        { win:  8.1, final: 16.5, sf: 31.2, qf: 60.1, r16: 72.1, groups: 94.5 },
+  'Alemania':        { win:  6.3, final: 13.5, sf: 28.5, qf: 56.1, r16: 68.4, groups: 93.8 },
+  'Países Bajos':    { win:  2.8, final:  7.0, sf: 19.1, qf: 41.7, r16: 61.2, groups: 90.5 },
+  'Bélgica':         { win:  2.5, final:  6.3, sf: 18.2, qf: 40.6, r16: 62.5, groups: 91.2 },
+  'Noruega':         { win:  1.4, final:  4.0, sf: 12.1, qf: 28.6, r16: 45.2, groups: 82.1 },
+  'Estados Unidos':  { win:  1.2, final:  3.1, sf:  9.5, qf: 22.8, r16: 59.2, groups: 89.4 },
+  'USA':             { win:  1.2, final:  3.1, sf:  9.5, qf: 22.8, r16: 59.2, groups: 89.4 },
+  'Uruguay':         { win:  0.8, final:  2.6, sf: 10.4, qf: 21.6, r16: 58.1, groups: 88.4 },
+  'Suiza':           { win:  0.8, final:  2.4, sf:  7.2, qf: 19.4, r16: 48.1, groups: 84.2 },
+  'México':          { win:  0.2, final:  0.9, sf:  3.5, qf: 12.1, r16: 48.5, groups: 85.1 },
+  'Colombia':        { win:  0.7, final:  2.1, sf:  6.5, qf: 18.2, r16: 46.4, groups: 83.5 },
+  'Japón':           { win:  0.5, final:  1.8, sf:  5.8, qf: 16.5, r16: 44.1, groups: 81.2 },
+  'Marruecos':       { win:  0.4, final:  1.5, sf:  5.2, qf: 15.1, r16: 43.5, groups: 80.8 },
+  'Croacia':         { win:  0.3, final:  1.2, sf:  4.9, qf: 14.8, r16: 41.2, groups: 79.5 },
+  'Ecuador':         { win:  0.1, final:  0.6, sf:  2.8, qf: 10.5, r16: 38.2, groups: 76.4 },
+  'Canadá':          { win:  0.1, final:  0.5, sf:  2.1, qf:  9.2, r16: 40.1, groups: 78.2 },
+  'Corea del Sur':   { win:  0.1, final:  0.4, sf:  1.9, qf:  8.1, r16: 35.4, groups: 74.1 },
+  'Senegal':         { win: 0.05, final:  0.3, sf:  1.5, qf:  7.5, r16: 32.1, groups: 72.5 },
+  'Austria':         { win: 0.05, final:  0.2, sf:  1.2, qf:  6.8, r16: 30.5, groups: 70.2 },
+  'Suecia':          { win: 0.05, final:  0.2, sf:  1.0, qf:  6.1, r16: 28.9, groups: 68.4 },
+  'Nigeria':         { win: 0.05, final:  0.1, sf:  0.8, qf:  5.5, r16: 25.4, groups: 65.1 },
+  'Turquía':         { win: 0.05, final:  0.1, sf:  0.7, qf:  5.2, r16: 24.1, groups: 64.8 },
+  'Paraguay':        { win: 0.05, final:  0.1, sf:  0.6, qf:  4.8, r16: 22.5, groups: 62.1 },
+  'Costa de Marfil': { win: 0.05, final: 0.05, sf:  0.5, qf:  4.2, r16: 21.2, groups: 60.5 },
+  'Egipto':          { win: 0.05, final: 0.05, sf:  0.4, qf:  3.8, r16: 19.5, groups: 58.2 },
+  'Australia':       { win: 0.05, final: 0.05, sf:  0.3, qf:  3.1, r16: 18.2, groups: 55.4 },
+  'Rep. Checa':      { win: 0.05, final: 0.05, sf:  0.2, qf:  2.5, r16: 16.4, groups: 52.1 },
+  'Argelia':         { win: 0.05, final: 0.05, sf:  0.1, qf:  1.8, r16: 14.2, groups: 48.5 },
+  'Escocia':         { win: 0.05, final: 0.05, sf: 0.05, qf:  1.5, r16: 12.5, groups: 45.2 },
+  'Irán':            { win: 0.05, final: 0.05, sf: 0.05, qf:  1.2, r16: 11.1, groups: 42.1 },
+  'Ghana':           { win: 0.05, final: 0.05, sf: 0.05, qf:  0.8, r16:  9.5, groups: 38.4 },
+  'Irak':            { win: 0.05, final: 0.05, sf: 0.05, qf:  0.6, r16:  8.2, groups: 35.2 },
+  'Arabia Saudita':  { win: 0.05, final: 0.05, sf: 0.05, qf:  0.5, r16:  7.4, groups: 32.1 },
+  'Uzbekistán':      { win: 0.05, final: 0.05, sf: 0.05, qf:  0.4, r16:  6.1, groups: 28.5 },
+  'Panamá':          { win: 0.05, final: 0.05, sf: 0.05, qf:  0.3, r16:  5.2, groups: 25.2 },
+  'Jordania':        { win: 0.05, final: 0.05, sf: 0.05, qf:  0.2, r16:  4.8, groups: 22.1 },
+  'RD Congo':        { win: 0.05, final: 0.05, sf: 0.05, qf:  0.1, r16:  3.5, groups: 19.5 },
+  'Sudáfrica':       { win: 0.05, final: 0.05, sf: 0.05, qf:  0.1, r16:  3.1, groups: 18.2 },
+  'Bosnia y Herz.':  { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  2.5, groups: 16.4 },
+  'Haití':           { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  1.8, groups: 12.1 },
+  'Curazao':         { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  1.5, groups: 10.5 },
+  'Catar':           { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  1.2, groups:  9.2 },
+  'Cabo Verde':      { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  1.1, groups:  8.1 },
+  'Nueva Zelanda':   { win: 0.05, final: 0.05, sf: 0.05, qf: 0.05, r16:  0.8, groups:  5.4 },
+}
+
 // ── GRUPOS MUNDIAL 2026 (fallback si el API no carga) ────────────────────────
 const DEFAULT_GROUPS = {
   A: ['USA',       'Panamá',    'Bosnia y Herz.', 'Uzbekistán'],
@@ -134,9 +188,11 @@ function computeStandings(teams, scores) {
 }
 
 function getStrength(name) {
+  const prob = TEAM_PROBS[name]
+  if (prob) return Math.sqrt(Math.max(prob.win, 0.05)) * 14 + (TEAMS[name]?.titles || 0) * 0.5
   const t = TEAMS[name]
-  if (!t) return 2
-  return Math.sqrt(Math.max(t.opta, 0.05)) * 14 + t.titles * 1.8
+  if (t) return Math.sqrt(Math.max(t.opta, 0.05)) * 14 + t.titles * 0.5
+  return 2
 }
 
 function simMatch(a, b) {
@@ -826,7 +882,7 @@ export default function SimulatorPage() {
 
   // Reset
   const handleReset = () => {
-    setScores(initScores())
+    setScores(Object.fromEntries(Object.keys(groups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
     setBracket(null)
     setBracketScores(null)
     setPenaltyWinners({})
