@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, ChevronRight, RotateCcw, Zap, Edit3, Check, X } from 'lucide-react'
+import { Trophy, ChevronRight, RotateCcw, Zap } from 'lucide-react'
+import { matchApi } from '../lib/api'
 
 // ── EQUIPOS ───────────────────────────────────────────────────────────────────
 // code = ISO 3166-1 alpha-2 para flagcdn.com (gb-eng / gb-sct para naciones UK)
@@ -55,8 +57,24 @@ const TEAMS = {
   'Curazao':         { code: 'cw',     opta: 0.05, titles: 0 },
 }
 
-// ── GRUPOS MUNDIAL 2026 (Sorteo oficial FIFA – 4 dic. 2024) ───────────────────
-// Formato: 48 equipos · 12 grupos de 4 · Clasifican top2 + 8 mejores 3ros = 32
+// ── MAPEO FIFA TLA → flagcdn ISO alpha-2 ─────────────────────────────────────
+const FIFA_TO_ISO2 = {
+  ARG:'ar', BRA:'br', URU:'uy', COL:'co', ECU:'ec', PAR:'py', CHI:'cl',
+  FRA:'fr', ENG:'gb-eng', ESP:'es', POR:'pt', BEL:'be', GER:'de',
+  NED:'nl', ITA:'it', CRO:'hr', SUI:'ch', AUT:'at', TUR:'tr',
+  SCO:'gb-sct', NOR:'no', SWE:'se', DEN:'dk', SRB:'rs', POL:'pl', UKR:'ua',
+  USA:'us', MEX:'mx', CAN:'ca', CRC:'cr', JAM:'jm', HON:'hn', PAN:'pa',
+  MAR:'ma', SEN:'sn', EGY:'eg', RSA:'za', CIV:'ci', GHA:'gh', ALG:'dz',
+  NGA:'ng', CMR:'cm',
+  JPN:'jp', KOR:'kr', KSA:'sa', IRN:'ir', AUS:'au', QAT:'qa', CHN:'cn', IRQ:'iq',
+  NZL:'nz', UZB:'uz', BIH:'ba', CZE:'cz', TUN:'tn', JOR:'jo',
+  CPV:'cv', COD:'cd', HTI:'ht', CUW:'cw',
+}
+
+// Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre
+const _teamMeta = {}
+
+// ── GRUPOS MUNDIAL 2026 (fallback si el API no carga) ────────────────────────
 const DEFAULT_GROUPS = {
   A: ['USA',       'Panamá',    'Bosnia y Herz.', 'Uzbekistán'],
   B: ['México',    'Croacia',   'Ghana',           'Japón'],
@@ -210,12 +228,24 @@ function buildR32(standings) {
 // ── SUBCOMPONENTES ────────────────────────────────────────────────────────────
 
 function Flag({ name, size = 'sm' }) {
-  const code = TEAMS[name]?.code
   const cls = size === 'lg' ? 'w-10 h-7' : size === 'md' ? 'w-7 h-5' : 'w-5 h-4'
-  if (!code) return <span className="text-sm">🏴</span>
+
+  // 1) ISO alpha-2 del objeto TEAMS (equipos con nombre en español)
+  let iso2 = TEAMS[name]?.code
+
+  // 2) Fallback: metadatos del API (nombre en inglés u otro idioma)
+  if (!iso2) {
+    const meta = _teamMeta[name]
+    if (meta) {
+      iso2 = meta.iso2 || FIFA_TO_ISO2[meta.fifaCode?.toUpperCase()]
+    }
+  }
+
+  const src = iso2 ? `https://flagcdn.com/32x24/${iso2}.png` : null
+  if (!src) return <span className="text-sm opacity-40">🏴</span>
   return (
     <img
-      src={`https://flagcdn.com/32x24/${code}.png`}
+      src={src}
       alt={name}
       className={`${cls} object-cover rounded-sm shadow-sm shrink-0`}
       onError={e => { e.currentTarget.style.display = 'none' }}
@@ -241,18 +271,8 @@ function ScoreInput({ value, onChange, disabled, isWin, isLose }) {
   )
 }
 
-function GroupCard({ letter, teams, scores, onScoreChange, onTeamChange }) {
+function GroupCard({ letter, teams, scores, onScoreChange }) {
   const standings = useMemo(() => computeStandings(teams, scores), [teams, scores])
-  const [editTeam, setEditTeam] = useState(null)
-  const [editVal, setEditVal] = useState('')
-
-  const allTeams = Object.keys(TEAMS)
-
-  const handleTeamSave = (idx) => {
-    if (editVal && editVal !== teams[idx]) onTeamChange(idx, editVal)
-    setEditTeam(null)
-  }
-
   const groupComplete = scores.every(([a, b]) => a !== '' && b !== '')
 
   return (
@@ -264,30 +284,10 @@ function GroupCard({ letter, teams, scores, onScoreChange, onTeamChange }) {
         </div>
         <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
           {teams.map((t, i) => (
-            editTeam === i ? (
-              <div key={i} className="flex items-center gap-1">
-                <select
-                  autoFocus
-                  value={editVal || t}
-                  onChange={e => setEditVal(e.target.value)}
-                  className="bg-mundial-navy border border-mundial-gold/50 rounded-lg text-xs text-white px-2 py-0.5 focus:outline-none"
-                >
-                  {allTeams.map(tn => <option key={tn} value={tn}>{TEAMS[tn]?.flag} {tn}</option>)}
-                </select>
-                <button onClick={() => handleTeamSave(i)} className="text-green-400 hover:text-green-300"><Check size={12}/></button>
-                <button onClick={() => setEditTeam(null)} className="text-zinc-500 hover:text-red-400"><X size={12}/></button>
-              </div>
-            ) : (
-              <button
-                key={i}
-                onClick={() => { setEditTeam(i); setEditVal(t) }}
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-400 hover:text-white transition-colors group"
-              >
-                <span>{TEAMS[t]?.flag}</span>
-                <span>{t}</span>
-                <Edit3 size={8} className="opacity-0 group-hover:opacity-100 transition-opacity text-mundial-gold"/>
-              </button>
-            )
+            <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-300">
+              <Flag name={t} size="sm" />
+              <span>{t}</span>
+            </span>
           ))}
         </div>
         {groupComplete && <span className="text-[8px] font-black text-mundial-gold uppercase tracking-widest shrink-0">✓ COMPLETO</span>}
@@ -661,6 +661,45 @@ export default function SimulatorPage() {
   const [bracketScores, setBracketScores] = useState(null)
   const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
   const [bracketView, setBracketView] = useState('list')   // 'list' | 'bracket'
+  const [groupsFromApi, setGroupsFromApi] = useState(false)
+
+  // Cargar grupos reales del API (idénticos a la página de Partidos)
+  const { data: groupMatches = [] } = useQuery({
+    queryKey: ['matches-group-sim'],
+    queryFn: () => matchApi.list({ phase: 'GROUP' }).then(r => r.data),
+    staleTime: Infinity,
+  })
+
+  useEffect(() => {
+    if (!groupMatches.length || groupsFromApi) return
+    const apiGroups = {}
+    groupMatches.forEach(m => {
+      const gl = m.groupLetter
+      if (!gl) return
+      if (!apiGroups[gl]) apiGroups[gl] = []
+      const addTeam = (team) => {
+        if (!team) return
+        // Guardar metadatos para el componente Flag
+        _teamMeta[team.name] = {
+          fifaCode: team.code,
+          iso2: FIFA_TO_ISO2[team.code?.toUpperCase()],
+          flagUrl: team.flagUrl,
+        }
+        if (!apiGroups[gl].includes(team.name)) apiGroups[gl].push(team.name)
+      }
+      addTeam(m.teamHome)
+      addTeam(m.teamAway)
+    })
+    // Solo actualizar si obtuvimos grupos válidos
+    const letters = Object.keys(apiGroups)
+    if (letters.length < 2) return
+    // Ordenar teams por orden de aparición y mantener exactamente 4 por grupo
+    const cleanGroups = {}
+    letters.sort().forEach(l => { cleanGroups[l] = apiGroups[l].slice(0, 4) })
+    setGroups(cleanGroups)
+    setScores(Object.fromEntries(Object.keys(cleanGroups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
+    setGroupsFromApi(true)
+  }, [groupMatches, groupsFromApi])
 
   // Cambia un score de grupo
   const handleGroupScore = useCallback((letter, mi, side, val) => {
@@ -668,11 +707,6 @@ export default function SimulatorPage() {
       const next = { ...prev, [letter]: prev[letter].map((s, i) => i === mi ? (side === 0 ? [val, s[1]] : [s[0], val]) : s) }
       return next
     })
-  }, [])
-
-  // Cambia un equipo de grupo
-  const handleTeamChange = useCallback((letter, idx, name) => {
-    setGroups(prev => ({ ...prev, [letter]: prev[letter].map((t, i) => i === idx ? name : t) }))
   }, [])
 
   // Calcula clasificados de cada grupo
@@ -859,7 +893,6 @@ export default function SimulatorPage() {
               teams={teams}
               scores={scores[letter]}
               onScoreChange={(mi, side, val) => handleGroupScore(letter, mi, side, val)}
-              onTeamChange={(idx, name) => handleTeamChange(letter, idx, name)}
             />
           ))}
         </motion.div>
