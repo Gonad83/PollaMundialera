@@ -42,6 +42,38 @@ export default function CountdownTimer({ variant = 'full' }) {
     )
   }
 
+  if (variant === 'hero') {
+    const units = [
+      { v: time.d, l: 'Días' },
+      { v: time.h, l: 'Horas' },
+      { v: time.m, l: 'Mins' },
+      { v: time.s, l: 'Segs' },
+    ]
+    return (
+      <div className="flex items-end gap-3 md:gap-5">
+        {units.map(({ v, l }, i) => (
+          <div key={l} className="flex items-end gap-3 md:gap-5">
+            <div className="flex flex-col items-center">
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={v}
+                  initial={{ y: 12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -12, opacity: 0 }}
+                  className="font-display text-5xl md:text-6xl text-white tabular-nums leading-none"
+                >
+                  {String(v).padStart(2, '0')}
+                </motion.span>
+              </AnimatePresence>
+              <span className="text-[9px] md:text-[10px] text-zinc-500 uppercase tracking-[0.3em] font-black mt-1">{l}</span>
+            </div>
+            {i < 3 && <span className="font-display text-4xl md:text-5xl text-mundial-gold/40 leading-none pb-5">:</span>}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="flex justify-center gap-4 md:gap-8">
       {[

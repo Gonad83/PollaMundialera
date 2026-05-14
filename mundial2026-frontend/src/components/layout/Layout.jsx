@@ -248,56 +248,81 @@ export default function Layout() {
       {/* Main Container */}
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pt-6 pb-32 md:py-12">
         
-        {/* Banner de Bienvenida Premium */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-6 p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-3xl shadow-2xl relative overflow-hidden group"
-        >
-          {/* Subtle patterns */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-mundial-gold/5 blur-[80px] -mr-32 -mt-32" />
-          
-          <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
-            <div className="w-16 h-16 bg-mundial-navy border border-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:border-mundial-gold/50 transition-colors">
-              {pathname === '/groups' ? <Users className="text-mundial-gold" /> : <Calendar className="text-mundial-gold" />}
-            </div>
-            <div>
-              <h2 className="font-display text-2xl md:text-3xl text-white leading-tight uppercase tracking-tight">
-                {pathname === '/groups' ? 'GESTOR DE GRUPOS' : 
-                 pathname === '/leaderboard' ? 'RANKING MUNDIAL' :
-                 pathname === '/tournament' ? 'CUADRO DEL TORNEO' :
-                 'TUS PRONÓSTICOS'}
-              </h2>
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className="w-2 h-2 bg-mundial-gold rounded-full animate-pulse" />
-                <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
-                   Mundial FIFA 2026 · {user?.username}
+        {/* Banner — hero grande en /groups, compacto en el resto */}
+        {isGroupsListing ? (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 md:mb-12 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-3xl shadow-2xl relative overflow-hidden p-8 md:p-12"
+          >
+            <div className="absolute top-0 right-0 w-96 h-96 bg-mundial-gold/5 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
+            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+              {/* Texto izquierda */}
+              <div>
+                <p className="text-[10px] font-black text-mundial-gold uppercase tracking-[0.4em] mb-3">
+                  <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full inline-block mr-2 animate-pulse" />
+                  Mundial FIFA 2026 · {user?.username}
                 </p>
-                <PlanBadge plan={user?.plan || 'FREE'} size="md" />
-              </div>
-              {/* Upgrade prompt para plan FREE */}
-              {user?.plan === 'FREE' && !isSuperAdmin && (
-                <div className="mt-3 flex items-center gap-2">
-                  <NavLink
-                    to="/groups"
-                    className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-zinc-500 hover:text-mundial-gold transition-colors border border-white/10 hover:border-mundial-gold/30 rounded-full px-3 py-1 bg-white/5 hover:bg-mundial-gold/5"
-                  >
-                    <ArrowUp size={10} className="text-mundial-gold" />
-                    Actualizar Plan
-                  </NavLink>
-                  <span className="text-[9px] text-zinc-700 font-bold uppercase tracking-widest">
-                    {user?.plan === 'FREE' && '5 miembros máx · 1 grupo'}
+                <h1 className="font-display text-5xl md:text-7xl text-white uppercase leading-none tracking-tight">
+                  GESTOR DE<br /><span className="text-mundial-gold">GRUPOS</span>
+                </h1>
+                {/* Plan actual */}
+                <div className="mt-5 flex items-center gap-3 flex-wrap">
+                  <PlanBadge plan={user?.plan || 'FREE'} size="md" />
+                  <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
+                    {user?.plan === 'FREE'    && '1 grupo · 3 miembros máx'}
+                    {user?.plan === 'CLASICO' && '1 grupo · 15 miembros máx'}
+                    {user?.plan === 'PRO'     && '3 grupos · 50 miembros'}
+                    {user?.plan === 'ELITE'   && 'Grupos ilimitados · 150 miembros'}
                   </span>
+                  {user?.plan === 'FREE' && !isSuperAdmin && (
+                    <NavLink
+                      to="/"
+                      className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors border border-mundial-gold/30 hover:border-mundial-gold rounded-full px-3 py-1 bg-mundial-gold/5 hover:bg-mundial-gold/10"
+                    >
+                      <ArrowUp size={9} /> Subir Plan
+                    </NavLink>
+                  )}
                 </div>
-              )}
+              </div>
+              {/* Reloj derecha — variant hero */}
+              <div className="shrink-0">
+                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.35em] mb-3">Mundial en:</p>
+                <CountdownTimer variant="hero" />
+              </div>
             </div>
-          </div>
-          
-          {/* Reloj Cuenta Regresiva */}
-          <div className="relative z-10 w-full md:w-auto">
-            <CountdownTimer variant="mini" />
-          </div>
-        </motion.div>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 md:mb-12 flex flex-col md:flex-row items-center justify-between gap-6 p-6 md:p-8 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-3xl shadow-2xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-mundial-gold/5 blur-[80px] -mr-32 -mt-32" />
+            <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
+              <div className="w-16 h-16 bg-mundial-navy border border-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:border-mundial-gold/50 transition-colors">
+                <Calendar className="text-mundial-gold" />
+              </div>
+              <div>
+                <h2 className="font-display text-2xl md:text-3xl text-white leading-tight uppercase tracking-tight">
+                  {pathname === '/leaderboard' ? 'RANKING MUNDIAL' :
+                   pathname === '/tournament'  ? 'CUADRO DEL TORNEO' :
+                   'TUS PRONÓSTICOS'}
+                </h2>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className="w-2 h-2 bg-mundial-gold rounded-full animate-pulse" />
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-[0.2em] font-bold">
+                    Mundial FIFA 2026 · {user?.username}
+                  </p>
+                  <PlanBadge plan={user?.plan || 'FREE'} size="md" />
+                </div>
+              </div>
+            </div>
+            <div className="relative z-10 w-full md:w-auto">
+              <CountdownTimer variant="mini" />
+            </div>
+          </motion.div>
+        )}
 
         {/* Page Content with Transitions */}
         <AnimatePresence mode="wait">
