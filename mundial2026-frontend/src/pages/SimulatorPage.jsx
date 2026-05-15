@@ -68,7 +68,7 @@ const FIFA_TO_ISO2 = {
   NGA:'ng', CMR:'cm',
   JPN:'jp', KOR:'kr', KSA:'sa', IRN:'ir', AUS:'au', QAT:'qa', CHN:'cn', IRQ:'iq',
   NZL:'nz', UZB:'uz', BIH:'ba', CZE:'cz', TUN:'tn', JOR:'jo',
-  CPV:'cv', COD:'cd', HTI:'ht', CUW:'cw',
+  CPV:'cv', COD:'cd', HTI:'ht', HAI:'ht', CUW:'cw', CUR:'cw',
 }
 
 // Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre
@@ -293,14 +293,16 @@ function Flag({ name, size = 'sm' }) {
   let iso2 = TEAMS[name]?.code
 
   // 2) Fallback: metadatos del API (nombre en inglés u otro idioma)
+  let flagUrl = null
   if (!iso2) {
     const meta = _teamMeta[name]
     if (meta) {
       iso2 = meta.iso2 || FIFA_TO_ISO2[meta.fifaCode?.toUpperCase()]
+      if (!iso2) flagUrl = meta.flagUrl
     }
   }
 
-  const src = iso2 ? `https://flagcdn.com/32x24/${iso2}.png` : null
+  const src = iso2 ? `https://flagcdn.com/32x24/${iso2}.png` : flagUrl
   if (!src) return <span className="text-sm opacity-40">🏴</span>
   return (
     <img
