@@ -712,7 +712,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
   )
 }
 
-const SAVE_KEY = 'mundial2026_sim_v1'
+const SAVE_KEY = 'mundial2026_sim_v2'
 
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
