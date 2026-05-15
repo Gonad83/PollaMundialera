@@ -752,9 +752,11 @@ export default function SimulatorPage() {
 
   useEffect(() => {
     if (!groupMatches.length || groupsFromApi) return
+    // Ordenar por fecha para que el orden de partidos coincida con PARTIDOS
+    const sorted = [...groupMatches].sort((a, b) => new Date(a.dateUtc) - new Date(b.dateUtc))
     const apiGroups = {}
     const apiMatchOrder = {} // letter → [[homeIdx, awayIdx], ...]
-    groupMatches.forEach(m => {
+    sorted.forEach(m => {
       const gl = m.groupLetter
       if (!gl) return
       if (!apiGroups[gl]) apiGroups[gl] = []
@@ -778,7 +780,7 @@ export default function SimulatorPage() {
     // Construir orden de partidos por grupo según la fecha del API
     letters.forEach(gl => {
       apiMatchOrder[gl] = []
-      groupMatches
+      sorted
         .filter(m => m.groupLetter === gl)
         .forEach(m => {
           const hi = cleanGroups[gl].indexOf(m.teamHome?.name)
