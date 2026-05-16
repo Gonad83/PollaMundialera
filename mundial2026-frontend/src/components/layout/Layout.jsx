@@ -49,6 +49,7 @@ export default function Layout() {
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
   const isGroupsListing = pathname === '/groups'
+  const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -146,7 +147,7 @@ export default function Layout() {
           </NavLink>
 
           {/* Menú Superior (Desktop) — sin Simulador, va como botón aparte */}
-          <nav className="hidden md:flex items-center justify-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/5">
+          <nav className="hidden">
             {filteredNav.filter(item => item.to !== '/simulator').map(({ to, label, icon: Icon }) => (
               <NavLink
                 key={to}
@@ -166,7 +167,7 @@ export default function Layout() {
           </nav>
 
           {/* Botón Simulador Desktop — visible solo cuando se está dentro de un grupo */}
-          {!isRestricted && !isGroupsListing && (
+          {false && !isRestricted && !isGroupsListing && (
             <NavLink
               to="/simulator"
               className={({ isActive }) =>
@@ -253,7 +254,7 @@ export default function Layout() {
       <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pt-6 pb-32 md:py-12">
         
         {/* Banner — hero grande en /groups, compacto en el resto */}
-        {isGroupsListing ? (
+        {isGroupDetail ? null : isGroupsListing ? (
           <motion.div
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -274,7 +275,7 @@ export default function Layout() {
                 <div className="mt-5 flex items-center gap-3 flex-wrap">
                   <PlanBadge plan={user?.plan || 'FREE'} size="md" />
                   <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                    {user?.plan === 'FREE'    && '1 grupo · 3 miembros máx'}
+                    {user?.plan === 'FREE'    && '1 grupo · 5 miembros máx'}
                     {user?.plan === 'CLASICO' && '1 grupo · 15 miembros máx'}
                     {user?.plan === 'DT'      && '3 grupos · 50 miembros'}
                     {user?.plan === 'PRO'     && 'Grupos ilimitados · 150 miembros'}

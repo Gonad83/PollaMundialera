@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -8,11 +8,12 @@ import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, 
 import toast from 'react-hot-toast'
 
 const PLAN_GROUP_LIMIT = { FREE: 1, CLASICO: 1, DT: 3, PRO: 99 }
-const PLAN_MEMBER_LIMIT = { FREE: 3, CLASICO: 15, DT: 15, PRO: 150 }
+const PLAN_MEMBER_LIMIT = { FREE: 5, CLASICO: 15, DT: 15, PRO: 150 }
 
 export default function GroupsPage() {
   const qc = useQueryClient()
   const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
   const [tab, setTab] = useState('my')
   const [mode, setMode] = useState(null)
   const [activeGroupForJoin, setActiveGroupForJoin] = useState(null)
@@ -45,13 +46,14 @@ export default function GroupsPage() {
 
   const createMut = useMutation({
     mutationFn: () => groupApi.create({ name: createName }),
-    onSuccess: () => {
+    onSuccess: (res) => {
       updateUser({ groupCount: (user.groupCount || 0) + 1 })
       qc.invalidateQueries({ queryKey: ['my-groups'] })
       setCreateName('')
       setMode(null)
       setTab('my')
       setError('')
+      if (res?.data?.id) navigate(`/groups/${res.data.id}`)
     },
     onError: (err) => setError(err.response?.data?.error || 'Error al crear grupo'),
   })
@@ -66,6 +68,7 @@ export default function GroupsPage() {
       setActiveGroupForJoin(null)
       setTab('my')
       setError('')
+      if (res?.data?.group?.id) navigate(`/groups/${res.data.group.id}`)
     },
     onError: (err) => setError(err.response?.data?.error || 'Código inválido'),
   })
