@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, MessageSquare } from 'lucide-react'
 
 // ── Plan Badge ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
@@ -50,6 +50,7 @@ export default function Layout() {
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
   const isGroupsListing = pathname === '/groups'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
+  const groupId = isGroupDetail ? pathname.match(/\/groups\/([^/]+)/)?.[1] : null
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -146,41 +147,30 @@ export default function Layout() {
             </div>
           </NavLink>
 
-          {/* Menú Superior (Desktop) — sin Simulador, va como botón aparte */}
-          <nav className="hidden">
-            {filteredNav.filter(item => item.to !== '/simulator').map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold uppercase tracking-wider transition-all
-                   ${isActive
-                     ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                     : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                   }`
-                }
-              >
-                <Icon size={16} />
-                <span>{label}</span>
-              </NavLink>
-            ))}
-          </nav>
-
-          {/* Botón Simulador Desktop — visible solo cuando se está dentro de un grupo */}
-          {false && !isRestricted && !isGroupsListing && (
-            <NavLink
-              to="/simulator"
-              className={({ isActive }) =>
-                `hidden md:flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border shrink-0 ${
-                  isActive
-                    ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
-                    : 'text-mundial-gold border-mundial-gold/40 hover:bg-mundial-gold/10'
-                }`
-              }
-            >
-              <Shuffle size={14} />
-              Simular
-            </NavLink>
+          {/* Nav grupo — visible solo en /groups/:id */}
+          {isGroupDetail && groupId && (
+            <nav className="hidden md:flex items-center gap-1 p-1 rounded-2xl bg-white/5 border border-white/5">
+              {[
+                { to: `/groups/${groupId}`,               label: 'Gestión Grupo', icon: Users,         tab: null },
+                { to: '/matches',                         label: 'Pronósticos',   icon: Calendar,      tab: null },
+                { to: `/groups/${groupId}?tab=messages`,  label: 'Mensajes',      icon: MessageSquare, tab: 'messages' },
+                { to: `/groups/${groupId}?tab=config`,    label: 'Config',        icon: Settings,      tab: 'config' },
+              ].map(({ to, label, icon: Icon, tab }) => {
+                const isActive = tab
+                  ? location.search.includes(`tab=${tab}`)
+                  : pathname === `/groups/${groupId}` && !location.search.includes('tab=')
+                    || (label === 'Pronósticos' && pathname === '/matches')
+                return (
+                  <NavLink key={to} to={to}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      isActive ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={12} /> {label}
+                  </NavLink>
+                )
+              })}
+            </nav>
           )}
 
           {/* Usuario / Logout (Desktop) */}

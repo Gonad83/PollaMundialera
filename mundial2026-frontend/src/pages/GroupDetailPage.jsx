@@ -1,4 +1,4 @@
-import { useParams, Link, NavLink, useNavigate } from 'react-router-dom'
+import { useParams, Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi, leaderboardApi, paymentApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -83,6 +83,7 @@ export default function GroupDetailPage() {
   const { user } = useAuth()
   const qc = useQueryClient()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   const [copied, setCopied] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
@@ -124,13 +125,16 @@ export default function GroupDetailPage() {
   // En modo simulación, el admin ve la app como un participante normal
   const actingAsAdmin = isAdmin && !simMode
 
-  // Set default tab once we know the role
+  // Sincronizar activeTab con el parámetro ?tab= de la URL
   useEffect(() => {
-    if (group && activeTab === null) {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['members', 'ranking', 'messages', 'config'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    } else if (group && activeTab === null) {
       setActiveTab(isAdmin ? 'members' : 'ranking')
       setEditName(group.name)
     }
-  }, [group, isAdmin, activeTab])
+  }, [searchParams, group, isAdmin, activeTab])
 
   // Scroll to bottom on new messages
   useEffect(() => {
