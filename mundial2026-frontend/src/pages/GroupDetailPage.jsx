@@ -343,12 +343,9 @@ export default function GroupDetailPage() {
             <motion.div
               initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-mundial-gold/10 rounded-xl flex items-center justify-center text-mundial-gold border border-mundial-gold/20"><Sparkles size={16} /></div>
-                <div>
+                          <div>
                   <p className="text-xs font-black text-white uppercase">¿Quieres más de 5 miembros?</p>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Sube al plan Elite — hasta 150 jugadores.</p>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Mejora tu liga para ampliar el límite de jugadores.</p>
                 </div>
               </div>
               <button onClick={() => setShowPricing(true)} className="btn-gold px-6 py-2.5 text-[10px] whitespace-nowrap shadow-lg shadow-mundial-gold/20">
@@ -357,7 +354,7 @@ export default function GroupDetailPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
+ 
         {/* Pricing */}
         <AnimatePresence>
           {showPricing && !preferenceId && (
@@ -366,10 +363,11 @@ export default function GroupDetailPage() {
                 <h3 className="text-sm font-black text-white uppercase tracking-tighter">Elige tu Plan</h3>
                 <button onClick={() => setShowPricing(false)} className="text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[
-                  { id: 'tier1', title: 'CAPITÁN', limit: 15, price: '4.990' },
-                  { id: 'tier2', title: 'ELITE', limit: 150, price: '9.990', recommended: true },
+                  { id: 'tier1', title: 'CAPITÁN', limit: 15, price: '2.990' },
+                  { id: 'tier2', title: 'DT',      limit: 15, price: '4.990' },
+                  { id: 'tier3', title: 'ELITE',   limit: 150, price: '9.990', recommended: true },
                 ].map((tier) => (
                   <button key={tier.id} onClick={() => setSelectedTier(tier.id)}
                     className={`p-5 rounded-[1.5rem] border-2 transition-all text-left relative

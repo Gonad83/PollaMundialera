@@ -18,7 +18,7 @@ const PLANS_COMPARE = [
     priceNum: null,
     tierId: null,
     desc: 'Para tu círculo íntimo.',
-    features: ['1 grupo', 'Hasta 3 miembros', 'Pronósticos básicos', 'Ranking en tiempo real'],
+    features: ['1 grupo', 'Hasta 5 miembros', 'Pronósticos básicos', 'Ranking en tiempo real'],
     style: 'ghost',
   },
   {

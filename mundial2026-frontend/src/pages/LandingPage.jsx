@@ -38,7 +38,7 @@ const PLANS = [
     name: 'AMATEUR',
     price: '0',
     desc: 'Ideal para tu círculo íntimo.',
-    features: ['1 grupo', 'Hasta 3 miembros', 'Pronósticos ilimitados', 'Ranking en tiempo real'],
+    features: ['1 grupo', 'Hasta 5 miembros', 'Pronósticos ilimitados', 'Ranking en tiempo real'],
     cta: 'Empezar Gratis',
     style: 'ghost',
     badge: null,
