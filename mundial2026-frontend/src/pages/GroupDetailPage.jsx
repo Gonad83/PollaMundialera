@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link, NavLink, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi, leaderboardApi, paymentApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
-  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff
+  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff,
+  Calendar, BookOpen, Shuffle
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
@@ -19,6 +20,14 @@ const MEDAL_COLORS = {
   2: 'from-zinc-300 to-zinc-500',
   3: 'from-orange-400 to-orange-700',
 }
+
+const GROUP_NAV = [
+  { to: '/matches',     label: 'Partidos',  icon: Calendar },
+  { to: '/tournament',  label: 'Torneo',    icon: Trophy },
+  { to: '/leaderboard', label: 'Ranking',   icon: BarChart3 },
+  { to: '/rules',       label: 'Reglas',    icon: BookOpen },
+  { to: '/simulator',   label: 'Simular',   icon: Shuffle },
+]
 
 // ── Confirmation Modal ──────────────────────────────────────────────
 function DeleteMemberModal({ member, groupName, onConfirm, onCancel, loading }) {
@@ -343,7 +352,12 @@ export default function GroupDetailPage() {
             <motion.div
               initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               className="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4"
-                          <div>
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-mundial-gold/10 rounded-xl flex items-center justify-center text-mundial-gold border border-mundial-gold/20">
+                  <Sparkles size={16} />
+                </div>
+                <div>
                   <p className="text-xs font-black text-white uppercase">¿Quieres más de 5 miembros?</p>
                   <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Mejora tu liga para ampliar el límite de jugadores.</p>
                 </div>
@@ -365,9 +379,9 @@ export default function GroupDetailPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[
-                  { id: 'tier1', title: 'CAPITÁN', limit: 15, price: '2.990' },
-                  { id: 'tier2', title: 'DT',      limit: 15, price: '4.990' },
-                  { id: 'tier3', title: 'ELITE',   limit: 150, price: '9.990', recommended: true },
+                  { id: 'tier1', title: 'CAPITÁN', groups: 1,  limit: 15,  price: '2.990' },
+                  { id: 'tier2', title: 'DT',      groups: 3,  limit: 50,  price: '4.990' },
+                  { id: 'tier3', title: 'ELITE',   groups: '∞', limit: 150, price: '9.990', recommended: true },
                 ].map((tier) => (
                   <button key={tier.id} onClick={() => setSelectedTier(tier.id)}
                     className={`p-5 rounded-[1.5rem] border-2 transition-all text-left relative
@@ -383,6 +397,7 @@ export default function GroupDetailPage() {
                       {selectedTier === tier.id && <Check size={14} className="text-mundial-navy" />}
                     </div>
                     <p className={`text-xl font-display uppercase ${selectedTier === tier.id ? 'text-mundial-navy' : 'text-white'}`}>Hasta {tier.limit} Jugadores</p>
+                    <p className={`text-[10px] font-bold mt-0.5 ${selectedTier === tier.id ? 'text-mundial-navy/60' : 'text-zinc-600'}`}>{tier.groups} grupo{tier.groups !== 1 ? 's' : ''}</p>
                     <p className={`text-base font-bold mt-1 ${selectedTier === tier.id ? 'text-mundial-navy/70' : 'text-zinc-500'}`}>${tier.price} CLP</p>
                   </button>
                 ))}
@@ -407,12 +422,33 @@ export default function GroupDetailPage() {
         </AnimatePresence>
       </motion.div>
 
+      <nav className="mb-6 rounded-2xl border border-white/5 bg-white/5 p-1.5 backdrop-blur-xl">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+          {GROUP_NAV.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${
+                  isActive
+                    ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                    : 'text-zinc-500 hover:bg-white/5 hover:text-white'
+                }`
+              }
+            >
+              <Icon size={14} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+
       {/* ── Admin quick metrics ── */}
       {actingAsAdmin && (
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: 'Miembros', value: memberCount, sub: `de ${group.maxMembers}`, color: 'text-white' },
-            { label: 'Plan', value: group.isPremium ? 'ELITE' : 'AMATEUR', sub: group.isPremium ? '$9.990/mes' : 'Gratis', color: group.isPremium ? 'text-mundial-gold' : 'text-zinc-400' },
+            { label: 'Plan', value: group.activePlan === 'TIER3' ? 'ELITE' : group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : 'AMATEUR', sub: group.isPremium ? `$${group.activePlan === 'TIER3' ? '9.990' : group.activePlan === 'TIER2' ? '4.990' : '2.990'}/mes` : 'Gratis', color: group.isPremium ? 'text-mundial-gold' : 'text-zinc-400' },
             { label: 'Link', value: group.inviteActive ? 'ACTIVO' : 'CERRADO', sub: 'de invitación', color: group.inviteActive ? 'text-green-400' : 'text-mundial-red' },
           ].map(m => (
             <div key={m.label} className="card p-4 text-center bg-white/3 border-white/5">
@@ -724,7 +760,7 @@ export default function GroupDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`font-display text-2xl ${group.isPremium ? 'text-mundial-gold' : 'text-zinc-400'}`}>
-                    {group.isPremium ? 'ELITE' : 'AMATEUR'}
+                    {group.activePlan === 'TIER3' ? 'ELITE' : group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : 'AMATEUR'}
                   </p>
                   <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">
                     Hasta {group.maxMembers} miembros
@@ -733,7 +769,7 @@ export default function GroupDetailPage() {
                 {!group.isPremium && (
                   <button onClick={() => { setActiveTab('members'); setShowPricing(true) }}
                     className="btn-gold px-5 py-2.5 text-[10px]">
-                    SUBIR A ELITE
+                    MEJORAR PLAN
                   </button>
                 )}
               </div>

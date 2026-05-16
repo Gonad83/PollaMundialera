@@ -15,9 +15,9 @@ const Tiers = {
     name: 'TIER1'
   },
   tier2: {
-    title: 'Plan DT (3 grupos de 15)',
+    title: 'Plan DT (3 grupos de 50)',
     price: 4990,
-    limit: 15,
+    limit: 50,
     plan: 'DT',
     name: 'TIER2'
   },

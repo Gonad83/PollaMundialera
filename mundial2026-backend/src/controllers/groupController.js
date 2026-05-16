@@ -14,7 +14,7 @@ const generateToken = () => crypto.randomBytes(16).toString('hex');
 const PLAN_LIMITS = {
   FREE:    { maxGroups: 1,  maxMembers: 5,   allowedRules: ['BASIC'] },
   CLASICO: { maxGroups: 1,  maxMembers: 15,  allowedRules: ['BASIC', 'COMPLETE'] },
-  DT:      { maxGroups: 3,  maxMembers: 15,  allowedRules: ['BASIC', 'COMPLETE'] },
+  DT:      { maxGroups: 3,  maxMembers: 50,  allowedRules: ['BASIC', 'COMPLETE'] },
   PRO:     { maxGroups: 99, maxMembers: 150, allowedRules: ['BASIC', 'COMPLETE', 'CUSTOM'] },
 };
 
