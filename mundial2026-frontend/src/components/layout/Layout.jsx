@@ -251,7 +251,7 @@ export default function Layout() {
       </header>
 
       {/* Main Container */}
-      <main className="relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pt-6 pb-32 md:py-12">
+      <main className={`relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pb-32 md:pb-12 ${isGroupDetail ? 'pt-0' : 'pt-6 md:pt-12'}`}>
         
         {/* Banner — hero grande en /groups, compacto en el resto */}
         {isGroupDetail ? null : isGroupsListing ? (

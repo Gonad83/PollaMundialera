@@ -274,11 +274,11 @@ export default function GroupDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Group slim header bar ── */}
+      {/* ── Group slim header bar — ancho completo, pegado al header ── */}
       <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-xl"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center justify-between gap-3 -mx-4 px-6 py-3 mb-6 bg-mundial-navy/80 backdrop-blur-xl border-b border-white/5"
       >
         {/* Left: back arrow + icon + info */}
         <div className="flex items-center gap-3 min-w-0">
