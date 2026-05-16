@@ -274,120 +274,98 @@ export default function GroupDetailPage() {
         )}
       </AnimatePresence>
 
-      <Link to="/groups" className="group text-zinc-500 hover:text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-8 transition-all">
-        <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> Volver
-      </Link>
-
-      {/* ── Group Header ── */}
+      {/* ── Group slim header bar ── */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card p-6 md:p-8 mb-6 border-white/5 bg-white/5 backdrop-blur-xl relative overflow-hidden"
+        className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-xl"
       >
-        {group.isPremium && <div className="absolute top-0 right-0 p-8 opacity-5"><Crown size={150} fill="currentColor" className="text-mundial-gold" /></div>}
-
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-          <div className="flex items-center gap-5">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-2xl shrink-0
-              ${group.isPremium ? 'bg-mundial-gold text-mundial-navy' : 'bg-mundial-navy border border-white/10 text-white/20'}`}>
-              {group.isPremium ? <Crown size={32} /> : <Users size={32} />}
-            </div>
-            <div>
-              <div className="flex items-center gap-3 mb-1 flex-wrap">
-                <h1 className="font-display text-2xl md:text-3xl text-white uppercase tracking-tight">{group.name}</h1>
-                {group.isPremium && <span className="bg-mundial-gold text-mundial-navy text-[9px] font-black px-2 py-1 rounded tracking-tighter uppercase">ELITE</span>}
-                {isAdmin && <span className="bg-mundial-gold/10 text-mundial-gold text-[9px] font-black px-2 py-1 rounded border border-mundial-gold/20 uppercase tracking-widest">TÚ ERES ADMIN</span>}
-                {isAdmin && (
-                  <button
-                    onClick={() => { setSimMode(s => !s); setActiveTab(simMode ? 'members' : 'ranking') }}
-                    className={`flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded border transition-all
-                      ${simMode
-                        ? 'bg-blue-500/20 border-blue-500/40 text-blue-300 hover:bg-blue-500/30'
-                        : 'bg-white/5 border-white/10 text-zinc-500 hover:text-blue-300 hover:border-blue-500/30'}`}
-                    title="Ver la app como un participante"
-                  >
-                    {simMode ? <EyeOff size={10} /> : <Eye size={10} />}
-                    {simMode ? 'Salir sim.' : 'Ver como usuario'}
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1.5">
-                  <ShieldCheck size={13} className="text-mundial-gold" /> {group.creator?.username}
-                </span>
-                <span className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${isAtLimit ? 'text-mundial-red' : 'text-zinc-500'}`}>
-                  <Users size={13} /> {memberCount} / {group.maxMembers}
-                </span>
-              </div>
-            </div>
+        {/* Left: back arrow + icon + info */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Link to="/groups" className="shrink-0 text-zinc-500 hover:text-mundial-gold transition-colors">
+            <ChevronLeft size={18} />
+          </Link>
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${group.isPremium ? 'bg-mundial-gold text-mundial-navy' : 'bg-white/10 border border-white/10 text-white/30'}`}>
+            {group.isPremium ? <Crown size={16} /> : <Users size={16} />}
           </div>
-
-          {/* Invite code */}
-          <div className="flex flex-col gap-2 w-full md:w-auto">
-            <div className="bg-white/5 px-5 py-3 rounded-2xl border border-white/10 flex items-center justify-between gap-4 min-w-[200px] hover:border-mundial-gold/30 transition-all group">
-              <div>
-                <p className="text-[8px] text-zinc-600 font-black uppercase tracking-widest mb-1">CÓDIGO</p>
-                <span className="font-mono text-xl text-mundial-gold font-bold tracking-widest">{group.inviteCode}</span>
-              </div>
-              <button onClick={copyCode} className={`p-2 rounded-xl transition-all ${copied ? 'bg-green-500 text-white' : 'bg-white/5 hover:bg-mundial-gold hover:text-mundial-navy'}`}>
-                {copied ? <Sparkles size={16} /> : <Copy size={16} />}
-              </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="font-display text-lg text-white uppercase tracking-tight truncate leading-none">{group.name}</h1>
+              {group.isPremium && <span className="bg-mundial-gold text-mundial-navy text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">ELITE</span>}
+              {isAdmin && <span className="bg-mundial-gold/10 text-mundial-gold text-[7px] font-black px-1.5 py-0.5 rounded border border-mundial-gold/20 uppercase shrink-0">Admin</span>}
+              {isAdmin && (
+                <button
+                  onClick={() => { setSimMode(s => !s); setActiveTab(simMode ? 'members' : 'ranking') }}
+                  className={`hidden sm:flex items-center gap-1 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border transition-all shrink-0
+                    ${simMode ? 'bg-blue-500/20 border-blue-500/40 text-blue-300' : 'bg-white/5 border-white/10 text-zinc-500 hover:text-blue-300 hover:border-blue-500/30'}`}
+                >
+                  {simMode ? <EyeOff size={8} /> : <Eye size={8} />}
+                  {simMode ? 'Salir' : 'Ver como usuario'}
+                </button>
+              )}
             </div>
-            {isAdmin && group.inviteToken && (
-              <button
-                onClick={copyLink}
-                className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all
-                  ${copiedLink ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
-              >
-                {copiedLink ? <Check size={13} /> : <Link2 size={13} />}
-                {copiedLink ? 'Link copiado' : 'Copiar link de invitación'}
-              </button>
-            )}
+            <div className="flex items-center gap-3 mt-0.5">
+              <span className="text-[9px] text-zinc-500 flex items-center gap-1">
+                <ShieldCheck size={9} className="text-mundial-gold" /> {group.creator?.username}
+              </span>
+              <span className={`text-[9px] flex items-center gap-1 font-bold ${isAtLimit ? 'text-mundial-red' : 'text-zinc-500'}`}>
+                <Users size={9} /> {memberCount} / {group.maxMembers}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Upgrade prompt para admin free */}
-        <AnimatePresence>
-          {isAdmin && isFree && !showPricing && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              className="mt-6 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-mundial-gold/10 rounded-xl flex items-center justify-center text-mundial-gold border border-mundial-gold/20">
-                  <Sparkles size={16} />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-white uppercase">¿Quieres más de 5 miembros?</p>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Mejora tu liga para ampliar el límite de jugadores.</p>
-                </div>
-              </div>
-              <button onClick={() => setShowPricing(true)} className="btn-gold px-6 py-2.5 text-[10px] whitespace-nowrap shadow-lg shadow-mundial-gold/20">
-                MEJORAR LIGA
-              </button>
-            </motion.div>
+        {/* Right: invite code + actions */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 hover:border-mundial-gold/30 transition-all">
+            <div>
+              <p className="text-[7px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-0.5">CÓDIGO</p>
+              <span className="font-mono text-sm text-mundial-gold font-bold tracking-widest leading-none">{group.inviteCode}</span>
+            </div>
+            <button onClick={copyCode} className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-green-500 text-white' : 'hover:bg-mundial-gold hover:text-mundial-navy text-zinc-400'}`}>
+              {copied ? <Sparkles size={12} /> : <Copy size={12} />}
+            </button>
+          </div>
+          {/* Mobile: compact code */}
+          <div className="flex sm:hidden items-center gap-1 bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
+            <span className="font-mono text-xs text-mundial-gold font-bold">{group.inviteCode}</span>
+            <button onClick={copyCode} className={`p-1 rounded transition-all ${copied ? 'text-green-400' : 'text-zinc-500'}`}>
+              <Copy size={11} />
+            </button>
+          </div>
+          {isAdmin && group.inviteToken && (
+            <button onClick={copyLink} className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all
+              ${copiedLink ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}>
+              {copiedLink ? <Check size={11} /> : <Link2 size={11} />}
+              {copiedLink ? 'Copiado' : 'Link'}
+            </button>
           )}
-        </AnimatePresence>
- 
-        {/* Pricing */}
-        <AnimatePresence>
-          {showPricing && !preferenceId && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mt-6 pt-6 border-t border-white/10">
-              <div className="flex items-center justify-between mb-5">
+          {isAdmin && isFree && !showPricing && (
+            <button onClick={() => setShowPricing(true)} className="btn-gold px-3 py-2 text-[9px] whitespace-nowrap">
+              MEJORAR
+            </button>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Pricing panel (debajo del header, animado) */}
+      <AnimatePresence>
+        {isAdmin && showPricing && !preferenceId && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            <div className="mt-3 p-5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-black text-white uppercase tracking-tighter">Elige tu Plan</h3>
-                <button onClick={() => setShowPricing(false)} className="text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
+                <button onClick={() => { setShowPricing(false); setSelectedTier(null) }} className="text-zinc-500 hover:text-white transition-colors"><X size={18} /></button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
                 {[
-                  { id: 'tier1', title: 'CAPITÁN', groups: 1,  limit: 15,  price: '2.990' },
-                  { id: 'tier2', title: 'DT',      groups: 3,  limit: 50,  price: '4.990' },
+                  { id: 'tier1', title: 'CAPITÁN', groups: 1,   limit: 15,  price: '2.990' },
+                  { id: 'tier2', title: 'DT',      groups: 3,   limit: 50,  price: '4.990' },
                   { id: 'tier3', title: 'ELITE',   groups: '∞', limit: 150, price: '9.990', recommended: true },
                 ].map((tier) => (
                   <button key={tier.id} onClick={() => setSelectedTier(tier.id)}
                     className={`p-5 rounded-[1.5rem] border-2 transition-all text-left relative
-                      ${selectedTier === tier.id
-                        ? 'bg-mundial-gold border-mundial-gold shadow-lg shadow-mundial-gold/20'
-                        : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                      ${selectedTier === tier.id ? 'bg-mundial-gold border-mundial-gold shadow-lg shadow-mundial-gold/20' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                   >
                     {tier.recommended && selectedTier !== tier.id && (
                       <span className="absolute top-3 right-3 text-[8px] bg-mundial-gold/20 text-mundial-gold border border-mundial-gold/30 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">TOP</span>
@@ -408,21 +386,22 @@ export default function GroupDetailPage() {
                   {prefMutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Cargando...</> : 'Pagar con Mercado Pago'}
                 </button>
               )}
-            </motion.div>
-          )}
-          {preferenceId && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 pt-6 border-t border-white/10 flex flex-col items-center">
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-4">Finaliza tu compra segura</p>
-              <div id="wallet_container" className="w-full max-w-sm">
-                <Wallet initialization={{ preferenceId }} customization={{ visual: { buttonBackground: 'default', borderRadius: '1.5rem' } }} />
-              </div>
-              <button onClick={() => setPreferenceId(null)} className="mt-4 text-[10px] text-zinc-500 hover:text-white uppercase font-bold">Cambiar Plan</button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+            </div>
+          </motion.div>
+        )}
+        {preferenceId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 p-5 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center">
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-4">Finaliza tu compra segura</p>
+            <div id="wallet_container" className="w-full max-w-sm">
+              <Wallet initialization={{ preferenceId }} customization={{ visual: { buttonBackground: 'default', borderRadius: '1.5rem' } }} />
+            </div>
+            <button onClick={() => setPreferenceId(null)} className="mt-4 text-[10px] text-zinc-500 hover:text-white uppercase font-bold">Cambiar Plan</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <nav className="mb-6 rounded-2xl border border-white/5 bg-white/5 p-1.5 backdrop-blur-xl">
+      {/* ── Nav contextual con amarillo ── */}
+      <nav className="mt-3 mb-6 rounded-2xl border border-mundial-gold/15 bg-white/5 p-1.5 backdrop-blur-xl">
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
           {GROUP_NAV.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -432,7 +411,7 @@ export default function GroupDetailPage() {
                 `flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${
                   isActive
                     ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                    : 'text-zinc-500 hover:bg-white/5 hover:text-white'
+                    : 'text-mundial-gold/60 border border-mundial-gold/20 hover:bg-mundial-gold/10 hover:text-mundial-gold hover:border-mundial-gold/40'
                 }`
               }
             >
