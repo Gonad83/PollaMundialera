@@ -18,7 +18,7 @@ const SECTIONS = [
   { key: 'estadisticas',  label: 'DATOS MAESTROS',   icon: BarChart3 },
 ]
 
-export default function TournamentPage() {
+export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
@@ -30,8 +30,9 @@ export default function TournamentPage() {
   })
 
   const { data: myPicks, isLoading: loadingPicks } = useQuery({
-    queryKey: ['my-tournament-picks'],
-    queryFn: () => tournamentApi.myPicks().then(r => r.data),
+    queryKey: ['my-tournament-picks', groupId],
+    queryFn: () => tournamentApi.myPicks({ groupId }).then(r => r.data),
+    enabled: !!groupId,
   })
 
   const { data: teams = [] } = useQuery({
@@ -46,7 +47,7 @@ export default function TournamentPage() {
   }, [myPicks])
 
   const mutation = useMutation({
-    mutationFn: (data) => tournamentApi.savePicks(data),
+    mutationFn: (data) => tournamentApi.savePicks({ ...data, groupId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-tournament-picks'] })
       setSaved(true)

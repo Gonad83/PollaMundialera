@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format, isAfter } from 'date-fns'
@@ -9,6 +9,8 @@ import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star } from 'luci
 
 export default function MatchDetailPage() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const groupId = searchParams.get('groupId')
   const qc = useQueryClient()
 
   const { data: match, isLoading } = useQuery({
@@ -17,18 +19,19 @@ export default function MatchDetailPage() {
   })
 
   const { data: myPred } = useQuery({
-    queryKey: ['prediction', id],
-    queryFn: () => predictionApi.forMatch(id).then(r => r.data).catch(() => null),
+    queryKey: ['prediction', id, groupId],
+    queryFn: () => predictionApi.forMatch(id, { groupId }).then(r => r.data).catch(() => null),
+    enabled: !!groupId,
   })
 
   const { data: allPreds = [] } = useQuery({
-    queryKey: ['all-preds', id],
-    queryFn: () => predictionApi.allForMatch(id).then(r => r.data).catch(() => []),
-    enabled: match?.status === 'FINISHED',
+    queryKey: ['all-preds', id, groupId],
+    queryFn: () => predictionApi.allForMatch(id, { groupId }).then(r => r.data).catch(() => []),
+    enabled: match?.status === 'FINISHED' && !!groupId,
   })
 
   const mutation = useMutation({
-    mutationFn: (data) => predictionApi.save(id, data),
+    mutationFn: (data) => predictionApi.save(id, { ...data, groupId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prediction', id] })
       qc.invalidateQueries({ queryKey: ['my-predictions'] })
@@ -83,7 +86,7 @@ export default function MatchDetailPage() {
       className="max-w-2xl mx-auto pb-32 px-4"
     >
       {/* Back Navigation */}
-      <Link to="/matches" className="inline-flex items-center gap-2 text-zinc-500 hover:text-mundial-gold transition-colors mb-6 group">
+      <Link to={groupId ? `/groups/${groupId}?tab=resultados` : "/matches"} className="inline-flex items-center gap-2 text-zinc-500 hover:text-mundial-gold transition-colors mb-6 group">
         <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-mundial-gold/10">
           <ChevronLeft size={18} />
         </div>

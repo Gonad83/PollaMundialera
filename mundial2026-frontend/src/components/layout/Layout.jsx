@@ -28,22 +28,11 @@ import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
 const MAIN_NAV = [
-  { to: '/matches',     label: 'Partidos', icon: Calendar },
-  { to: '/tournament',  label: 'Torneo',   icon: Trophy },
-  { to: '/leaderboard', label: 'Ranking',  icon: BarChart3 },
+  { to: '/groups',      label: 'Grupos',   icon: Users },
   { to: '/rules',       label: 'Reglas',   icon: BookOpen },
-  { to: '/simulator',   label: 'Simular',  icon: Shuffle },
 ]
 
-// Para filteredNav del BottomNav (mantiene /groups)
-const NAV = [
-  { to: '/matches',     label: 'Partidos',  icon: Calendar },
-  { to: '/tournament',  label: 'Torneo',    icon: Trophy },
-  { to: '/leaderboard', label: 'Ranking',   icon: BarChart3 },
-  { to: '/groups',      label: 'Grupos',    icon: Users },
-  { to: '/simulator',   label: 'Simulador', icon: Shuffle },
-  { to: '/rules',       label: 'Reglas',    icon: BookOpen },
-]
+const NAV = MAIN_NAV
 
 export default function Layout() {
   const { user, logout, loadingProfile } = useAuth()
@@ -85,11 +74,7 @@ export default function Layout() {
     return () => socket.off('notification:global')
   }, [socketRef])
 
-  const filteredNav = NAV.filter(item => {
-    if (isRestricted) return ['/groups', '/rules'].includes(item.to)
-    if (isGroupsListing) return item.to === '/groups'
-    return true
-  })
+  const filteredNav = NAV
 
   return (
     <div className="min-h-screen flex flex-col bg-mundial-navy text-white selection:bg-mundial-gold selection:text-mundial-navy overflow-x-hidden">
@@ -174,31 +159,7 @@ export default function Layout() {
               ))}
             </nav>
 
-            {/* Nav grupo — solo en /groups/:id */}
-            {isGroupDetail && groupId && (
-              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-mundial-gold/8 border border-mundial-gold/20">
-                {[
-                  { to: `/groups/${groupId}`,              label: 'Mi Grupo', icon: Users,         tab: null },
-                  { to: `/groups/${groupId}?tab=messages`, label: 'Mensajes', icon: MessageSquare, tab: 'messages' },
-                  { to: `/groups/${groupId}?tab=config`,   label: 'Config',   icon: Settings,      tab: 'config' },
-                ].map(({ to, label, icon: Icon, tab }) => {
-                  const isActive = tab
-                    ? location.search.includes(`tab=${tab}`)
-                    : pathname === `/groups/${groupId}` && !location.search.includes('tab=')
-                  return (
-                    <NavLink key={to} to={to}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        isActive
-                          ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                          : 'text-mundial-gold/60 hover:text-mundial-gold hover:bg-mundial-gold/10'
-                      }`}
-                    >
-                      <Icon size={13} /> {label}
-                    </NavLink>
-                  )
-                })}
-              </nav>
-            )}
+
           </div>
 
           {/* Usuario / Logout (Desktop) */}

@@ -62,7 +62,7 @@ model User {
   lastLogin    DateTime?
 
   predictions       Prediction[]
-  tournamentPicks   TournamentPicks?
+  tournamentPicks   TournamentPicks[]
   groupMemberships  GroupMember[]
   createdGroups     Group[]          @relation("GroupCreator")
   refreshTokens     RefreshToken[]
@@ -105,6 +105,8 @@ model Group {
 
   members    GroupMember[]
   leaderboard LeaderboardEntry[]
+  predictions Prediction[]
+  tournamentPicks TournamentPicks[]
 }
 
 model GroupMember {
@@ -175,8 +177,10 @@ model Prediction {
   id              String  @id @default(cuid())
   userId          String
   matchId         String
+  groupId         String
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   match           Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  group           Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   predHome        Int
   predAway        Int
@@ -194,17 +198,20 @@ model Prediction {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  @@unique([userId, matchId])
+  @@unique([userId, matchId, groupId])
   @@index([matchId])
   @@index([userId])
+  @@index([groupId])
 }
 
 // ─── Tournament Picks ─────────────────────────────────────────────────────────
 
 model TournamentPicks {
   id              String  @id @default(cuid())
-  userId          String  @unique
+  userId          String
+  groupId         String
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group           Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   champion        String?
   finalist1       String?
@@ -240,6 +247,9 @@ model TournamentPicks {
   lockedAt   DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@unique([userId, groupId])
+  @@index([groupId])
 }
 
 // ─── Leaderboard Cache ────────────────────────────────────────────────────────

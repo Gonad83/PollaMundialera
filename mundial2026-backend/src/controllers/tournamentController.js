@@ -27,29 +27,35 @@ const picksSchema = z.object({
 
 // GET /api/tournament/picks — Mis picks del torneo
 const getMyPicks = async (req, res) => {
+  const { groupId } = req.query;
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
+
   const picks = await prisma.tournamentPicks.findUnique({
-    where: { userId: req.user.id },
+    where: { userId_groupId: { userId: req.user.id, groupId } },
   });
   return res.json(picks || {});
 };
 
 // PUT /api/tournament/picks — Guardar/actualizar mis picks
 const savePicks = async (req, res) => {
+  const { groupId, ...bodyData } = req.body;
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
+
   if (isTournamentLocked()) {
     return res.status(403).json({
       error: 'El plazo para los pronósticos del torneo ha cerrado',
     });
   }
 
-  const parsed = picksSchema.safeParse(req.body);
+  const parsed = picksSchema.safeParse(bodyData);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.errors[0].message });
   }
 
   const picks = await prisma.tournamentPicks.upsert({
-    where: { userId: req.user.id },
+    where: { userId_groupId: { userId: req.user.id, groupId } },
     update: parsed.data,
-    create: { userId: req.user.id, ...parsed.data },
+    create: { userId: req.user.id, groupId, ...parsed.data },
   });
 
   return res.json(picks);
@@ -57,6 +63,9 @@ const savePicks = async (req, res) => {
 
 // GET /api/tournament/picks/:userId — Ver picks de otro usuario (post-cierre)
 const getUserPicks = async (req, res) => {
+  const { groupId } = req.query;
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
+
   // Solo se revelan los picks de otros cuando el torneo ha comenzado
   if (!isTournamentLocked() && req.user.id !== req.params.userId) {
     return res.status(403).json({
@@ -65,10 +74,10 @@ const getUserPicks = async (req, res) => {
   }
 
   const picks = await prisma.tournamentPicks.findUnique({
-    where: { userId: req.params.userId },
+    where: { userId_groupId: { userId: req.params.userId, groupId } },
   });
 
-  if (!picks) return res.status(404).json({ error: 'Usuario no encontró pronósticos' });
+  if (!picks) return res.status(404).json({ error: 'Usuario no encontró pronósticos para este grupo' });
   return res.json(picks);
 };
 

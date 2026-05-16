@@ -188,23 +188,45 @@ const rebuildLeaderboard = async () => {
 const rebuildGroupLeaderboard = async (groupId) => {
   const members = await prisma.groupMember.findMany({
     where: { groupId },
-    include: { user: { select: { id: true, totalPoints: true } } },
+    select: { userId: true },
   });
 
-  const sorted = members.sort((a, b) => b.user.totalPoints - a.user.totalPoints);
+  const stats = [];
+  for (const member of members) {
+    const predictions = await prisma.prediction.findMany({
+      where: { userId: member.userId, groupId },
+      select: { pointsTotal: true },
+    });
+    const tournamentPicks = await prisma.tournamentPicks.findUnique({
+      where: { userId_groupId: { userId: member.userId, groupId } },
+      select: { pointsTotal: true },
+    });
+
+    const matchPoints = predictions.reduce((s, p) => s + p.pointsTotal, 0);
+    const tournamentPoints = tournamentPicks?.pointsTotal || 0;
+    const totalPoints = matchPoints + tournamentPoints;
+
+    stats.push({ userId: member.userId, totalPoints, matchPoints, tournamentPoints });
+  }
+
+  const sorted = stats.sort((a, b) => b.totalPoints - a.totalPoints);
 
   for (let i = 0; i < sorted.length; i++) {
     await prisma.leaderboardEntry.upsert({
       where: { userId_groupId: { userId: sorted[i].userId, groupId } },
       update: {
-        totalPoints: sorted[i].user.totalPoints,
+        totalPoints: sorted[i].totalPoints,
+        matchPoints: sorted[i].matchPoints,
+        tournamentPoints: sorted[i].tournamentPoints,
         rank: i + 1,
         lastUpdated: new Date(),
       },
       create: {
         userId: sorted[i].userId,
         groupId,
-        totalPoints: sorted[i].user.totalPoints,
+        totalPoints: sorted[i].totalPoints,
+        matchPoints: sorted[i].matchPoints,
+        tournamentPoints: sorted[i].tournamentPoints,
         rank: i + 1,
       },
     });

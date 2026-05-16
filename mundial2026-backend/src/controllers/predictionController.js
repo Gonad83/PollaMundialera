@@ -100,9 +100,12 @@ const predictionSchema = z.object({
 // GET /api/predictions/match/:matchId — Ver predicciones propias para un partido
 const getForMatch = async (req, res) => {
   const { matchId } = req.params;
+  const { groupId } = req.query;
+
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
 
   const prediction = await prisma.prediction.findUnique({
-    where: { userId_matchId: { userId: req.user.id, matchId } },
+    where: { userId_matchId_groupId: { userId: req.user.id, matchId, groupId } },
     include: {
       match: {
         include: { teamHome: true, teamAway: true },
@@ -120,8 +123,11 @@ const getForMatch = async (req, res) => {
 // POST /api/predictions/match/:matchId — Crear o actualizar predicción
 const upsert = async (req, res) => {
   const { matchId } = req.params;
+  const { groupId, ...bodyData } = req.body;
 
-  const parsed = predictionSchema.safeParse(req.body);
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
+
+  const parsed = predictionSchema.safeParse(bodyData);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.errors[0].message });
   }
@@ -146,11 +152,12 @@ const upsert = async (req, res) => {
     ...parsed.data,
     userId: req.user.id,
     matchId,
+    groupId,
     lockedAt: null,
   };
 
   const prediction = await prisma.prediction.upsert({
-    where: { userId_matchId: { userId: req.user.id, matchId } },
+    where: { userId_matchId_groupId: { userId: req.user.id, matchId, groupId } },
     update: parsed.data,
     create: data,
   });
@@ -160,11 +167,14 @@ const upsert = async (req, res) => {
 
 // GET /api/predictions/my — Todas mis predicciones
 const getMyPredictions = async (req, res) => {
-  const { phase, status } = req.query;
+  const { phase, status, groupId } = req.query;
+
+  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
 
   const predictions = await prisma.prediction.findMany({
     where: {
       userId: req.user.id,
+      groupId,
       match: {
         ...(phase && { phase }),
         ...(status && { status }),
@@ -190,15 +200,20 @@ const getAllForMatch = async (req, res) => {
     return res.status(404).json({ error: 'Partido no encontrado' });
   }
 
+  const { groupId } = req.query;
+
   // Solo mostrar predicciones de otros cuando el partido terminó
-  if (match.status !== 'FINISHED' && req.query.groupId) {
+  if (match.status !== 'FINISHED') {
     return res.status(403).json({
       error: 'Las predicciones de otros jugadores se revelan cuando termina el partido',
     });
   }
 
+  const whereClause = { matchId };
+  if (groupId) whereClause.groupId = groupId;
+
   const predictions = await prisma.prediction.findMany({
-    where: { matchId },
+    where: whereClause,
     include: {
       user: { select: { id: true, username: true, avatarUrl: true } },
     },

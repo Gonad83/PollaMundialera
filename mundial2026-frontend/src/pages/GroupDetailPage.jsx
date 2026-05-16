@@ -6,8 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
-  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff
+  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen
 } from 'lucide-react'
+import MatchesPage from './MatchesPage'
+import TournamentPage from './TournamentPage'
+import RulesPage from './RulesPage'
+import SimulatorPage from './SimulatorPage'
 import { useState, useEffect, useRef } from 'react'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 import toast from 'react-hot-toast'
@@ -119,10 +123,10 @@ export default function GroupDetailPage() {
   // Sincronizar activeTab con el parámetro ?tab= de la URL
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['members', 'ranking', 'messages', 'config'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'reglas', 'config'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group && activeTab === null) {
-      setActiveTab(isAdmin ? 'members' : 'ranking')
+      setActiveTab('resultados') // Default tab
       setEditName(group.name)
     }
   }, [searchParams, group, isAdmin, activeTab])
@@ -223,15 +227,21 @@ export default function GroupDetailPage() {
 
   // Tabs según rol + modo simulación
   const adminTabs = [
-    { id: 'members',  label: 'Miembros',  icon: Users },
-    { id: 'ranking',  label: 'Ranking',   icon: BarChart3 },
-    { id: 'messages', label: 'Mensajes',  icon: MessageSquare },
-    { id: 'config',   label: 'Config',    icon: Settings },
+    { id: 'resultados', label: 'Resultados', icon: Calendar },
+    { id: 'premios',    label: 'Premios',    icon: Trophy },
+    { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
+    { id: 'liga',       label: 'Liga',       icon: Users },
+    { id: 'messages',   label: 'Mensajes',   icon: MessageSquare },
+    { id: 'reglas',     label: 'Reglas',     icon: BookOpen },
+    { id: 'config',     label: 'Ajustes',    icon: Settings },
   ]
   const playerTabs = [
-    { id: 'ranking',  label: 'Ranking',   icon: BarChart3 },
-    { id: 'members',  label: 'Miembros',  icon: Users },
-    { id: 'messages', label: 'Mensajes',  icon: MessageSquare },
+    { id: 'resultados', label: 'Resultados', icon: Calendar },
+    { id: 'premios',    label: 'Premios',    icon: Trophy },
+    { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
+    { id: 'liga',       label: 'Liga',       icon: Users },
+    { id: 'messages',   label: 'Mensajes',   icon: MessageSquare },
+    { id: 'reglas',     label: 'Reglas',     icon: BookOpen },
   ]
   const tabs = actingAsAdmin ? adminTabs : playerTabs
 
@@ -414,7 +424,7 @@ export default function GroupDetailPage() {
       )}
 
       {/* ── Tabs ── */}
-      <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-6">
+      <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-6 overflow-x-auto no-scrollbar">
         {tabs.map(({ id: tabId, label, icon: Icon }) => (
           <button key={tabId} onClick={() => setActiveTab(tabId)}
             className={`flex-1 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
@@ -427,8 +437,47 @@ export default function GroupDetailPage() {
 
       <AnimatePresence mode="wait">
 
-        {/* ── TAB: MEMBERS ── */}
-        {activeTab === 'members' && (
+        {/* ── TAB: RESULTADOS ── */}
+        {activeTab === 'resultados' && (
+          <motion.div key="resultados" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {/* Simulador button at the top of Resultados */}
+            <div className="mb-6 flex justify-end">
+               <button onClick={() => setActiveTab('simulador')} className="btn-gold px-4 py-2 text-[10px] flex items-center gap-2">
+                 <Calendar size={14} /> ABRIR SIMULADOR DE FASE DE GRUPOS
+               </button>
+            </div>
+            <MatchesPage groupId={id} />
+          </motion.div>
+        )}
+
+        {/* ── TAB: SIMULADOR (Sub-tab of Resultados) ── */}
+        {activeTab === 'simulador' && (
+          <motion.div key="simulador" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <div className="mb-6 flex">
+               <button onClick={() => setActiveTab('resultados')} className="text-zinc-400 hover:text-white flex items-center gap-2 text-xs font-black uppercase">
+                 <ChevronLeft size={16} /> Volver a Partidos
+               </button>
+            </div>
+            <SimulatorPage groupId={id} />
+          </motion.div>
+        )}
+
+        {/* ── TAB: PREMIOS ── */}
+        {activeTab === 'premios' && (
+          <motion.div key="premios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <TournamentPage groupId={id} />
+          </motion.div>
+        )}
+
+        {/* ── TAB: REGLAS ── */}
+        {activeTab === 'reglas' && (
+          <motion.div key="reglas" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <RulesPage />
+          </motion.div>
+        )}
+
+        {/* ── TAB: LIGA (Members) ── */}
+        {activeTab === 'liga' && (
           <motion.div key="members" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div className="card overflow-hidden bg-white/5 border border-white/5">
               <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">

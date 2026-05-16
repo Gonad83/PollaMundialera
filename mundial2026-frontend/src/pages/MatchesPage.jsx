@@ -45,7 +45,7 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 }
 
-export default function MatchesPage() {
+export default function MatchesPage({ groupId }) {
   const [phase, setPhase] = useState('')
 
   const { data: allMatches = [], isLoading } = useQuery({
@@ -54,8 +54,9 @@ export default function MatchesPage() {
   })
 
   const { data: myPreds = [] } = useQuery({
-    queryKey: ['my-predictions'],
-    queryFn: () => predictionApi.my({}).then(r => r.data),
+    queryKey: ['my-predictions', groupId],
+    queryFn: () => predictionApi.my({ groupId }).then(r => r.data),
+    enabled: !!groupId,
   })
 
   const predMap = myPreds.reduce((acc, p) => {
@@ -206,7 +207,7 @@ export default function MatchesPage() {
               <div className="grid gap-4">
                 {dayMatches.map(match => (
                   <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                    <MatchRow match={match} pred={predMap[match.id]} />
+                    <MatchRow match={match} pred={predMap[match.id]} groupId={groupId} />
                   </motion.div>
                 ))}
               </div>
@@ -226,7 +227,7 @@ export default function MatchesPage() {
   )
 }
 
-function MatchRow({ match, pred }) {
+function MatchRow({ match, pred, groupId }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isDeadlinePassed = isAfter(new Date(), new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000))
   const isLive   = status === 'LIVE'
@@ -235,7 +236,7 @@ function MatchRow({ match, pred }) {
   const hasBonus = hasPred && (pred.predBtts !== null || pred.predOverUnder !== null)
 
   return (
-    <Link to={`/matches/${match.id}`} className="group block">
+    <Link to={`/matches/${match.id}?groupId=${groupId}`} className="group block">
       <div className={`card-hover flex flex-col relative overflow-hidden
         ${isLive ? 'border-mundial-red/30' : hasPred && !isFinished ? 'border-green-500/20' : ''}`}>
 

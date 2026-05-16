@@ -60,15 +60,15 @@ export const matchApi = {
 
 export const predictionApi = {
   my:         (params) => api.get('/predictions/my', { params }),
-  forMatch:   (matchId) => api.get(`/predictions/match/${matchId}`),
+  forMatch:   (matchId, params) => api.get(`/predictions/match/${matchId}`, { params }),
   save:       (matchId, data) => api.post(`/predictions/match/${matchId}`, data),
-  allForMatch: (matchId) => api.get(`/predictions/match/${matchId}/all`),
+  allForMatch: (matchId, params) => api.get(`/predictions/match/${matchId}/all`, { params }),
 }
 
 export const tournamentApi = {
-  myPicks:   ()     => api.get('/tournament/picks'),
+  myPicks:   (params) => api.get('/tournament/picks', { params }),
   savePicks: (data) => api.put('/tournament/picks', data),
-  userPicks: (id)   => api.get(`/tournament/picks/${id}`),
+  userPicks: (id, params) => api.get(`/tournament/picks/${id}`, { params }),
 }
 
 export const leaderboardApi = {
