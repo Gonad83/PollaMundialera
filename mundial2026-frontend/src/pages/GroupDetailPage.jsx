@@ -1,4 +1,4 @@
-import { useParams, Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi, leaderboardApi, paymentApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
@@ -6,8 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
-  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff,
-  Calendar, BookOpen, Shuffle
+  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
@@ -20,14 +19,6 @@ const MEDAL_COLORS = {
   2: 'from-zinc-300 to-zinc-500',
   3: 'from-orange-400 to-orange-700',
 }
-
-const GROUP_NAV = [
-  { to: '/matches',     label: 'Partidos',  icon: Calendar },
-  { to: '/tournament',  label: 'Torneo',    icon: Trophy },
-  { to: '/leaderboard', label: 'Ranking',   icon: BarChart3 },
-  { to: '/rules',       label: 'Reglas',    icon: BookOpen },
-  { to: '/simulator',   label: 'Simular',   icon: Shuffle },
-]
 
 // ── Confirmation Modal ──────────────────────────────────────────────
 function DeleteMemberModal({ member, groupName, onConfirm, onCancel, loading }) {
@@ -404,25 +395,6 @@ export default function GroupDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Nav contextual ── */}
-      <nav className="mt-3 mb-6 flex p-1 rounded-2xl bg-white/5 border border-white/5">
-        {GROUP_NAV.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
-                isActive
-                  ? 'bg-mundial-gold text-mundial-navy shadow-lg'
-                  : 'text-zinc-500 hover:text-white hover:bg-white/5'
-              }`
-            }
-          >
-            <Icon size={13} />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
 
       {/* ── Admin quick metrics ── */}
       {actingAsAdmin && (
