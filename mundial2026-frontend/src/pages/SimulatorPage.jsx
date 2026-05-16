@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, ChevronRight, RotateCcw, Zap, Save, CheckCircle2 } from 'lucide-react'
 import { matchApi } from '../lib/api'
+import { THIRDS_TABLE } from '../data/annexC'
 
 // ── EQUIPOS ───────────────────────────────────────────────────────────────────
 // code = ISO 3166-1 alpha-2 para flagcdn.com (gb-eng / gb-sct para naciones UK)
@@ -209,7 +210,11 @@ function simMatch(a, b) {
   return [goA, Math.max(goB, goA + 1)]
 }
 
-// ── REGLAS OFICIALES FIFA · R32 (P73–P88) ────────────────────────────────────
+// ── REGLAS OFICIALES FIFA · R32 (P73–P88) — Anexo C ─────────────────────────
+// THIRDS_TABLE: 495 combinaciones oficiales FIFA (Wikipedia Template:2026_FIFA_World_Cup_third-place_table)
+// Key: 8 grupos clasificados ordenados alfabéticamente, ej. "ABCDEFIL"
+// Value: { P79: "3C", P85: "3E", P81: "3B", P74: "3D", P82: "3A", P77: "3F", P87: "3L", P80: "3I" }
+//   "3X" = 3° del grupo X, código de slot = partido donde juega el 1° del grupo indicado
 function buildR32(standings) {
   const f = {}, s = {}
   const thirdsArr = []
@@ -224,54 +229,42 @@ function buildR32(standings) {
   thirdsArr.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf)
   const best8 = thirdsArr.slice(0, 8)
 
-  // Anti-repetición: el 3° no puede enfrentar al 1° de su mismo grupo
-  // Para cada slot "1X vs 3°", excluir el grupo X
-  const ALL = ['A','B','C','D','E','F','G','H','I','J','K','L']
-  const excl = (g) => ALL.filter(x => x !== g)
-  const VALID = {
-    74: excl('E'),  // 1E vs 3°
-    77: excl('I'),  // 1I vs 3°
-    79: excl('A'),  // 1A vs 3°
-    80: excl('L'),  // 1L vs 3°
-    81: excl('D'),  // 1D vs 3°
-    82: excl('G'),  // 1G vs 3°
-    85: excl('B'),  // 1B vs 3°
-    87: excl('K'),  // 1K vs 3°
-  }
+  // Clave del Anexo C: 8 grupos clasificados ordenados alfabéticamente
+  const comboKey = best8.map(t => t.group).sort().join('')
+  const annexRow = THIRDS_TABLE[comboKey]
 
-  // Asignación greedy: mejor tercero disponible → primer slot válido
-  const thirdFor = {}
-  const used = new Set()
-  for (const slot of [74, 77, 79, 80, 81, 82, 85, 87]) {
-    for (const t of best8) {
-      if (!used.has(t.name) && VALID[slot].includes(t.group)) {
-        thirdFor[slot] = t.name; used.add(t.name); break
-      }
-    }
-    if (thirdFor[slot] === undefined) thirdFor[slot] = null
+  // Construir mapa slot → equipo usando la tabla oficial
+  // Si por algún motivo la combinación no existe (no debería), fallback a '?'
+  const thirdByGroup = {}
+  best8.forEach(t => { thirdByGroup[t.group] = t.name })
+
+  const resolveSlot = (slotCode) => {
+    if (!annexRow) return '?'
+    const code = annexRow[slotCode] // e.g. "3C" or "2X"
+    if (!code) return '?'
+    const grp = code.slice(1) // "C"
+    return thirdByGroup[grp] ?? '?'
   }
 
   const F = g => f[g] ?? '?'
   const S = g => s[g] ?? '?'
-  const T = p => thirdFor[p] ?? '?'
 
-  // Partidos P73-P88 en orden oficial FIFA 2026
   const RAW = [
     { label: 'P73', desc: '2A vs 2B',  teams: [S('A'), S('B')] },
-    { label: 'P74', desc: '1E vs 3°',  teams: [F('E'), T(74)]  },
+    { label: 'P74', desc: '1E vs 3°',  teams: [F('E'), resolveSlot('P74')] },
     { label: 'P75', desc: '1F vs 2C',  teams: [F('F'), S('C')] },
     { label: 'P76', desc: '1C vs 2F',  teams: [F('C'), S('F')] },
-    { label: 'P77', desc: '1I vs 3°',  teams: [F('I'), T(77)]  },
+    { label: 'P77', desc: '1I vs 3°',  teams: [F('I'), resolveSlot('P77')] },
     { label: 'P78', desc: '2E vs 2I',  teams: [S('E'), S('I')] },
-    { label: 'P79', desc: '1A vs 3°',  teams: [F('A'), T(79)]  },
-    { label: 'P80', desc: '1L vs 3°',  teams: [F('L'), T(80)]  },
-    { label: 'P81', desc: '1D vs 3°',  teams: [F('D'), T(81)]  },
-    { label: 'P82', desc: '1G vs 3°',  teams: [F('G'), T(82)]  },
+    { label: 'P79', desc: '1A vs 3°',  teams: [F('A'), resolveSlot('P79')] },
+    { label: 'P80', desc: '1L vs 3°',  teams: [F('L'), resolveSlot('P80')] },
+    { label: 'P81', desc: '1D vs 3°',  teams: [F('D'), resolveSlot('P81')] },
+    { label: 'P82', desc: '1G vs 3°',  teams: [F('G'), resolveSlot('P82')] },
     { label: 'P83', desc: '2K vs 2L',  teams: [S('K'), S('L')] },
     { label: 'P84', desc: '1H vs 2J',  teams: [F('H'), S('J')] },
-    { label: 'P85', desc: '1B vs 3°',  teams: [F('B'), T(85)]  },
+    { label: 'P85', desc: '1B vs 3°',  teams: [F('B'), resolveSlot('P85')] },
     { label: 'P86', desc: '1J vs 2H',  teams: [F('J'), S('H')] },
-    { label: 'P87', desc: '1K vs 3°',  teams: [F('K'), T(87)]  },
+    { label: 'P87', desc: '1K vs 3°',  teams: [F('K'), resolveSlot('P87')] },
     { label: 'P88', desc: '2D vs 2G',  teams: [S('D'), S('G')] },
   ]
 
@@ -281,6 +274,7 @@ function buildR32(standings) {
     descs:   RAW.map(m => m.desc),
     thirds:  thirdsArr,
     best8,
+    comboKey,
   }
 }
 
