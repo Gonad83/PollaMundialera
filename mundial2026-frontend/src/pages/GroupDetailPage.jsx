@@ -400,26 +400,24 @@ export default function GroupDetailPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Nav contextual con amarillo ── */}
-      <nav className="mt-3 mb-6 rounded-2xl border border-mundial-gold/15 bg-white/5 p-1.5 backdrop-blur-xl">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-          {GROUP_NAV.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-[10px] font-black uppercase tracking-widest transition-all ${
-                  isActive
-                    ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                    : 'text-mundial-gold/60 border border-mundial-gold/20 hover:bg-mundial-gold/10 hover:text-mundial-gold hover:border-mundial-gold/40'
-                }`
-              }
-            >
-              <Icon size={14} />
-              {label}
-            </NavLink>
-          ))}
-        </div>
+      {/* ── Nav contextual ── */}
+      <nav className="mt-3 mb-6 flex p-1 rounded-2xl bg-white/5 border border-white/5">
+        {GROUP_NAV.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+                isActive
+                  ? 'bg-mundial-gold text-mundial-navy shadow-lg'
+                  : 'text-zinc-500 hover:text-white hover:bg-white/5'
+              }`
+            }
+          >
+            <Icon size={13} />
+            {label}
+          </NavLink>
+        ))}
       </nav>
 
       {/* ── Admin quick metrics ── */}
