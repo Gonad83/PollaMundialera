@@ -19,23 +19,30 @@ const app = express();
 const httpServer = createServer(app);
 
 // ─── Orígenes Permitidos (CORS) ────────────────────────────────────────────────
-const allowedOrigins = [
+const ALLOWED_EXACT = [
   process.env.FRONTEND_URL,
   'https://polla-mundialera-three.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
-  'http://localhost:3000'
+  'http://localhost:3000',
 ].filter(Boolean);
 
+const originFn = (origin, callback) => {
+  // Peticiones sin origin (curl, server-to-server, Postman)
+  if (!origin) return callback(null, true);
+  // Exactas
+  if (ALLOWED_EXACT.includes(origin)) return callback(null, true);
+  // Cualquier subdominio de vercel.app (previews automáticos)
+  if (/^https:\/\/[^.]+\.vercel\.app$/.test(origin)) return callback(null, true);
+  callback(new Error(`CORS: origen no permitido → ${origin}`));
+};
+
+const corsOptions = { origin: originFn, credentials: true };
+
 // ─── Socket.io ───────────────────────────────────────────────────────────────
-const io = new Server(httpServer, {
-  cors: {
-    origin: allowedOrigins,
-    credentials: true,
-  },
-});
+const io = new Server(httpServer, { cors: corsOptions });
 
 // Exponer io para usarlo en controllers
 app.set('io', io);
@@ -55,10 +62,9 @@ io.on('connection', (socket) => {
 
 // ─── Middlewares globales ─────────────────────────────────────────────────────
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
+// Preflight explícito para todas las rutas (necesario para CORS con credentials)
+app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Rate limiting general
