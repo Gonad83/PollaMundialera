@@ -1,12 +1,3 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { matchApi, predictionApi } from '../lib/api'
-import { format, isAfter } from 'date-fns'
-import { es } from 'date-fns/locale'
-import { motion } from 'framer-motion'
-import { Trophy, Calendar, Filter, ChevronRight, Star, CheckCircle2 } from 'lucide-react'
-
 // --- Constants & Utils ---
 
 const PHASES = [
@@ -31,13 +22,9 @@ const STATUS_LABELS = {
   FINISHED: 'FINALIZADO',
 }
 
-// Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
 }
 
 const itemVariants = {
@@ -47,24 +34,50 @@ const itemVariants = {
 
 export default function MatchesPage({ groupId }) {
   const [phase, setPhase] = useState('')
+  const [viewMode, setViewMode] = useState('real') // 'real' | 'apostado'
 
   const { data: allMatches = [], isLoading } = useQuery({
     queryKey: ['matches-all'],
     queryFn: () => matchApi.list({}).then(r => r.data),
   })
 
+  // Predictions for this group (used in list view)
   const { data: myPreds = [] } = useQuery({
     queryKey: ['my-predictions', groupId],
     queryFn: () => predictionApi.my({ groupId }).then(r => r.data),
     enabled: !!groupId,
   })
 
-  const predMap = myPreds.reduce((acc, p) => {
-    acc[p.matchId] = p
-    return acc
-  }, {})
+  // All user predictions across groups (for apostado mode)
+  const { data: allMyPreds = [] } = useQuery({
+    queryKey: ['my-predictions-all'],
+    queryFn: () => predictionApi.my({}).then(r => r.data),
+    enabled: viewMode === 'apostado',
+  })
 
-  const matches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
+  // Map: matchId → prediction (group-scoped)
+  const predMap = useMemo(() => myPreds.reduce((acc, p) => {
+    acc[p.matchId] = p; return acc
+  }, {}), [myPreds])
+
+  // Map: matchId → prediction (all groups, first found wins)
+  const allPredMap = useMemo(() => allMyPreds.reduce((acc, p) => {
+    if (!acc[p.matchId]) acc[p.matchId] = p; return acc
+  }, {}), [allMyPreds])
+
+  // In apostado mode, overlay predictions onto match data (treat as FINISHED)
+  const effectiveMatches = useMemo(() => {
+    if (viewMode !== 'apostado') return allMatches
+    return allMatches.map(m => {
+      const pred = allPredMap[m.id]
+      if (!pred) return m
+      return { ...m, scoreHome: pred.predHome, scoreAway: pred.predAway, status: 'FINISHED' }
+    })
+  }, [allMatches, allPredMap, viewMode])
+
+  const activePredMap = viewMode === 'apostado' ? allPredMap : predMap
+
+  const matches = phase ? effectiveMatches.filter(m => m.phase === phase) : effectiveMatches
 
   const grouped = matches.reduce((acc, m) => {
     const day = format(new Date(m.dateUtc), 'EEEE d MMM', { locale: es })
@@ -73,35 +86,66 @@ export default function MatchesPage({ groupId }) {
     return acc
   }, {})
 
-  const groupMatches = allMatches.filter(m => m.phase === 'GROUP')
-  const standings = buildStandings(groupMatches)
+  const standings = buildStandings(effectiveMatches.filter(m => m.phase === 'GROUP'))
+
+  const apostadoCount = Object.keys(allPredMap).length
 
   return (
-    <motion.div 
+    <motion.div
       initial="hidden"
       animate="visible"
       variants={containerVariants}
       className="pb-24 max-w-4xl mx-auto px-4"
     >
-      {/* Header Section */}
+      {/* Header */}
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10 pt-4">
         <div>
-          <h1 className="font-display text-5xl text-white tracking-tight flex items-center gap-4">
-            PRÓXIMOS ENCUENTROS
-          </h1>
+          <h1 className="font-display text-5xl text-white tracking-tight">ENCUENTROS</h1>
           <p className="text-[10px] text-mundial-gold font-extrabold uppercase tracking-[0.4em] mt-2 opacity-80">
             United 2026 • Road to the Final
           </p>
         </div>
         <div className="flex items-center gap-2">
-           <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
-              <Calendar size={14} className="text-mundial-gold" />
-              <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{allMatches.length} PARTIDOS</span>
-           </div>
+          <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
+            <Calendar size={14} className="text-mundial-gold" />
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{allMatches.length} PARTIDOS</span>
+          </div>
         </div>
       </motion.div>
 
-      {/* Advanced Filters */}
+      {/* Real vs Apostado toggle */}
+      <motion.div variants={itemVariants} className="mb-6">
+        <div className="flex p-1 rounded-2xl bg-white/5 border border-white/10 max-w-xs">
+          <button
+            onClick={() => setViewMode('real')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              viewMode === 'real'
+                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Wifi size={12} /> Real
+          </button>
+          <button
+            onClick={() => setViewMode('apostado')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              viewMode === 'apostado'
+                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Target size={12} /> Apostado
+          </button>
+        </div>
+        {viewMode === 'apostado' && (
+          <p className="mt-2 text-[10px] text-mundial-gold/70 font-bold uppercase tracking-widest flex items-center gap-1.5">
+            <Target size={10} />
+            Simulando con {apostadoCount} pronóstico{apostadoCount !== 1 ? 's' : ''} registrado{apostadoCount !== 1 ? 's' : ''}
+          </p>
+        )}
+      </motion.div>
+
+      {/* Phase filters */}
       <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-8 border-b border-white/5">
         <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-zinc-500 mr-2">
           <Filter size={16} />
@@ -130,9 +174,16 @@ export default function MatchesPage({ groupId }) {
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
         <div className="space-y-12">
+          {viewMode === 'apostado' && apostadoCount === 0 && (
+            <div className="p-6 rounded-2xl bg-mundial-gold/5 border border-mundial-gold/20 text-center">
+              <Target size={32} className="text-mundial-gold/40 mx-auto mb-3" />
+              <p className="text-zinc-400 text-sm font-bold">Aún no tienes pronósticos registrados.</p>
+              <p className="text-zinc-500 text-xs mt-1">Haz tus apuestas en los partidos de grupo para ver la tabla simulada.</p>
+            </div>
+          )}
           {standings.length === 0 ? (
             <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
-               <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Sin datos para mostrar</p>
+              <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Sin datos para mostrar</p>
             </div>
           ) : standings.map(({ letter, rows }) => (
             <motion.div key={letter} variants={itemVariants}>
@@ -140,16 +191,23 @@ export default function MatchesPage({ groupId }) {
                 <div className="w-12 h-12 rounded-[1.25rem] bg-gradient-to-br from-mundial-gold to-mundial-gold/70 text-mundial-navy flex items-center justify-center text-2xl font-black shadow-xl shadow-mundial-gold/10">
                   {letter}
                 </div>
-                <h2 className="font-display text-2xl text-white uppercase tracking-tighter">
-                  GRUPO <span className="text-mundial-gold">{letter}</span>
-                </h2>
+                <div>
+                  <h2 className="font-display text-2xl text-white uppercase tracking-tighter">
+                    GRUPO <span className="text-mundial-gold">{letter}</span>
+                  </h2>
+                  {viewMode === 'apostado' && (
+                    <span className="text-[9px] text-mundial-gold/60 font-black uppercase tracking-widest">
+                      según tus pronósticos
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="card overflow-hidden border-b-4 border-b-mundial-gold/20">
+              <div className={`card overflow-hidden border-b-4 ${viewMode === 'apostado' ? 'border-b-mundial-gold/40' : 'border-b-mundial-gold/20'}`}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest bg-white/5">
+                      <tr className={`border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest ${viewMode === 'apostado' ? 'bg-mundial-gold/5' : 'bg-white/5'}`}>
                         <th className="text-left px-6 py-4 w-12">#</th>
                         <th className="text-left px-2 py-4">Selección</th>
                         <th className="text-center px-4 py-4 w-12">PJ</th>
@@ -161,12 +219,10 @@ export default function MatchesPage({ groupId }) {
                       {rows.map((row, idx) => (
                         <tr
                           key={row.team.id}
-                          className={`border-b border-white/5 last:border-0 transition-all group ${
-                            idx < 2 ? 'bg-mundial-gold/[0.03]' : ''
-                          }`}
+                          className={`border-b border-white/5 last:border-0 transition-all group ${idx < 2 ? 'bg-mundial-gold/[0.03]' : ''}`}
                         >
                           <td className="px-6 py-5 font-mono text-zinc-500 text-xs">
-                             {idx < 2 ? <Star size={10} className="text-mundial-gold" /> : idx + 1}
+                            {idx < 2 ? <Star size={10} className="text-mundial-gold" /> : idx + 1}
                           </td>
                           <td className="px-2 py-5">
                             <div className="flex items-center gap-4">
@@ -180,9 +236,7 @@ export default function MatchesPage({ groupId }) {
                           <td className="text-center px-4 py-5 font-mono text-xs text-zinc-500">
                             {row.gf - row.gc > 0 ? '+' : ''}{row.gf - row.gc}
                           </td>
-                          <td className="text-center px-6 py-5 font-display text-xl font-bold text-white">
-                            {row.pts}
-                          </td>
+                          <td className="text-center px-6 py-5 font-display text-xl font-bold text-white">{row.pts}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -199,15 +253,18 @@ export default function MatchesPage({ groupId }) {
             <div key={day}>
               <div className="flex items-center gap-3 mb-6 px-2">
                 <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-white/5" />
-                <h2 className="font-mono text-[10px] text-mundial-gold uppercase tracking-[0.3em] font-black whitespace-nowrap">
-                  {day}
-                </h2>
+                <h2 className="font-mono text-[10px] text-mundial-gold uppercase tracking-[0.3em] font-black whitespace-nowrap">{day}</h2>
                 <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-white/5" />
               </div>
               <div className="grid gap-4">
                 {dayMatches.map(match => (
                   <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
-                    <MatchRow match={match} pred={predMap[match.id]} groupId={groupId} />
+                    <MatchRow
+                      match={match}
+                      pred={activePredMap[match.id]}
+                      groupId={groupId}
+                      apostado={viewMode === 'apostado'}
+                    />
                   </motion.div>
                 ))}
               </div>
@@ -227,13 +284,16 @@ export default function MatchesPage({ groupId }) {
   )
 }
 
-function MatchRow({ match, pred, groupId }) {
+function MatchRow({ match, pred, groupId, apostado = false }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isDeadlinePassed = isAfter(new Date(), new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000))
-  const isLive   = status === 'LIVE'
+  const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
-  const hasPred  = !!pred
-  const hasBonus = hasPred && (pred.predBtts !== null || pred.predOverUnder !== null)
+  const hasPred    = !!pred
+  const hasBonus   = hasPred && !apostado && (pred.predBtts !== null || pred.predOverUnder !== null)
+
+  // En modo apostado, si hay predicción mostramos el score apostado con estilo gold
+  const showApostadoScore = apostado && hasPred
 
   return (
     <Link to={`/matches/${match.id}?groupId=${groupId}`} className="group block">
@@ -263,9 +323,18 @@ function MatchRow({ match, pred, groupId }) {
               <div className="order-1 sm:order-2"><TeamFlag team={teamHome} size="md" /></div>
             </div>
 
-            {/* Center: score real / pronóstico / VS */}
+            {/* Center: score real / apostado / pronóstico / VS */}
             <div className="shrink-0">
-              {isFinished || isLive ? (
+              {showApostadoScore ? (
+                <div className="flex flex-col items-center gap-0.5">
+                  <div className="flex items-center gap-1">
+                    <div className="w-10 h-10 rounded-xl bg-mundial-gold/15 border border-mundial-gold/40 flex items-center justify-center font-display text-lg text-mundial-gold">{pred.predHome}</div>
+                    <span className="text-mundial-gold/40 font-black text-sm">–</span>
+                    <div className="w-10 h-10 rounded-xl bg-mundial-gold/15 border border-mundial-gold/40 flex items-center justify-center font-display text-lg text-mundial-gold">{pred.predAway}</div>
+                  </div>
+                  <span className="text-[8px] text-mundial-gold/50 font-black uppercase tracking-widest">apostado</span>
+                </div>
+              ) : isFinished || isLive ? (
                 <div className="flex items-center gap-1.5">
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
                   <span className="text-zinc-600 font-bold text-sm">:</span>
@@ -290,9 +359,15 @@ function MatchRow({ match, pred, groupId }) {
 
           {/* Action */}
           <div className="w-full sm:w-36 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 flex items-center justify-center">
-            {hasPred && !isFinished ? (
+            {apostado && hasPred ? (
+              <span className="flex items-center gap-1.5 text-[9px] font-black text-mundial-gold/70 uppercase tracking-widest">
+                <Target size={11} /> TU APUESTA
+              </span>
+            ) : apostado && !hasPred ? (
+              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">SIN APUESTA</span>
+            ) : hasPred && !isFinished ? (
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
-                <CheckCircle2 size={13} /> PRONÓSTICO REGISTRADO
+                <CheckCircle2 size={13} /> REGISTRADO
               </span>
             ) : !isDeadlinePassed && !isFinished ? (
               <span className="flex items-center gap-1 text-[10px] font-black text-mundial-gold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
