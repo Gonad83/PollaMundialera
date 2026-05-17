@@ -226,11 +226,6 @@ export default function WelcomePage() {
                 <ChevronLeft size={16} /> Volver
               </button>
 
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#FFD700' }}>
-                  PASO 1 DE 2
-                </span>
-              </div>
               <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 7vw, 52px)', color: '#fff', lineHeight: 1, marginBottom: 8 }}>
                 NOMBRA TU LIGA
               </h2>
@@ -248,7 +243,7 @@ export default function WelcomePage() {
                 autoFocus
                 value={ligaName}
                 onChange={e => setLigaName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && ligaName.trim() && setStep('create-plan')}
+                onKeyDown={e => e.key === 'Enter' && ligaName.trim() && !createMut.isPending && createMut.mutate()}
                 placeholder="Ej: Los Crack de la Oficina"
                 style={{
                   width: '100%', padding: '18px 20px', borderRadius: 16, fontSize: 18,
@@ -261,8 +256,8 @@ export default function WelcomePage() {
               />
 
               <button
-                onClick={() => { setError(''); setStep('create-plan') }}
-                disabled={!ligaName.trim()}
+                onClick={() => { setError(''); createMut.mutate() }}
+                disabled={!ligaName.trim() || createMut.isPending}
                 style={{
                   width: '100%', padding: '16px', borderRadius: 16,
                   background: ligaName.trim() ? '#FFD700' : 'rgba(255,255,255,0.05)',
@@ -273,8 +268,15 @@ export default function WelcomePage() {
                   boxShadow: ligaName.trim() ? '0 0 40px rgba(255,215,0,0.25)' : 'none',
                 }}
               >
-                Elegir Plan <ArrowRight size={16} />
+                {createMut.isPending
+                  ? <><Loader2 size={16} className="animate-spin" /> Creando liga...</>
+                  : <><Trophy size={16} /> CREAR MI LIGA GRATIS</>
+                }
               </button>
+
+              <p style={{ textAlign: 'center', marginTop: 12, fontSize: 11, color: '#52525b' }}>
+                Gratis · Puedes invitar hasta 5 amigos · Sin tarjeta de crédito
+              </p>
             </motion.div>
           )}
 

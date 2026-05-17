@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, Link2, Copy, Check } from 'lucide-react'
+import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, Link2, Copy, Check, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const PLAN_GROUP_LIMIT = { FREE: 1, CLASICO: 1, DT: 3, PRO: 99 }
-const PLAN_MEMBER_LIMIT = { FREE: 5, CLASICO: 15, DT: 15, PRO: 150 }
+const PLAN_MEMBER_LIMIT = { FREE: 5, CLASICO: 15, DT: 50, PRO: 150 }
 
 export default function GroupsPage() {
   const qc = useQueryClient()
@@ -217,18 +217,29 @@ export default function GroupsPage() {
         {tab === 'my' ? (
           loadingMy ? <SkeletonList /> :
           myGroups.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              className="text-center py-20 bg-white/5 border border-dashed border-white/10 rounded-[2.5rem]"
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-16 px-6 bg-gradient-to-b from-mundial-gold/5 to-transparent border border-dashed border-mundial-gold/20 rounded-[2.5rem]"
             >
-              <div className="w-20 h-20 bg-mundial-navy border border-white/5 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-2xl">
-                <Users size={40} className="text-zinc-700" />
+              <div className="w-24 h-24 bg-mundial-gold/10 border border-mundial-gold/20 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-2xl shadow-mundial-gold/10">
+                <Trophy size={44} className="text-mundial-gold" />
               </div>
-              <h3 className="text-white font-display text-2xl uppercase">¿Sin equipo todavía?</h3>
-              <p className="text-zinc-500 mt-2 max-w-sm mx-auto uppercase tracking-widest text-[10px] font-bold">El mundial se vive mejor en comunidad. Crea un grupo o explora los retos públicos.</p>
-              <button onClick={() => setTab('all')} className="mt-8 text-mundial-gold text-xs font-extrabold uppercase tracking-widest hover:underline flex items-center gap-2 mx-auto transition-all hover:gap-3">
-                Explorar Grupos <ChevronRight size={14} />
+              <h3 className="text-white font-display text-3xl uppercase tracking-tight">Arma tu liga</h3>
+              <p className="text-zinc-400 mt-3 max-w-xs mx-auto text-sm leading-relaxed">
+                Crea tu primera comunidad, invita a tus amigos y empiecen a apostar juntos.
+              </p>
+              <button
+                onClick={() => { setMode('create'); setError('') }}
+                className="mt-8 btn-gold px-8 py-4 rounded-2xl flex items-center gap-2 mx-auto font-black text-sm uppercase tracking-widest shadow-lg shadow-mundial-gold/20 hover:scale-105 transition-transform"
+              >
+                <Plus size={18} /> CREAR MI PRIMERA LIGA
+              </button>
+              <button
+                onClick={() => { setMode('join'); setError('') }}
+                className="mt-4 text-zinc-500 hover:text-mundial-gold text-xs font-bold uppercase tracking-widest transition-colors flex items-center gap-1.5 mx-auto"
+              >
+                o únete con un código <ChevronRight size={12} />
               </button>
             </motion.div>
           ) : (

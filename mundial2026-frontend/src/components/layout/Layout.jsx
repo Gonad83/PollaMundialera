@@ -3,7 +3,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, MessageSquare } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, MessageSquare, Users } from 'lucide-react'
+import BottomNav from './BottomNav'
+import CountdownTimer from '../common/CountdownTimer'
 
 // ── Plan Badge ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
@@ -24,15 +26,19 @@ function PlanBadge({ plan, size = 'sm' }) {
     </span>
   )
 }
-import BottomNav from './BottomNav'
-import CountdownTimer from '../common/CountdownTimer'
 
 const MAIN_NAV = [
-  { to: '/groups',      label: 'Grupos',   icon: Users },
+  { to: '/matches',     label: 'Partidos', icon: Calendar },
+  { to: '/tournament',  label: 'Torneo',   icon: Trophy },
+  { to: '/leaderboard', label: 'Ranking',  icon: BarChart3 },
   { to: '/rules',       label: 'Reglas',   icon: BookOpen },
+  { to: '/simulator',   label: 'Simular',  icon: Shuffle },
 ]
 
-const NAV = MAIN_NAV
+const RESTRICTED_NAV = [
+  { to: '/groups', label: 'Grupos', icon: Users },
+  { to: '/rules',  label: 'Reglas', icon: BookOpen },
+]
 
 export default function Layout() {
   const { user, logout, loadingProfile } = useAuth()
@@ -74,7 +80,13 @@ export default function Layout() {
     return () => socket.off('notification:global')
   }, [socketRef])
 
-  const filteredNav = NAV
+  const filteredNav = isRestricted ? RESTRICTED_NAV : MAIN_NAV
+
+  const GROUP_NAV = groupId ? [
+    { to: `/groups/${groupId}?tab=members`,  label: 'Mi Grupo',   icon: Users },
+    { to: `/groups/${groupId}?tab=messages`, label: 'Mensajes',   icon: MessageSquare },
+    { to: `/groups/${groupId}?tab=config`,   label: 'Config',     icon: Settings },
+  ] : []
 
   return (
     <div className="min-h-screen flex flex-col bg-mundial-navy text-white selection:bg-mundial-gold selection:text-mundial-navy overflow-x-hidden">
@@ -143,14 +155,14 @@ export default function Layout() {
 
           {/* Nav principal — siempre visible en desktop cuando logueado */}
           <div className="hidden md:flex items-center gap-2">
-            <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/8">
-              {(isRestricted ? MAIN_NAV.filter(n => n.to === '/rules') : MAIN_NAV).map(({ to, label, icon: Icon }) => (
+            <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+              {(isRestricted ? RESTRICTED_NAV : MAIN_NAV).map(({ to, label, icon: Icon }) => (
                 <NavLink key={to} to={to}
                   className={({ isActive }) =>
                     `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                       isActive
                         ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/8'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/10'
                     }`
                   }
                 >
@@ -159,7 +171,23 @@ export default function Layout() {
               ))}
             </nav>
 
-
+            {GROUP_NAV.length > 0 && (
+              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-mundial-gold/8 border border-mundial-gold/20">
+                {GROUP_NAV.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to}
+                    className={({ isActive }) =>
+                      `flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        isActive
+                          ? 'bg-mundial-gold text-mundial-navy'
+                          : 'text-mundial-gold/70 hover:text-mundial-gold hover:bg-mundial-gold/10'
+                      }`
+                    }
+                  >
+                    <Icon size={13} /> {label}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
           </div>
 
           {/* Usuario / Logout (Desktop) */}
