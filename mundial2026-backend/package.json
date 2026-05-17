@@ -4,7 +4,7 @@
   "description": "API backend para la polla del Mundial 2026",
   "main": "src/index.js",
   "scripts": {
-    "postinstall": "prisma generate",
+    "build": "npx prisma generate",
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "db:generate": "prisma generate",
