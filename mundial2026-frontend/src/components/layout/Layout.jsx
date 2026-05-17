@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, MessageSquare, Users } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, Users } from 'lucide-react'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -54,7 +54,6 @@ export default function Layout() {
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
   const isGroupsListing = pathname === '/groups'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
-  const groupId = isGroupDetail ? pathname.match(/\/groups\/([^/]+)/)?.[1] : null
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -82,11 +81,6 @@ export default function Layout() {
 
   const filteredNav = isRestricted ? RESTRICTED_NAV : MAIN_NAV
 
-  const GROUP_NAV = groupId ? [
-    { to: `/groups/${groupId}?tab=members`,  label: 'Mi Grupo',   icon: Users },
-    { to: `/groups/${groupId}?tab=messages`, label: 'Mensajes',   icon: MessageSquare },
-    { to: `/groups/${groupId}?tab=config`,   label: 'Config',     icon: Settings },
-  ] : []
 
   return (
     <div className="min-h-screen flex flex-col bg-mundial-navy text-white selection:bg-mundial-gold selection:text-mundial-navy overflow-x-hidden">
@@ -171,23 +165,6 @@ export default function Layout() {
               ))}
             </nav>
 
-            {GROUP_NAV.length > 0 && (
-              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-mundial-gold/8 border border-mundial-gold/20">
-                {GROUP_NAV.map(({ to, label, icon: Icon }) => (
-                  <NavLink key={to} to={to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        isActive
-                          ? 'bg-mundial-gold text-mundial-navy'
-                          : 'text-mundial-gold/70 hover:text-mundial-gold hover:bg-mundial-gold/10'
-                      }`
-                    }
-                  >
-                    <Icon size={13} /> {label}
-                  </NavLink>
-                ))}
-              </nav>
-            )}
           </div>
 
           {/* Usuario / Logout (Desktop) */}
