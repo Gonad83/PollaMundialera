@@ -10,7 +10,8 @@ import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star } from 'luci
 export default function MatchDetailPage() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
-  const groupId = searchParams.get('groupId')
+  const rawGroupId = searchParams.get('groupId')
+  const groupId = (rawGroupId && rawGroupId !== 'undefined' && rawGroupId !== 'null') ? rawGroupId : null
   const qc = useQueryClient()
 
   const { data: match, isLoading } = useQuery({

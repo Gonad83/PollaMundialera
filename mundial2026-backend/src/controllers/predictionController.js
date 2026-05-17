@@ -169,12 +169,10 @@ const upsert = async (req, res) => {
 const getMyPredictions = async (req, res) => {
   const { phase, status, groupId } = req.query;
 
-  if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
-
   const predictions = await prisma.prediction.findMany({
     where: {
       userId: req.user.id,
-      groupId,
+      ...(groupId && { groupId }),
       match: {
         ...(phase && { phase }),
         ...(status && { status }),

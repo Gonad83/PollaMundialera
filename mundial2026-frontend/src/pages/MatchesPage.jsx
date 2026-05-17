@@ -296,7 +296,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   const showApostadoScore = apostado && hasPred
 
   return (
-    <Link to={`/matches/${match.id}?groupId=${groupId}`} className="group block">
+    <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">
       <div className={`card-hover flex flex-col relative overflow-hidden
         ${isLive ? 'border-mundial-red/30' : hasPred && !isFinished ? 'border-green-500/20' : ''}`}>
 
