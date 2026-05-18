@@ -52,7 +52,7 @@ export default function Layout() {
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
-  const isGroupsListing = pathname === '/groups'
+  const isGroupsListing = pathname === '/groups' || pathname === '/groups/'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
   
   useEffect(() => {
