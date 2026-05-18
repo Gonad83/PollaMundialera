@@ -3,6 +3,9 @@ import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 
 import { motion } from 'framer-motion'
 
 export default function BottomNav({ user, filteredNav }) {
+  const hasItems = filteredNav.length > 0 || user?.role === 'ADMIN'
+  if (!hasItems) return null
+
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 bg-mundial-navy/80 backdrop-blur-2xl border-t border-white/10 safe-area-bottom">
       <div className="flex items-center justify-around max-w-lg mx-auto">

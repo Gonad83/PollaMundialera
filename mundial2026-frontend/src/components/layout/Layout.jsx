@@ -79,7 +79,11 @@ export default function Layout() {
     return () => socket.off('notification:global')
   }, [socketRef])
 
-  const filteredNav = isRestricted ? RESTRICTED_NAV : MAIN_NAV
+  // Nav logic:
+  // - No groups → RESTRICTED_NAV (Grupos, Reglas)
+  // - Has groups but on /groups listing → no nav (enter a group first)
+  // - Has groups and inside a group or other app page → MAIN_NAV
+  const filteredNav = isRestricted ? RESTRICTED_NAV : isGroupsListing ? [] : MAIN_NAV
 
 
   return (
@@ -147,25 +151,26 @@ export default function Layout() {
             </div>
           </NavLink>
 
-          {/* Nav principal — siempre visible en desktop cuando logueado */}
-          <div className="hidden md:flex items-center gap-2">
-            <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
-              {(isRestricted ? RESTRICTED_NAV : MAIN_NAV).map(({ to, label, icon: Icon }) => (
-                <NavLink key={to} to={to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                      isActive
-                        ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/10'
-                    }`
-                  }
-                >
-                  <Icon size={13} /> {label}
-                </NavLink>
-              ))}
-            </nav>
-
-          </div>
+          {/* Nav principal — visible en desktop cuando hay items */}
+          {filteredNav.length > 0 && (
+            <div className="hidden md:flex items-center gap-2">
+              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+                {filteredNav.map(({ to, label, icon: Icon }) => (
+                  <NavLink key={to} to={to}
+                    className={({ isActive }) =>
+                      `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        isActive
+                          ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                      }`
+                    }
+                  >
+                    <Icon size={13} /> {label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          )}
 
           {/* Usuario / Logout (Desktop) */}
           <div className="flex items-center gap-3 shrink-0">
