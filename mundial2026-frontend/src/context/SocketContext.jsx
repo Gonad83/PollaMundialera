@@ -11,7 +11,8 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return
 
-    socketRef.current = io('/', { transports: ['websocket'] })
+    const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    socketRef.current = io(backendUrl, { transports: ['websocket'] })
 
     socketRef.current.on('connect', () => {
       // Unirse al ranking global
