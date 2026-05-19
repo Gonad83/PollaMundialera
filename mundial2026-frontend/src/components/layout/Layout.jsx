@@ -41,7 +41,7 @@ const RESTRICTED_NAV = [
 ]
 
 export default function Layout() {
-  const { user, logout, loadingProfile } = useAuth()
+  const { user, logout, loading: loadingProfile } = useAuth()
   const socketRef = useSocket()
   const navigate = useNavigate()
   const [notification, setNotification] = useState(null)
