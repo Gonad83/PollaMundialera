@@ -80,10 +80,19 @@ export default function Layout() {
   }, [socketRef])
 
   // Nav logic:
-  // - No groups → RESTRICTED_NAV (Grupos, Reglas)
-  // - Has groups but on /groups listing → no nav (enter a group first)
-  // - Has groups and inside a group or other app page → MAIN_NAV
-  const filteredNav = isRestricted ? RESTRICTED_NAV : isGroupsListing ? [] : MAIN_NAV
+  // - Inside a group detail → always MAIN_NAV (skip loading flash)
+  // - Loading or no groups → RESTRICTED_NAV
+  // - Has groups on /groups listing → no nav
+  // - Has groups elsewhere → MAIN_NAV
+  const filteredNav = isGroupDetail
+    ? MAIN_NAV
+    : loadingProfile
+      ? []
+      : isRestricted
+        ? RESTRICTED_NAV
+        : isGroupsListing
+          ? []
+          : MAIN_NAV
 
 
   return (
