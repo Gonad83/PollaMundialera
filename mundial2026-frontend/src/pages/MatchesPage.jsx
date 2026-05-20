@@ -1,3 +1,12 @@
+import { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { matchApi, predictionApi } from '../lib/api'
+import { format, isAfter } from 'date-fns'
+import { es } from 'date-fns/locale'
+import { motion } from 'framer-motion'
+import { Calendar, Trophy, Filter, ChevronRight, CheckCircle2, Target, Wifi } from 'lucide-react'
+
 // --- Constants & Utils ---
 
 const PHASES = [
