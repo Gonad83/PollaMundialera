@@ -93,6 +93,23 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ─── Sync ruta pública con secret key ────────────────────────────────────────
+// POST /sync-matches?key=SYNC_SECRET  → sincroniza partidos desde football-data.org
+const { syncMatches: syncUtil } = require('./utils/syncFootballData');
+app.post('/sync-matches', async (req, res) => {
+  const key = req.query.key || req.headers['x-sync-key'];
+  if (!process.env.SYNC_SECRET || key !== process.env.SYNC_SECRET) {
+    return res.status(401).json({ error: 'Clave inválida' });
+  }
+  try {
+    const result = await syncUtil();
+    return res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('Sync error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
