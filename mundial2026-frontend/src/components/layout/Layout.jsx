@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Shuffle, Users } from 'lucide-react'
+import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users } from 'lucide-react'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -32,7 +32,6 @@ const MAIN_NAV = [
   { to: '/tournament',  label: 'Torneo',   icon: Trophy },
   { to: '/leaderboard', label: 'Ranking',  icon: BarChart3 },
   { to: '/rules',       label: 'Reglas',   icon: BookOpen },
-  { to: '/simulator',   label: 'Simular',  icon: Shuffle },
 ]
 
 const RESTRICTED_NAV = [
