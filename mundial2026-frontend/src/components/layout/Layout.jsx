@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BarChart3, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users } from 'lucide-react'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -28,10 +28,9 @@ function PlanBadge({ plan, size = 'sm' }) {
 }
 
 const MAIN_NAV = [
-  { to: '/matches',     label: 'Partidos', icon: Calendar },
-  { to: '/tournament',  label: 'Torneo',   icon: Trophy },
-  { to: '/leaderboard', label: 'Ranking',  icon: BarChart3 },
-  { to: '/rules',       label: 'Reglas',   icon: BookOpen },
+  { to: '/matches',    label: 'Partidos', icon: Calendar },
+  { to: '/tournament', label: 'Torneo',   icon: Trophy },
+  { to: '/rules',      label: 'Reglas',   icon: BookOpen },
 ]
 
 const RESTRICTED_NAV = [
