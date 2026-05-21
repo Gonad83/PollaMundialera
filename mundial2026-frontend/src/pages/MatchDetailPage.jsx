@@ -6,6 +6,7 @@ import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 export default function MatchDetailPage() {
   const { id } = useParams()
@@ -39,6 +40,10 @@ export default function MatchDetailPage() {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
+    onError: (err) => {
+      const msg = err?.response?.data?.error || 'Error al guardar el pronóstico'
+      toast.error(msg)
+    },
   })
 
   const [form, setForm] = useState({
@@ -71,6 +76,10 @@ export default function MatchDetailPage() {
   const handleSubmit = (e) => {
     e?.preventDefault()
     if (isLocked) return
+    if (!groupId) {
+      toast.error('Debes entrar desde un grupo para guardar pronósticos')
+      return
+    }
     mutation.mutate(form)
   }
 
