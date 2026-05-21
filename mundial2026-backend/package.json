@@ -4,9 +4,9 @@
   "description": "API backend para la polla del Mundial 2026",
   "main": "src/index.js",
   "scripts": {
-    "build": "npx prisma generate && npx prisma db push --accept-data-loss",
+    "build": "npx prisma generate",
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js",
+    "start": "node scripts/ensure-schema.js && node src/index.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
