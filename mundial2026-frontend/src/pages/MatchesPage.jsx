@@ -2,10 +2,10 @@ import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
-import { format, isAfter } from 'date-fns'
+import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, ChevronRight, CheckCircle2, Target, Wifi } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -295,7 +295,6 @@ export default function MatchesPage({ groupId }) {
 
 function MatchRow({ match, pred, groupId, apostado = false }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
-  const isDeadlinePassed = isAfter(new Date(), new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000))
   const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
   const hasPred    = !!pred
@@ -377,10 +376,6 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
             ) : hasPred && !isFinished ? (
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
                 <CheckCircle2 size={13} /> REGISTRADO
-              </span>
-            ) : !isDeadlinePassed && !isFinished ? (
-              <span className="flex items-center gap-1 text-[10px] font-black text-mundial-gold uppercase tracking-widest group-hover:translate-x-1 transition-transform">
-                Apostar <ChevronRight size={14} />
               </span>
             ) : (
               <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">VER DETALLE</span>
