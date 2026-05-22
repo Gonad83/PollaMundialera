@@ -57,11 +57,10 @@ export default function MatchesPage({ groupId }) {
     enabled: !!groupId,
   })
 
-  // All user predictions across groups (for apostado mode)
+  // All user predictions (always fetched — needed for both apostado mode and groups standings)
   const { data: allMyPreds = [] } = useQuery({
     queryKey: ['my-predictions-all'],
     queryFn: () => predictionApi.my({}).then(r => r.data),
-    enabled: viewMode === 'apostado',
   })
 
   // Map: matchId → prediction (group-scoped)
@@ -95,7 +94,20 @@ export default function MatchesPage({ groupId }) {
     return acc
   }, {})
 
-  const standings = buildStandings(effectiveMatches.filter(m => m.phase === 'GROUP'))
+  // Real standings: only counts FINISHED matches with actual scores
+  const realStandings = useMemo(() =>
+    buildStandings(allMatches.filter(m => m.phase === 'GROUP')),
+    [allMatches])
+
+  // Apostado standings: overlays user predictions on group matches
+  const predStandings = useMemo(() =>
+    buildStandings(
+      allMatches.filter(m => m.phase === 'GROUP').map(m => {
+        const pred = allPredMap[m.id]
+        if (!pred) return m
+        return { ...m, scoreHome: pred.predHome, scoreAway: pred.predAway, status: 'FINISHED' }
+      })
+    ), [allMatches, allPredMap])
 
   const apostadoCount = Object.keys(allPredMap).length
 
@@ -182,78 +194,46 @@ export default function MatchesPage({ groupId }) {
         </div>
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
-        <div className="space-y-12">
-          {viewMode === 'apostado' && apostadoCount === 0 && (
-            <div className="p-6 rounded-2xl bg-mundial-gold/5 border border-mundial-gold/20 text-center">
-              <Target size={32} className="text-mundial-gold/40 mx-auto mb-3" />
-              <p className="text-zinc-400 text-sm font-bold">Aún no tienes pronósticos registrados.</p>
-              <p className="text-zinc-500 text-xs mt-1">Haz tus apuestas en los partidos de grupo para ver la tabla simulada.</p>
-            </div>
-          )}
-          {standings.length === 0 ? (
+        <div className="space-y-16">
+          {realStandings.length === 0 ? (
             <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
               <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Sin datos para mostrar</p>
             </div>
-          ) : standings.map(({ letter, rows }) => (
-            <motion.div key={letter} variants={itemVariants}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-12 h-12 rounded-[1.25rem] bg-gradient-to-br from-mundial-gold to-mundial-gold/70 text-mundial-navy flex items-center justify-center text-2xl font-black shadow-xl shadow-mundial-gold/10">
-                  {letter}
-                </div>
-                <div>
+          ) : realStandings.map(({ letter, rows: realRows }) => {
+            const predRows = predStandings.find(g => g.letter === letter)?.rows || realRows
+            return (
+              <motion.div key={letter} variants={itemVariants}>
+                {/* Group header */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-[1.25rem] bg-gradient-to-br from-mundial-gold to-mundial-gold/70 text-mundial-navy flex items-center justify-center text-2xl font-black shadow-xl shadow-mundial-gold/10">
+                    {letter}
+                  </div>
                   <h2 className="font-display text-2xl text-white uppercase tracking-tighter">
                     GRUPO <span className="text-mundial-gold">{letter}</span>
                   </h2>
-                  {viewMode === 'apostado' && (
-                    <span className="text-[9px] text-mundial-gold/60 font-black uppercase tracking-widest">
-                      según tus pronósticos
-                    </span>
-                  )}
                 </div>
-              </div>
 
-              <div className={`card overflow-hidden border-b-4 ${viewMode === 'apostado' ? 'border-b-mundial-gold/40' : 'border-b-mundial-gold/20'}`}>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className={`border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest ${viewMode === 'apostado' ? 'bg-mundial-gold/5' : 'bg-white/5'}`}>
-                        <th className="text-left px-6 py-4 w-12">#</th>
-                        <th className="text-left px-2 py-4">Selección</th>
-                        <th className="text-center px-4 py-4 w-12">PJ</th>
-                        <th className="text-center px-4 py-4 w-12">DG</th>
-                        <th className="text-center px-6 py-4 w-16 font-bold text-mundial-gold">PTS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row, idx) => (
-                        <tr
-                          key={row.team.id}
-                          className={`border-b border-white/5 last:border-0 transition-all group ${idx < 2 ? 'bg-mundial-gold/[0.03]' : ''}`}
-                        >
-                          <td className="px-6 py-5 font-mono text-zinc-500 text-xs">
-                            {idx < 2 ? <Star size={10} className="text-mundial-gold" /> : idx + 1}
-                          </td>
-                          <td className="px-2 py-5">
-                            <div className="flex items-center gap-4">
-                              <TeamFlag team={row.team} size="sm" />
-                              <span className={`font-bold transition-colors ${idx < 2 ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'}`}>
-                                {row.team.name}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-center px-4 py-5 text-zinc-400 font-mono text-xs">{row.pj}</td>
-                          <td className="text-center px-4 py-5 font-mono text-xs text-zinc-500">
-                            {row.gf - row.gc > 0 ? '+' : ''}{row.gf - row.gc}
-                          </td>
-                          <td className="text-center px-6 py-5 font-display text-xl font-bold text-white">{row.pts}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                {/* Two tables side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Real standings */}
+                  <div>
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <Wifi size={10} /> Real
+                    </p>
+                    <StandingsTable rows={realRows} gold={false} />
+                  </div>
+
+                  {/* Prediction standings */}
+                  <div>
+                    <p className="text-[9px] font-black text-mundial-gold/70 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <Target size={10} /> Según tus apuestas
+                    </p>
+                    <StandingsTable rows={predRows} gold={true} />
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )
+          })}
         </div>
       ) : (
         /* ── MATCH LIST VIEW ──────────────────────────────────── */
@@ -290,6 +270,48 @@ export default function MatchesPage({ groupId }) {
         </div>
       )}
     </motion.div>
+  )
+}
+
+function StandingsTable({ rows, gold }) {
+  return (
+    <div className={`card overflow-hidden border-b-4 ${gold ? 'border-b-mundial-gold/40' : 'border-b-white/10'}`}>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className={`border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest ${gold ? 'bg-mundial-gold/5' : 'bg-white/5'}`}>
+              <th className="text-left px-4 py-3 w-8">#</th>
+              <th className="text-left px-2 py-3">Selección</th>
+              <th className="text-center px-3 py-3 w-10">PJ</th>
+              <th className="text-center px-3 py-3 w-10">DG</th>
+              <th className={`text-center px-4 py-3 w-12 font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={row.team.id} className={`border-b border-white/5 last:border-0 ${idx < 2 ? 'bg-mundial-gold/[0.03]' : ''}`}>
+                <td className="px-4 py-4 font-mono text-zinc-500 text-xs">
+                  {idx < 2 ? <Star size={9} className="text-mundial-gold" /> : idx + 1}
+                </td>
+                <td className="px-2 py-4">
+                  <div className="flex items-center gap-2">
+                    <TeamFlag team={row.team} size="sm" />
+                    <span className={`text-xs font-bold truncate max-w-[100px] ${idx < 2 ? 'text-white' : 'text-zinc-400'}`}>
+                      {row.team.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="text-center px-3 py-4 text-zinc-400 font-mono text-xs">{row.pj}</td>
+                <td className="text-center px-3 py-4 font-mono text-xs text-zinc-500">
+                  {row.gf - row.gc > 0 ? '+' : ''}{row.gf - row.gc}
+                </td>
+                <td className={`text-center px-4 py-4 font-display text-lg font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>{row.pts}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 
