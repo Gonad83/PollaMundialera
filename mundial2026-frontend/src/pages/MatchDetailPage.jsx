@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { matchApi, predictionApi } from '../lib/api'
+import { matchApi, predictionApi, groupApi } from '../lib/api'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -15,25 +15,33 @@ export default function MatchDetailPage() {
   const groupId = (rawGroupId && rawGroupId !== 'undefined' && rawGroupId !== 'null') ? rawGroupId : null
   const qc = useQueryClient()
 
+  // Si no hay groupId en la URL, usar el primer grupo del usuario como fallback
+  const { data: myGroups = [] } = useQuery({
+    queryKey: ['my-groups'],
+    queryFn: () => groupApi.my().then(r => r.data),
+    enabled: !groupId,
+  })
+  const effectiveGroupId = groupId || myGroups[0]?.id || null
+
   const { data: match, isLoading } = useQuery({
     queryKey: ['match', id],
     queryFn: () => matchApi.get(id).then(r => r.data),
   })
 
   const { data: myPred } = useQuery({
-    queryKey: ['prediction', id, groupId],
-    queryFn: () => predictionApi.forMatch(id, { groupId }).then(r => r.data).catch(() => null),
-    enabled: !!groupId,
+    queryKey: ['prediction', id, effectiveGroupId],
+    queryFn: () => predictionApi.forMatch(id, { groupId: effectiveGroupId }).then(r => r.data).catch(() => null),
+    enabled: !!effectiveGroupId,
   })
 
   const { data: allPreds = [] } = useQuery({
-    queryKey: ['all-preds', id, groupId],
-    queryFn: () => predictionApi.allForMatch(id, { groupId }).then(r => r.data).catch(() => []),
-    enabled: match?.status === 'FINISHED' && !!groupId,
+    queryKey: ['all-preds', id, effectiveGroupId],
+    queryFn: () => predictionApi.allForMatch(id, { groupId: effectiveGroupId }).then(r => r.data).catch(() => []),
+    enabled: match?.status === 'FINISHED' && !!effectiveGroupId,
   })
 
   const mutation = useMutation({
-    mutationFn: (data) => predictionApi.save(id, { ...data, groupId }),
+    mutationFn: (data) => predictionApi.save(id, { ...data, groupId: effectiveGroupId }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prediction', id] })
       qc.invalidateQueries({ queryKey: ['my-predictions'] })
@@ -76,8 +84,8 @@ export default function MatchDetailPage() {
   const handleSubmit = (e) => {
     e?.preventDefault()
     if (isLocked) return
-    if (!groupId) {
-      toast.error('Debes entrar desde un grupo para guardar pronósticos')
+    if (!effectiveGroupId) {
+      toast.error('Únete a un grupo para guardar pronósticos')
       return
     }
     mutation.mutate(form)
@@ -96,7 +104,7 @@ export default function MatchDetailPage() {
       className="max-w-2xl mx-auto pb-32 px-4"
     >
       {/* Back Navigation */}
-      <Link to={groupId ? `/groups/${groupId}?tab=resultados` : "/matches"} className="inline-flex items-center gap-2 text-zinc-500 hover:text-mundial-gold transition-colors mb-6 group">
+      <Link to={groupId ? `/groups/${groupId}?tab=resultados` : "/matches"} className="inline-flex items-center gap-2 text-zinc-500 hover:text-mundial-gold transition-colors mb-6 group" >
         <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-mundial-gold/10">
           <ChevronLeft size={18} />
         </div>
