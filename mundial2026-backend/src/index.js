@@ -127,8 +127,37 @@ app.use((err, req, res, next) => {
 
 // ─── Arrancar ────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📡 Socket.io listo`);
-  console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
-});
+const prisma = require('./utils/prisma');
+
+async function startServer() {
+  // Aplica migraciones pendientes antes de aceptar tráfico
+  try {
+    await prisma.$executeRaw`ALTER TABLE "Prediction" ADD COLUMN IF NOT EXISTS "groupId" TEXT`;
+    await prisma.$executeRaw`
+      DO $$ BEGIN
+        ALTER TABLE "Prediction" ADD CONSTRAINT "Prediction_groupId_fkey"
+          FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+    await prisma.$executeRaw`DROP INDEX IF EXISTS "Prediction_userId_matchId_key"`;
+    await prisma.$executeRaw`
+      CREATE UNIQUE INDEX IF NOT EXISTS "Prediction_userId_matchId_groupId_key"
+        ON "Prediction"("userId", "matchId", "groupId")
+    `;
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS "Prediction_groupId_idx" ON "Prediction"("groupId")
+    `;
+    console.log('✅ Schema migration OK');
+  } catch (e) {
+    console.error('⚠️  Schema migration warning (continuing):', e.message);
+  }
+
+  httpServer.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`📡 Socket.io listo`);
+    console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
+  });
+}
+
+startServer();
