@@ -43,7 +43,7 @@ const itemVariants = {
 
 export default function MatchesPage({ groupId }) {
   const [phase, setPhase] = useState('')
-  const [viewMode, setViewMode] = useState('real') // 'real' | 'apostado'
+  const [viewMode, setViewMode] = useState('apostado') // 'apostado' | 'real'
 
   const { data: allMatches = [], isLoading } = useQuery({
     queryKey: ['matches-all'],
@@ -126,16 +126,6 @@ export default function MatchesPage({ groupId }) {
       <motion.div variants={itemVariants} className="mb-6">
         <div className="flex p-1 rounded-2xl bg-white/5 border border-white/10 max-w-xs">
           <button
-            onClick={() => setViewMode('real')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              viewMode === 'real'
-                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <Wifi size={12} /> Real
-          </button>
-          <button
             onClick={() => setViewMode('apostado')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
               viewMode === 'apostado'
@@ -144,6 +134,16 @@ export default function MatchesPage({ groupId }) {
             }`}
           >
             <Target size={12} /> Apostado
+          </button>
+          <button
+            onClick={() => setViewMode('real')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              viewMode === 'real'
+                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            <Wifi size={12} /> Real
           </button>
         </div>
         {viewMode === 'apostado' && (
