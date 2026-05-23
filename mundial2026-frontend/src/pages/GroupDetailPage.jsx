@@ -136,8 +136,8 @@ export default function GroupDetailPage() {
   // Inyectar botones Mensajes + Ajustes en el header principal
   useEffect(() => {
     const actions = [
-      { id: 'messages', icon: MessageSquare, onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages', title: 'Mensajes' },
-      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, onClick: () => setActiveTab('config'), isActive: activeTab === 'config', title: 'Ajustes' }] : []),
+      { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages' },
+      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setActiveTab('config'), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
     return () => setActions([])

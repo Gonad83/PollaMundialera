@@ -182,20 +182,21 @@ export default function Layout() {
 
           {/* Acciones inyectadas por la página activa (ej: Mensajes + Ajustes del grupo) */}
           {headerActions.length > 0 && (
-            <div className="hidden md:flex items-center gap-1.5">
-              {headerActions.map(({ id, icon: Icon, onClick, isActive, title }) => (
-                <button
-                  key={id}
-                  onClick={onClick}
-                  title={title}
-                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
-                    ${isActive
-                      ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
-                      : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
-                >
-                  <Icon size={15} />
-                </button>
-              ))}
+            <div className="hidden md:flex items-center">
+              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+                {headerActions.map(({ id, icon: Icon, label, onClick, isActive }) => (
+                  <button
+                    key={id}
+                    onClick={onClick}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                      ${isActive
+                        ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
+                  >
+                    <Icon size={13} /> {label}
+                  </button>
+                ))}
+              </nav>
             </div>
           )}
 
