@@ -123,7 +123,7 @@ export default function GroupDetailPage() {
   // Sincronizar activeTab con el parámetro ?tab= de la URL
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'reglas', 'config'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group && activeTab === null) {
       setActiveTab('resultados') // Default tab
@@ -225,25 +225,13 @@ export default function GroupDetailPage() {
   const podium = leaderboard.filter(e => e.rank <= 3)
   const rest = leaderboard.filter(e => e.rank > 3)
 
-  // Tabs según rol + modo simulación
-  const adminTabs = [
+  // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
+  const tabs = [
     { id: 'resultados', label: 'Resultados', icon: Calendar },
     { id: 'premios',    label: 'Premios',    icon: Trophy },
     { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
     { id: 'liga',       label: 'Liga',       icon: Users },
-    { id: 'messages',   label: 'Mensajes',   icon: MessageSquare },
-    { id: 'reglas',     label: 'Reglas',     icon: BookOpen },
-    { id: 'config',     label: 'Ajustes',    icon: Settings },
   ]
-  const playerTabs = [
-    { id: 'resultados', label: 'Resultados', icon: Calendar },
-    { id: 'premios',    label: 'Premios',    icon: Trophy },
-    { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
-    { id: 'liga',       label: 'Liga',       icon: Users },
-    { id: 'messages',   label: 'Mensajes',   icon: MessageSquare },
-    { id: 'reglas',     label: 'Reglas',     icon: BookOpen },
-  ]
-  const tabs = actingAsAdmin ? adminTabs : playerTabs
 
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4">
@@ -258,7 +246,7 @@ export default function GroupDetailPage() {
               <Eye size={14} className="text-blue-400" />
               <span className="text-blue-400 text-xs font-black uppercase tracking-widest">Modo Vista Participante — así ven la app tus usuarios</span>
             </div>
-            <button onClick={() => { setSimMode(false); setActiveTab('members') }}
+            <button onClick={() => { setSimMode(false); setActiveTab('ranking') }}
               className="text-[10px] font-black uppercase tracking-widest text-blue-300 hover:text-white border border-blue-500/30 px-3 py-1 rounded-xl transition-all hover:bg-blue-500/20">
               Salir del modo simulación
             </button>
@@ -300,7 +288,7 @@ export default function GroupDetailPage() {
               {isAdmin && <span className="bg-mundial-gold/10 text-mundial-gold text-[7px] font-black px-1.5 py-0.5 rounded border border-mundial-gold/20 uppercase shrink-0">Admin</span>}
               {isAdmin && (
                 <button
-                  onClick={() => { setSimMode(s => !s); setActiveTab(simMode ? 'members' : 'ranking') }}
+                  onClick={() => { setSimMode(s => !s); setActiveTab('ranking') }}
                   className={`hidden sm:flex items-center gap-1 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border transition-all shrink-0
                     ${simMode ? 'bg-blue-500/20 border-blue-500/40 text-blue-300' : 'bg-white/5 border-white/10 text-zinc-500 hover:text-blue-300 hover:border-blue-500/30'}`}
                 >
@@ -320,7 +308,7 @@ export default function GroupDetailPage() {
           </div>
         </div>
 
-        {/* Right: invite code + actions */}
+        {/* Right: invite code + header actions */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 hover:border-mundial-gold/30 transition-all">
             <div>
@@ -345,6 +333,33 @@ export default function GroupDetailPage() {
               {copiedLink ? 'Copiado' : 'Link'}
             </button>
           )}
+
+          {/* Mensajes — visible para todos */}
+          <button
+            onClick={() => setActiveTab('messages')}
+            title="Mensajes"
+            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
+              ${activeTab === 'messages'
+                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold'
+                : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
+          >
+            <MessageSquare size={15} />
+          </button>
+
+          {/* Ajustes — solo admin */}
+          {actingAsAdmin && (
+            <button
+              onClick={() => setActiveTab('config')}
+              title="Ajustes"
+              className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
+                ${activeTab === 'config'
+                  ? 'bg-mundial-gold text-mundial-navy border-mundial-gold'
+                  : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
+            >
+              <Settings size={15} />
+            </button>
+          )}
+
           {isAdmin && isFree && !showPricing && (
             <button onClick={() => setShowPricing(true)} className="btn-gold px-3 py-2 text-[9px] whitespace-nowrap">
               MEJORAR
