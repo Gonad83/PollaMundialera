@@ -50,44 +50,21 @@ export default function MatchesPage({ groupId }) {
     queryFn: () => matchApi.list({}).then(r => r.data),
   })
 
-  // Predictions for this group (used in list view)
-  const { data: myPreds = [] } = useQuery({
-    queryKey: ['my-predictions', groupId],
-    queryFn: () => predictionApi.my({ groupId }).then(r => r.data),
-    enabled: !!groupId,
-  })
-
-  // All user predictions (always fetched — needed for both apostado mode and groups standings)
+  // All user predictions (always fetched — needed for list display and standings)
   const { data: allMyPreds = [] } = useQuery({
     queryKey: ['my-predictions-all'],
     queryFn: () => predictionApi.my({}).then(r => r.data),
   })
-
-  // Map: matchId → prediction (group-scoped)
-  const predMap = useMemo(() => myPreds.reduce((acc, p) => {
-    acc[p.matchId] = p; return acc
-  }, {}), [myPreds])
 
   // Map: matchId → prediction (all groups, first found wins)
   const allPredMap = useMemo(() => allMyPreds.reduce((acc, p) => {
     if (!acc[p.matchId]) acc[p.matchId] = p; return acc
   }, {}), [allMyPreds])
 
-  // In apostado mode, overlay predictions onto match data (treat as FINISHED)
-  const effectiveMatches = useMemo(() => {
-    if (viewMode !== 'apostado') return allMatches
-    return allMatches.map(m => {
-      const pred = allPredMap[m.id]
-      if (!pred) return m
-      return { ...m, scoreHome: pred.predHome, scoreAway: pred.predAway, status: 'FINISHED' }
-    })
-  }, [allMatches, allPredMap, viewMode])
+  // List view always uses raw match data; predictions shown via pred prop in MatchRow
+  const listMatches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
 
-  const activePredMap = viewMode === 'apostado' ? allPredMap : predMap
-
-  const matches = phase ? effectiveMatches.filter(m => m.phase === phase) : effectiveMatches
-
-  const grouped = matches.reduce((acc, m) => {
+  const grouped = listMatches.reduce((acc, m) => {
     const day = format(new Date(m.dateUtc), 'EEEE d MMM', { locale: es })
     if (!acc[day]) acc[day] = []
     acc[day].push(m)
@@ -260,16 +237,15 @@ export default function MatchesPage({ groupId }) {
                   <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                     <MatchRow
                       match={match}
-                      pred={activePredMap[match.id]}
+                      pred={allPredMap[match.id]}
                       groupId={groupId}
-                      apostado={viewMode === 'apostado'}
                     />
                   </motion.div>
                 ))}
               </div>
             </div>
           ))}
-          {matches.length === 0 && (
+          {listMatches.length === 0 && (
             <div className="text-center py-32 bg-white/5 rounded-[3rem] border border-white/5">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Trophy size={40} className="text-zinc-700" />
@@ -325,15 +301,12 @@ function StandingsTable({ rows, gold }) {
   )
 }
 
-function MatchRow({ match, pred, groupId, apostado = false }) {
+function MatchRow({ match, pred, groupId }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
   const hasPred    = !!pred
-  const hasBonus   = hasPred && !apostado && (pred.predBtts !== null || pred.predOverUnder !== null)
-
-  // En modo apostado, si hay predicción mostramos el score apostado con estilo gold
-  const showApostadoScore = apostado && hasPred
+  const hasBonus   = hasPred && !isFinished && (pred.predBtts !== null || pred.predOverUnder !== null)
 
   return (
     <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">
@@ -363,19 +336,9 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
               <div className="order-1 sm:order-2"><TeamFlag team={teamHome} size="md" /></div>
             </div>
 
-            {/* Center: score real / apostado / pronóstico / VS */}
+            {/* Center: predicted score (green) / real score / VS */}
             <div className="shrink-0">
-              {showApostadoScore ? (
-                /* APOSTADO + tiene apuesta: marcador gold */
-                <div className="flex flex-col items-center gap-0.5">
-                  <div className="flex items-center gap-1">
-                    <div className="w-10 h-10 rounded-xl bg-mundial-gold/15 border border-mundial-gold/40 flex items-center justify-center font-display text-lg text-mundial-gold">{pred.predHome}</div>
-                    <span className="text-mundial-gold/40 font-black text-sm">–</span>
-                    <div className="w-10 h-10 rounded-xl bg-mundial-gold/15 border border-mundial-gold/40 flex items-center justify-center font-display text-lg text-mundial-gold">{pred.predAway}</div>
-                  </div>
-                  <span className="text-[8px] text-mundial-gold/50 font-black uppercase tracking-widest">apostado</span>
-                </div>
-              ) : isFinished || isLive ? (
+              {isFinished || isLive ? (
                 /* Partido terminado o en vivo: marcador real */
                 <div className="flex items-center gap-1.5">
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
@@ -383,14 +346,14 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
                 </div>
               ) : hasPred ? (
-                /* REAL + próximo + tiene apuesta: marcador verde */
+                /* Próximo + tiene apuesta: marcador verde con tu pronóstico */
                 <div className="flex items-center gap-1">
                   <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predHome}</div>
                   <span className="text-green-700 font-black text-xs">–</span>
                   <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predAway}</div>
                 </div>
               ) : (
-                /* Sin apuesta y no empezó: VS */
+                /* Sin apuesta: VS */
                 <div className="px-3 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
               )}
             </div>
@@ -403,13 +366,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
 
           {/* Action */}
           <div className="w-full sm:w-36 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 flex items-center justify-center">
-            {apostado && hasPred ? (
-              <span className="flex items-center gap-1.5 text-[9px] font-black text-mundial-gold/70 uppercase tracking-widest">
-                <Target size={11} /> TU APUESTA
-              </span>
-            ) : apostado && !hasPred ? (
-              <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">SIN APUESTA</span>
-            ) : hasPred && !isFinished ? (
+            {hasPred && !isFinished ? (
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
                 <CheckCircle2 size={13} /> REGISTRADO
               </span>
@@ -420,7 +377,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
         </div>
 
         {/* Bonus chips */}
-        {hasBonus && !isFinished && (
+        {hasBonus && (
           <div className="px-5 sm:px-6 pb-4 pt-3 flex flex-wrap gap-2 border-t border-white/5">
             {pred.predBtts !== null && (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
