@@ -5,7 +5,7 @@ import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star } from 'lucide-react'
 
 // --- Constants & Utils ---
 
