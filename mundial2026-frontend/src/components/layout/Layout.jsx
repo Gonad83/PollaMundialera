@@ -28,9 +28,8 @@ function PlanBadge({ plan, size = 'sm' }) {
 }
 
 const MAIN_NAV = [
-  { to: '/matches',    label: 'Partidos', icon: Calendar },
-  { to: '/tournament', label: 'Torneo',   icon: Trophy },
-  { to: '/rules',      label: 'Reglas',   icon: BookOpen },
+  { to: '/matches', label: 'Partidos', icon: Calendar },
+  { to: '/rules',   label: 'Reglas',   icon: BookOpen },
 ]
 
 const RESTRICTED_NAV = [

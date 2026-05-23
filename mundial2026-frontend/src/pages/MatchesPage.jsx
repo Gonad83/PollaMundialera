@@ -131,7 +131,7 @@ export default function MatchesPage({ groupId }) {
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            <Target size={12} /> Apostado
+            <Target size={12} /> Pronósticos
           </button>
           <button
             onClick={() => setViewMode('real')}
@@ -147,7 +147,7 @@ export default function MatchesPage({ groupId }) {
         {viewMode === 'apostado' && (
           <p className="mt-2 text-[10px] text-mundial-gold/70 font-bold uppercase tracking-widest flex items-center gap-1.5">
             <Target size={10} />
-            Simulando con {apostadoCount} pronóstico{apostadoCount !== 1 ? 's' : ''} registrado{apostadoCount !== 1 ? 's' : ''}
+            {apostadoCount} pronóstico{apostadoCount !== 1 ? 's' : ''} registrado{apostadoCount !== 1 ? 's' : ''}
           </p>
         )}
       </motion.div>

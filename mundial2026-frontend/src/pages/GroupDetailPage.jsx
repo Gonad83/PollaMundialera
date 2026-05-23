@@ -228,7 +228,7 @@ export default function GroupDetailPage() {
   // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
   const tabs = [
     { id: 'resultados', label: 'Resultados', icon: Calendar },
-    { id: 'premios',    label: 'Premios',    icon: Trophy },
+    { id: 'premios',    label: 'Pronósticos Torneo', icon: Trophy },
     { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
     { id: 'liga',       label: 'Participantes', icon: Users },
   ]
