@@ -311,9 +311,14 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   const showPred   = apostado && hasPred && !isFinished && !isLive
   const hasBonus   = showPred && (pred.predBtts !== null || pred.predOverUnder !== null)
 
+  // En REAL mode el card no es clickeable — solo se puede apostar desde APOSTADO
+  const Wrapper = apostado
+    ? ({ children }) => <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">{children}</Link>
+    : ({ children }) => <div className="block">{children}</div>
+
   return (
-    <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">
-      <div className={`card-hover flex flex-col relative overflow-hidden
+    <Wrapper>
+      <div className={`${apostado ? 'card-hover' : 'card'} flex flex-col relative overflow-hidden
         ${isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' : ''}`}>
 
         {/* Main row */}
@@ -373,9 +378,9 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
                 <CheckCircle2 size={13} /> REGISTRADO
               </span>
-            ) : (
+            ) : apostado ? (
               <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">VER DETALLE</span>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -399,7 +404,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
 
         {isLive && <div className="absolute top-0 right-0 w-32 h-32 bg-mundial-red/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />}
       </div>
-    </Link>
+    </Wrapper>
   )
 }
 
