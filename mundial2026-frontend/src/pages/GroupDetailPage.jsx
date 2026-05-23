@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupApi, leaderboardApi, paymentApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
+import { useHeaderActions } from '../context/HeaderActionsContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
@@ -76,6 +77,7 @@ function DeleteMemberModal({ member, groupName, onConfirm, onCancel, loading }) 
 export default function GroupDetailPage() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { setActions } = useHeaderActions()
   const qc = useQueryClient()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -130,6 +132,16 @@ export default function GroupDetailPage() {
       setEditName(group.name)
     }
   }, [searchParams, group, isAdmin, activeTab])
+
+  // Inyectar botones Mensajes + Ajustes en el header principal
+  useEffect(() => {
+    const actions = [
+      { id: 'messages', icon: MessageSquare, onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages', title: 'Mensajes' },
+      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, onClick: () => setActiveTab('config'), isActive: activeTab === 'config', title: 'Ajustes' }] : []),
+    ]
+    setActions(actions)
+    return () => setActions([])
+  }, [activeTab, actingAsAdmin, setActions])
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -331,32 +343,6 @@ export default function GroupDetailPage() {
               ${copiedLink ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}>
               {copiedLink ? <Check size={11} /> : <Link2 size={11} />}
               {copiedLink ? 'Copiado' : 'Link'}
-            </button>
-          )}
-
-          {/* Mensajes — visible para todos */}
-          <button
-            onClick={() => setActiveTab('messages')}
-            title="Mensajes"
-            className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
-              ${activeTab === 'messages'
-                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold'
-                : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
-          >
-            <MessageSquare size={15} />
-          </button>
-
-          {/* Ajustes — solo admin */}
-          {actingAsAdmin && (
-            <button
-              onClick={() => setActiveTab('config')}
-              title="Ajustes"
-              className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
-                ${activeTab === 'config'
-                  ? 'bg-mundial-gold text-mundial-navy border-mundial-gold'
-                  : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
-            >
-              <Settings size={15} />
             </button>
           )}
 

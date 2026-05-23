@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { SocketProvider } from './context/SocketContext'
+import { HeaderActionsProvider } from './context/HeaderActionsContext'
 import Layout from './components/layout/Layout'
 
 // Pages
@@ -52,6 +53,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <SocketProvider>
+          <HeaderActionsProvider>
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
               {/* Públicas */}
@@ -79,6 +81,7 @@ export default function App() {
                 <Route path="/admin" element={<Protected adminOnly><AdminPage /></Protected>} />
               </Route>
             </Routes>
+          </HeaderActionsProvider>
           </SocketProvider>
         </AuthProvider>
       </BrowserRouter>

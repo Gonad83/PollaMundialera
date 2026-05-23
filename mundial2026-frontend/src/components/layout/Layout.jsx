@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users } from 'lucide-react'
+import { useHeaderActions } from '../../context/HeaderActionsContext'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -45,6 +46,7 @@ export default function Layout() {
   const location = useLocation()
   const { pathname } = location
 
+  const { actions: headerActions } = useHeaderActions()
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
@@ -175,6 +177,25 @@ export default function Layout() {
                   </NavLink>
                 ))}
               </nav>
+            </div>
+          )}
+
+          {/* Acciones inyectadas por la página activa (ej: Mensajes + Ajustes del grupo) */}
+          {headerActions.length > 0 && (
+            <div className="hidden md:flex items-center gap-1.5">
+              {headerActions.map(({ id, icon: Icon, onClick, isActive, title }) => (
+                <button
+                  key={id}
+                  onClick={onClick}
+                  title={title}
+                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all
+                    ${isActive
+                      ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
+                      : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
+                >
+                  <Icon size={15} />
+                </button>
+              ))}
             </div>
           )}
 
