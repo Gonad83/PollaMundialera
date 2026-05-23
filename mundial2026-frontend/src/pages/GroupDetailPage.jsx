@@ -230,7 +230,7 @@ export default function GroupDetailPage() {
     { id: 'resultados', label: 'Resultados', icon: Calendar },
     { id: 'premios',    label: 'Premios',    icon: Trophy },
     { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
-    { id: 'liga',       label: 'Liga',       icon: Users },
+    { id: 'liga',       label: 'Participantes', icon: Users },
   ]
 
   return (
