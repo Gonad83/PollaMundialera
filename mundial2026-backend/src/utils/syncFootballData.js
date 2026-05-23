@@ -59,6 +59,9 @@ async function syncMatches() {
   }
 
   console.log(`📦 ${matches.length} partidos recibidos. Sincronizando...`);
+  // Debug: log first group-stage match to verify field names
+  const sampleGroup = matches.find(m => m.stage === 'GROUP_STAGE');
+  if (sampleGroup) console.log(`🔍 Sample group match — stage:"${sampleGroup.stage}" group:"${sampleGroup.group}" id:${sampleGroup.id}`);
 
   let created = 0;
   let updated = 0;
@@ -95,7 +98,11 @@ async function syncMatches() {
 
     const phase         = STAGE_MAP[m.stage] || 'GROUP';
     const status        = STATUS_MAP[m.status] || 'SCHEDULED';
-    const groupLetter   = m.group ? m.group.replace('GROUP_', '') : null;
+    // Normalize group: "GROUP_A" → "A", "Group A" → "A", "A" → "A"
+    const rawGroup      = m.group || null;
+    const groupLetter   = rawGroup
+      ? (rawGroup.replace(/^GROUP_/i, '').replace(/^Group\s*/i, '').trim().charAt(0) || null)
+      : null;
     const dateUtc       = new Date(m.utcDate);
     const scoreHome     = m.score?.fullTime?.home ?? null;
     const scoreAway     = m.score?.fullTime?.away ?? null;

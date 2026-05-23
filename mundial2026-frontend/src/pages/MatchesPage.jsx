@@ -109,6 +109,15 @@ export default function MatchesPage({ groupId }) {
       })
     ), [allMatches, allPredMap])
 
+  // All unique group letters from either source, sorted
+  const groupLetters = useMemo(() => {
+    const set = new Set([
+      ...realStandings.map(g => g.letter),
+      ...predStandings.map(g => g.letter),
+    ])
+    return [...set].sort()
+  }, [realStandings, predStandings])
+
   const apostadoCount = Object.keys(allPredMap).length
 
   return (
@@ -195,11 +204,12 @@ export default function MatchesPage({ groupId }) {
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
         <div className="space-y-16">
-          {realStandings.length === 0 ? (
+          {groupLetters.length === 0 ? (
             <div className="text-center py-20 bg-white/5 rounded-[2.5rem] border border-dashed border-white/10">
-              <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Sin datos para mostrar</p>
+              <p className="text-zinc-500 uppercase tracking-widest text-[10px] font-bold">Cargando grupos...</p>
             </div>
-          ) : realStandings.map(({ letter, rows: realRows }) => {
+          ) : groupLetters.map(letter => {
+            const realRows = realStandings.find(g => g.letter === letter)?.rows || []
             const predRows = predStandings.find(g => g.letter === letter)?.rows || realRows
             return (
               <motion.div key={letter} variants={itemVariants}>
