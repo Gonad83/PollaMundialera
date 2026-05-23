@@ -356,6 +356,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
             {/* Center: score real / apostado / pronóstico / VS */}
             <div className="shrink-0">
               {showApostadoScore ? (
+                /* APOSTADO: muestra el marcador apostado en gold */
                 <div className="flex flex-col items-center gap-0.5">
                   <div className="flex items-center gap-1">
                     <div className="w-10 h-10 rounded-xl bg-mundial-gold/15 border border-mundial-gold/40 flex items-center justify-center font-display text-lg text-mundial-gold">{pred.predHome}</div>
@@ -365,18 +366,14 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
                   <span className="text-[8px] text-mundial-gold/50 font-black uppercase tracking-widest">apostado</span>
                 </div>
               ) : isFinished || isLive ? (
+                /* REAL: partido en curso o terminado → marcador real */
                 <div className="flex items-center gap-1.5">
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
                   <span className="text-zinc-600 font-bold text-sm">:</span>
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
                 </div>
-              ) : hasPred ? (
-                <div className="flex items-center gap-1">
-                  <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predHome}</div>
-                  <span className="text-green-700 font-black text-xs">–</span>
-                  <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predAway}</div>
-                </div>
               ) : (
+                /* REAL + próximo: siempre VS, nunca muestra el marcador apostado */
                 <div className="px-3 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
               )}
             </div>
