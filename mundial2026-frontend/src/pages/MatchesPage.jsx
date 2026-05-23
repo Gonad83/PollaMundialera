@@ -239,6 +239,7 @@ export default function MatchesPage({ groupId }) {
                       match={match}
                       pred={allPredMap[match.id]}
                       groupId={groupId}
+                      apostado={viewMode === 'apostado'}
                     />
                   </motion.div>
                 ))}
@@ -301,17 +302,19 @@ function StandingsTable({ rows, gold }) {
   )
 }
 
-function MatchRow({ match, pred, groupId }) {
+function MatchRow({ match, pred, groupId, apostado = false }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
   const hasPred    = !!pred
-  const hasBonus   = hasPred && !isFinished && (pred.predBtts !== null || pred.predOverUnder !== null)
+  // Bonus chips y score verde solo en APOSTADO mode
+  const showPred   = apostado && hasPred && !isFinished && !isLive
+  const hasBonus   = showPred && (pred.predBtts !== null || pred.predOverUnder !== null)
 
   return (
     <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">
       <div className={`card-hover flex flex-col relative overflow-hidden
-        ${isLive ? 'border-mundial-red/30' : hasPred && !isFinished ? 'border-green-500/20' : ''}`}>
+        ${isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' : ''}`}>
 
         {/* Main row */}
         <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
@@ -336,7 +339,7 @@ function MatchRow({ match, pred, groupId }) {
               <div className="order-1 sm:order-2"><TeamFlag team={teamHome} size="md" /></div>
             </div>
 
-            {/* Center: predicted score (green) / real score / VS */}
+            {/* Center: marcador real / pronóstico verde (solo apostado) / VS */}
             <div className="shrink-0">
               {isFinished || isLive ? (
                 /* Partido terminado o en vivo: marcador real */
@@ -345,15 +348,15 @@ function MatchRow({ match, pred, groupId }) {
                   <span className="text-zinc-600 font-bold text-sm">:</span>
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
                 </div>
-              ) : hasPred ? (
-                /* Próximo + tiene apuesta: marcador verde con tu pronóstico */
+              ) : showPred ? (
+                /* APOSTADO + próximo + tiene apuesta: marcador verde */
                 <div className="flex items-center gap-1">
                   <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predHome}</div>
                   <span className="text-green-700 font-black text-xs">–</span>
                   <div className="w-9 h-9 rounded-xl bg-green-500/15 border border-green-500/30 flex items-center justify-center font-display text-lg text-green-400">{pred.predAway}</div>
                 </div>
               ) : (
-                /* Sin apuesta: VS */
+                /* REAL mode o sin apuesta: VS */
                 <div className="px-3 py-1.5 rounded-xl bg-white/5 text-[10px] font-black text-zinc-600 tracking-widest uppercase">VS</div>
               )}
             </div>
@@ -366,7 +369,7 @@ function MatchRow({ match, pred, groupId }) {
 
           {/* Action */}
           <div className="w-full sm:w-36 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 flex items-center justify-center">
-            {hasPred && !isFinished ? (
+            {showPred ? (
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
                 <CheckCircle2 size={13} /> REGISTRADO
               </span>
