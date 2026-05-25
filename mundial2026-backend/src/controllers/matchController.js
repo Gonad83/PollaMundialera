@@ -1,5 +1,8 @@
 const prisma = require('../utils/prisma');
 
+// In-memory cache — teams never change during the tournament
+let _teamsCache = null;
+
 // GET /api/matches — Lista de partidos con filtros opcionales
 const getMatches = async (req, res) => {
   const { phase, status, teamId } = req.query;
@@ -57,12 +60,14 @@ const getUpcoming = async (req, res) => {
   return res.json(matches);
 };
 
-// GET /api/teams — Lista de equipos
+// GET /api/teams — Lista de equipos (cached in memory, teams never change)
 const getTeams = async (req, res) => {
-  const teams = await prisma.team.findMany({
-    orderBy: [{ confederation: 'asc' }, { name: 'asc' }],
-  });
-  return res.json(teams);
+  if (!_teamsCache) {
+    _teamsCache = await prisma.team.findMany({
+      orderBy: [{ confederation: 'asc' }, { name: 'asc' }],
+    });
+  }
+  return res.json(_teamsCache);
 };
 
 // GET /api/teams/:id/players — Jugadores de un equipo

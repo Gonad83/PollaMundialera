@@ -33,12 +33,13 @@ export default function TournamentPage({ groupId }) {
     queryKey: ['my-tournament-picks', groupId],
     queryFn: () => tournamentApi.myPicks({ groupId }).then(r => r.data),
     enabled: !!groupId,
+    staleTime: 60_000,
   })
 
-  const { data: teams = [], isLoading: loadingTeams } = useQuery({
+  const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
     queryFn: () => matchApi.teams().then(r => r.data),
-    staleTime: Infinity, // Los equipos nunca cambian
+    staleTime: Infinity,
     gcTime: 24 * 60 * 60 * 1000,
   })
 
@@ -70,7 +71,7 @@ export default function TournamentPage({ groupId }) {
 
   const hosts = teams.filter(t => ['USA', 'MEX', 'CAN'].includes(t.code))
 
-  if (loadingPicks || loadingTeams) return <LoadingSkeleton />
+  if (loadingPicks) return <LoadingSkeleton />
 
   return (
     <div className="max-w-4xl mx-auto pb-32 px-4">
