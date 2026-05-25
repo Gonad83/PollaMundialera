@@ -159,31 +159,29 @@ export default function Layout() {
             </div>
           </NavLink>
 
-          {/* Nav principal — visible en desktop cuando hay items */}
+          {/* Nav unificado — nav links + acciones de grupo en un solo pill */}
           {filteredNav.length > 0 && (
-            <div className="hidden md:flex items-center gap-2">
-              <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
-                {filteredNav.map(({ to, label, icon: Icon }) => (
-                  <NavLink key={to} to={to}
-                    className={({ isActive }) =>
-                      `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                        isActive
-                          ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/10'
-                      }`
-                    }
-                  >
-                    <Icon size={13} /> {label}
-                  </NavLink>
-                ))}
-              </nav>
-            </div>
-          )}
-
-          {/* Acciones inyectadas por la página activa (ej: Mensajes + Ajustes del grupo) */}
-          {headerActions.length > 0 && (
             <div className="hidden md:flex items-center">
               <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
+                {filteredNav.map(({ to, label, icon: Icon }) => {
+                  // Dentro de un grupo, PARTIDOS apunta al grupo (no a /matches global)
+                  const groupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
+                  const resolvedTo = (to === '/matches' && groupId) ? `/groups/${groupId}` : to
+                  return (
+                    <NavLink key={to} to={resolvedTo}
+                      className={({ isActive }) =>
+                        `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          isActive
+                            ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                            : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                        }`
+                      }
+                    >
+                      <Icon size={13} /> {label}
+                    </NavLink>
+                  )
+                })}
+                {/* Botones de grupo (Mensajes, Ajustes) pegados al mismo pill */}
                 {headerActions.map(({ id, icon: Icon, label, onClick, isActive }) => (
                   <button
                     key={id}
