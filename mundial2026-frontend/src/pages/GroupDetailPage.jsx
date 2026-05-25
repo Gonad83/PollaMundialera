@@ -122,26 +122,29 @@ export default function GroupDetailPage() {
   // En modo simulación, el admin ve la app como un participante normal
   const actingAsAdmin = isAdmin && !simMode
 
-  // Sincronizar activeTab con el parámetro ?tab= de la URL
+  // Sincronizar activeTab con ?tab= de la URL.
+  // Sin activeTab en deps para evitar loop; cuando no hay tabParam siempre vuelve a resultados.
   useEffect(() => {
     const tabParam = searchParams.get('tab')
     if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config', 'reglas'].includes(tabParam)) {
       setActiveTab(tabParam)
-    } else if (group && activeTab === null) {
-      setActiveTab('resultados') // Default tab
-      setEditName(group.name)
+    } else if (group) {
+      setActiveTab('resultados')
+      setEditName(n => n || group.name)
     }
-  }, [searchParams, group, isAdmin, activeTab])
+  }, [searchParams, group]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Inyectar botones Mensajes + Ajustes en el header principal
+  // Inyectar botones Mensajes + Ajustes en el header — sin cleanup aquí para evitar parpadeo
   useEffect(() => {
     const actions = [
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages' },
       ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setActiveTab('config'), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
-    return () => setActions([])
   }, [activeTab, actingAsAdmin, setActions])
+
+  // Limpiar acciones del header solo al desmontar el grupo
+  useEffect(() => () => setActions([]), [setActions])
 
   // Scroll to bottom on new messages
   useEffect(() => {
