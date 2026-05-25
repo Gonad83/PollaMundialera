@@ -34,6 +34,9 @@ export default function TournamentPage({ groupId }) {
     queryFn: () => tournamentApi.myPicks({ groupId }).then(r => r.data),
     enabled: !!groupId,
     staleTime: 60_000,
+    placeholderData: () => {
+      try { const c = localStorage.getItem(`tp_${groupId}`); return c ? JSON.parse(c) : undefined } catch { return undefined }
+    },
   })
 
   const { data: teams = [] } = useQuery({
@@ -46,13 +49,15 @@ export default function TournamentPage({ groupId }) {
   useEffect(() => {
     if (myPicks && Object.keys(myPicks).length > 0) {
       setForm(f => ({ ...f, ...myPicks }))
+      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(myPicks)) } catch {}
     }
-  }, [myPicks])
+  }, [myPicks, groupId])
 
   const mutation = useMutation({
     mutationFn: (data) => tournamentApi.savePicks({ ...data, groupId }),
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['my-tournament-picks'] })
+      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(data)) } catch {}
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },

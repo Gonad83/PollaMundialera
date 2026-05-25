@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { groupApi, leaderboardApi, paymentApi, matchApi } from '../lib/api'
+import { groupApi, leaderboardApi, paymentApi, matchApi, tournamentApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useHeaderActions } from '../context/HeaderActionsContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -99,14 +99,19 @@ export default function GroupDetailPage() {
     initMercadoPago(import.meta.env.VITE_MP_PUBLIC_KEY || 'TEST-99999999-9999-9999-9999-999999999999', { locale: 'es-CL' })
   }, [])
 
-  // Prefetch teams al montar el grupo para que Pronósticos Torneo cargue instantáneo
+  // Prefetch teams + picks al montar el grupo (carga paralela antes de que el usuario clickee la tab)
   useEffect(() => {
     qc.prefetchQuery({
       queryKey: ['teams'],
       queryFn: () => matchApi.teams().then(r => r.data),
       staleTime: Infinity,
     })
-  }, [qc])
+    qc.prefetchQuery({
+      queryKey: ['my-tournament-picks', id],
+      queryFn: () => tournamentApi.myPicks({ groupId: id }).then(r => r.data),
+      staleTime: 60_000,
+    })
+  }, [qc, id])
 
   const { data: group, isLoading } = useQuery({
     queryKey: ['group', id],
