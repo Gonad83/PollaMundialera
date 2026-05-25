@@ -111,7 +111,18 @@ export default function GroupDetailPage() {
   const { data: group, isLoading } = useQuery({
     queryKey: ['group', id],
     queryFn: () => groupApi.get(id).then(r => r.data),
+    placeholderData: () => {
+      try { const c = localStorage.getItem(`grp_${id}`); return c ? JSON.parse(c) : undefined } catch { return undefined }
+    },
+    staleTime: 30_000,
   })
+
+  // Persistir el grupo en cache local para carga instantánea en siguiente visita
+  useEffect(() => {
+    if (group) {
+      try { localStorage.setItem(`grp_${id}`, JSON.stringify(group)) } catch {}
+    }
+  }, [group, id])
 
   const { data: rawLeaderboard = [] } = useQuery({
     queryKey: ['group-leaderboard', id],
