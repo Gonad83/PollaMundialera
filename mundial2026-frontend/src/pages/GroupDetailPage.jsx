@@ -125,7 +125,7 @@ export default function GroupDetailPage() {
   // Sincronizar activeTab con el parámetro ?tab= de la URL
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config', 'reglas'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group && activeTab === null) {
       setActiveTab('resultados') // Default tab

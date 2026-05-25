@@ -166,7 +166,9 @@ export default function Layout() {
                 {filteredNav.map(({ to, label, icon: Icon }) => {
                   // Dentro de un grupo, PARTIDOS apunta al grupo (no a /matches global)
                   const groupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
-                  const resolvedTo = (to === '/matches' && groupId) ? `/groups/${groupId}` : to
+                  const resolvedTo = (to === '/matches' && groupId) ? `/groups/${groupId}`
+                    : (to === '/rules' && groupId) ? `/groups/${groupId}?tab=reglas`
+                    : to
                   return (
                     <NavLink key={to} to={resolvedTo}
                       className={({ isActive }) =>
