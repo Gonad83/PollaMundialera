@@ -224,50 +224,54 @@ export default function TournamentPage({ groupId }) {
 
           {section === 'estadisticas' && (
             <div className="space-y-6">
+               {/* Total Goles */}
                <div className="card p-10 bg-gradient-to-br from-mundial-navyLight/20 to-mundial-navy/40 border-white/5 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-8 opacity-5 -mr-10 -mt-10 group-hover:scale-110 transition-transform duration-1000">
                     <BarChart3 size={200} fill="currentColor" />
                   </div>
-                  
                   <div className="max-w-lg">
                     <h3 className="font-display text-3xl text-white uppercase mb-2">Datos del Torneo</h3>
                     <p className="text-sm text-zinc-500 mb-8 font-bold uppercase tracking-widest">Goles totales, ataque y la mejor defensa del torneo.</p>
-                    
-                    <div className="space-y-10">
-                       <div>
-                          <p className="text-[10px] font-black text-mundial-gold uppercase tracking-[0.2em] mb-4">Total Goles en el Torneo (8 pts)</p>
-                          <div className="flex flex-col sm:flex-row items-center gap-6">
-                            <input
-                              type="number"
-                              className="w-full sm:w-40 bg-white/5 border-2 border-white/10 rounded-3xl p-6 text-center text-4xl font-display text-white focus:border-mundial-gold outline-none transition-all"
-                              value={form.totalGoals || ''}
-                              onChange={e => setForm(f => ({ ...f, totalGoals: e.target.value }))}
-                              placeholder="000"
-                            />
-                            <div className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest leading-loose">
-                               <p className="text-zinc-500">Mundial 2022: 172 GOLES</p>
-                               <p className="text-zinc-500">Mundial 2018: 169 GOLES</p>
-                               <p className="text-mundial-red">2026: 104 PARTIDOS (+ PARTIDOS!)</p>
-                            </div>
-                          </div>
-                       </div>
-
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-10 border-t border-white/5">
-                          <div className="space-y-3">
-                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">MÁS GOLEADORA (6 PTS)</p>
-                             <TeamSelector teams={teams} selected={form.mostGoalsTeamId} onSelect={set('mostGoalsTeamId')} />
-                          </div>
-                          <div className="space-y-3">
-                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">VALLA INVICTA (6 PTS)</p>
-                             <p className="text-[9px] text-zinc-700 font-bold uppercase tracking-widest leading-relaxed">
-                               Equipo con más partidos sin recibir gol.<br />
-                               Penales no cuentan como gol en contra.
-                             </p>
-                             <TeamSelector teams={teams} selected={form.leastGoalsTeamId} onSelect={set('leastGoalsTeamId')} />
-                          </div>
-                       </div>
+                    <div>
+                      <p className="text-[10px] font-black text-mundial-gold uppercase tracking-[0.2em] mb-4">Total Goles en el Torneo (8 pts)</p>
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <input
+                          type="number"
+                          className="w-full sm:w-40 bg-white/5 border-2 border-white/10 rounded-3xl p-6 text-center text-4xl font-display text-white focus:border-mundial-gold outline-none transition-all"
+                          value={form.totalGoals || ''}
+                          onChange={e => setForm(f => ({ ...f, totalGoals: e.target.value }))}
+                          placeholder="000"
+                        />
+                        <div className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest leading-loose">
+                          <p className="text-zinc-500">Mundial 2022: 172 GOLES</p>
+                          <p className="text-zinc-500">Mundial 2018: 169 GOLES</p>
+                          <p className="text-mundial-red">2026: 104 PARTIDOS (+ PARTIDOS!)</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
+               </div>
+
+               {/* Más Goleadora + Valla Invicta — misma card style que Premios Indiv. */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <AwardPick
+                   title="Más Goleadora"
+                   subtitle="Mejor ataque del torneo"
+                   pts="6 PTS"
+                   teams={teams}
+                   value={form.mostGoalsTeamId}
+                   onChange={set('mostGoalsTeamId')}
+                   icon={Target}
+                 />
+                 <AwardPick
+                   title="Valla Invicta"
+                   subtitle="Más partidos sin recibir gol · penales no cuentan"
+                   pts="6 PTS"
+                   teams={teams}
+                   value={form.leastGoalsTeamId}
+                   onChange={set('leastGoalsTeamId')}
+                   icon={Shield}
+                 />
                </div>
             </div>
           )}
