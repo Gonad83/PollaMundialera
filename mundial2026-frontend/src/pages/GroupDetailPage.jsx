@@ -113,13 +113,14 @@ export default function GroupDetailPage() {
     })
   }, [qc, id])
 
-  const { data: group, isLoading } = useQuery({
+  const { data: group, isLoading, isError } = useQuery({
     queryKey: ['group', id],
     queryFn: () => groupApi.get(id).then(r => r.data),
     placeholderData: () => {
       try { const c = localStorage.getItem(`grp_${id}`); return c ? JSON.parse(c) : undefined } catch { return undefined }
     },
     staleTime: 30_000,
+    retry: 1,
   })
 
   // Persistir el grupo en cache local para carga instantánea en siguiente visita
@@ -253,11 +254,19 @@ export default function GroupDetailPage() {
     </div>
   )
 
-  if (!group) return (
+  if (isError || !group) return (
     <div className="text-center py-20 px-4">
       <AlertCircle size={48} className="mx-auto text-zinc-700 mb-4" />
-      <h2 className="text-white font-display text-2xl uppercase">Grupo no encontrado</h2>
-      <Link to="/groups" className="text-mundial-gold text-xs font-black uppercase mt-4 block">Volver a mis grupos</Link>
+      <h2 className="text-white font-display text-2xl uppercase">
+        {isError ? 'Error de conexión' : 'Grupo no encontrado'}
+      </h2>
+      <p className="text-zinc-500 text-sm mt-2 mb-4">
+        {isError ? 'El servidor no responde. Espera unos segundos y recarga la página.' : ''}
+      </p>
+      {isError
+        ? <button onClick={() => window.location.reload()} className="text-mundial-gold text-xs font-black uppercase mt-2 border border-mundial-gold/30 px-4 py-2 rounded-xl hover:bg-mundial-gold/10 transition-all">Reintentar</button>
+        : <Link to="/groups" className="text-mundial-gold text-xs font-black uppercase mt-4 block">Volver a mis grupos</Link>
+      }
     </div>
   )
 
