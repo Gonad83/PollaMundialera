@@ -44,7 +44,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const [notification, setNotification] = useState(null)
   const location = useLocation()
-  const { pathname } = location
+  const { pathname, search } = location
 
   const { actions: headerActions } = useHeaderActions()
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
@@ -168,17 +168,26 @@ export default function Layout() {
                   const resolvedTo = (to === '/matches' && currentGroupId) ? `/groups/${currentGroupId}`
                     : (to === '/rules' && currentGroupId) ? `/groups/${currentGroupId}?tab=reglas`
                     : to
-                  // REGLAS inside a group is never highlighted (it's a tab, not a page)
-                  const neverActive = to === '/rules' && currentGroupId
                   return (
                     <NavLink key={to} to={resolvedTo}
-                      className={({ isActive }) =>
-                        `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                          (isActive && !neverActive)
+                      className={({ isActive }) => {
+                        let active = isActive
+                        if (currentGroupId) {
+                          const tabParam = new URLSearchParams(search).get('tab')
+                          if (to === '/matches') {
+                            // PARTIDOS activo solo en tab=resultados o sin tab
+                            active = !tabParam || tabParam === 'resultados'
+                          } else if (to === '/rules') {
+                            // REGLAS nunca amarillo dentro de un grupo
+                            active = false
+                          }
+                        }
+                        return `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          active
                             ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
                             : 'text-zinc-400 hover:text-white hover:bg-white/10'
                         }`
-                      }
+                      }}
                     >
                       <Icon size={13} /> {label}
                     </NavLink>
