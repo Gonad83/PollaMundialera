@@ -53,6 +53,7 @@ export default function Layout() {
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
   const isGroupsListing = pathname === '/groups' || pathname === '/groups/'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
+  const currentGroupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -148,7 +149,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 h-16 md:h-20 flex items-center justify-between gap-4">
           
           {/* Logo dinámico */}
-          <NavLink to={isRestricted ? "/groups" : "/matches"} className="flex items-center gap-3 shrink-0 group">
+          <NavLink to={currentGroupId ? `/groups/${currentGroupId}` : isRestricted ? "/groups" : "/matches"} className="flex items-center gap-3 shrink-0 group">
             <div className="relative">
               <img src="/logo.png" alt="MUNDIAL 2026" className="w-10 md:w-12 h-auto drop-shadow-2xl group-hover:scale-105 transition-transform duration-300" />
               <div className="absolute -inset-2 bg-mundial-gold opacity-0 blur-xl rounded-full group-hover:opacity-20 transition" />
@@ -164,16 +165,16 @@ export default function Layout() {
             <div className="hidden md:flex items-center">
               <nav className="flex items-center gap-0.5 p-1 rounded-2xl bg-white/5 border border-white/10">
                 {filteredNav.map(({ to, label, icon: Icon }) => {
-                  // Dentro de un grupo, PARTIDOS apunta al grupo (no a /matches global)
-                  const groupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
-                  const resolvedTo = (to === '/matches' && groupId) ? `/groups/${groupId}`
-                    : (to === '/rules' && groupId) ? `/groups/${groupId}?tab=reglas`
+                  const resolvedTo = (to === '/matches' && currentGroupId) ? `/groups/${currentGroupId}`
+                    : (to === '/rules' && currentGroupId) ? `/groups/${currentGroupId}?tab=reglas`
                     : to
+                  // REGLAS inside a group is never highlighted (it's a tab, not a page)
+                  const neverActive = to === '/rules' && currentGroupId
                   return (
                     <NavLink key={to} to={resolvedTo}
                       className={({ isActive }) =>
                         `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                          isActive
+                          (isActive && !neverActive)
                             ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
                             : 'text-zinc-400 hover:text-white hover:bg-white/10'
                         }`
