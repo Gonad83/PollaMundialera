@@ -230,8 +230,8 @@ export default function TournamentPage({ groupId }) {
                   </div>
                   
                   <div className="max-w-lg">
-                    <h3 className="font-display text-3xl text-white uppercase mb-2">Poder de Ataque</h3>
-                    <p className="text-sm text-zinc-500 mb-8 font-bold uppercase tracking-widest">Estima el total de goles y las defensas más sólidas del torneo.</p>
+                    <h3 className="font-display text-3xl text-white uppercase mb-2">Datos del Torneo</h3>
+                    <p className="text-sm text-zinc-500 mb-8 font-bold uppercase tracking-widest">Goles totales, ataque y la mejor defensa del torneo.</p>
                     
                     <div className="space-y-10">
                        <div>
@@ -258,7 +258,11 @@ export default function TournamentPage({ groupId }) {
                              <TeamSelector teams={teams} selected={form.mostGoalsTeamId} onSelect={set('mostGoalsTeamId')} />
                           </div>
                           <div className="space-y-3">
-                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">MENOS GOLEADA (6 PTS)</p>
+                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">VALLA INVICTA (6 PTS)</p>
+                             <p className="text-[9px] text-zinc-700 font-bold uppercase tracking-widest leading-relaxed">
+                               Equipo con más partidos sin recibir gol.<br />
+                               Penales no cuentan como gol en contra.
+                             </p>
                              <TeamSelector teams={teams} selected={form.leastGoalsTeamId} onSelect={set('leastGoalsTeamId')} />
                           </div>
                        </div>
