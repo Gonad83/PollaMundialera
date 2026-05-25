@@ -145,12 +145,14 @@ export default function GroupDetailPage() {
 
   // Inyectar botones Mensajes + Ajustes en el header — sin cleanup aquí para evitar parpadeo
   useEffect(() => {
+    // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
+    if (!group) return
     const actions = [
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages' },
       ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setActiveTab('config'), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
-  }, [activeTab, actingAsAdmin, setActions])
+  }, [activeTab, actingAsAdmin, setActions, group])
 
   // Limpiar acciones del header solo al desmontar el grupo
   useEffect(() => () => setActions([]), [setActions])

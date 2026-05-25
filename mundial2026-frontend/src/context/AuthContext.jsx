@@ -3,26 +3,48 @@ import { authApi } from '../lib/api'
 
 const AuthContext = createContext(null)
 
+const readCache = () => {
+  try {
+    const u = localStorage.getItem('cachedUser')
+    return u ? JSON.parse(u) : null
+  } catch { return null }
+}
+
+const writeCache = (user) => {
+  try { localStorage.setItem('cachedUser', JSON.stringify(user)) } catch {}
+}
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const hasToken = !!localStorage.getItem('accessToken')
+  const cached = hasToken ? readCache() : null
+
+  // Si hay token + cache: arranca con usuario inmediato, sin bloquear
+  // Si hay token sin cache: loading=true hasta que /me responda
+  // Sin token: user=null, loading=false
+  const [user, setUser] = useState(cached)
+  const [loading, setLoading] = useState(hasToken && !cached)
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken')
-    if (token) {
-      authApi.me()
-        .then(({ data }) => setUser(data))
-        .catch(() => localStorage.clear())
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
-    }
+    if (!token) { setLoading(false); return }
+
+    authApi.me()
+      .then(({ data }) => {
+        setUser(data)
+        writeCache(data)
+      })
+      .catch(() => {
+        localStorage.clear()
+        setUser(null)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   const login = async (email, password) => {
     const { data } = await authApi.login({ email, password })
     localStorage.setItem('accessToken', data.accessToken)
     localStorage.setItem('refreshToken', data.refreshToken)
+    writeCache(data.user)
     setUser(data.user)
     return data.user
   }
@@ -31,6 +53,7 @@ export const AuthProvider = ({ children }) => {
     const { data } = await authApi.register({ username, email, password })
     localStorage.setItem('accessToken', data.accessToken)
     localStorage.setItem('refreshToken', data.refreshToken)
+    writeCache(data.user)
     setUser(data.user)
     return data.user
   }
@@ -42,7 +65,11 @@ export const AuthProvider = ({ children }) => {
     window.location.replace('/')
   }
 
-  const updateUser = (updates) => setUser((u) => ({ ...u, ...updates }))
+  const updateUser = (updates) => setUser((u) => {
+    const next = { ...u, ...updates }
+    writeCache(next)
+    return next
+  })
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
