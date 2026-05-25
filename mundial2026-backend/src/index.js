@@ -148,6 +148,20 @@ async function startServer() {
     await prisma.$executeRaw`
       CREATE INDEX IF NOT EXISTS "Prediction_groupId_idx" ON "Prediction"("groupId")
     `;
+    // TournamentPicks.groupId migration
+    await prisma.$executeRaw`ALTER TABLE "TournamentPicks" ADD COLUMN IF NOT EXISTS "groupId" TEXT`;
+    await prisma.$executeRaw`
+      DO $$ BEGIN
+        ALTER TABLE "TournamentPicks" ADD CONSTRAINT "TournamentPicks_groupId_fkey"
+          FOREIGN KEY ("groupId") REFERENCES "Group"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+    await prisma.$executeRaw`DROP INDEX IF EXISTS "TournamentPicks_userId_groupId_key"`;
+    await prisma.$executeRaw`
+      CREATE UNIQUE INDEX IF NOT EXISTS "TournamentPicks_userId_groupId_key"
+        ON "TournamentPicks"("userId", "groupId")
+    `;
     console.log('✅ Schema migration OK');
   } catch (e) {
     console.error('⚠️  Schema migration warning (continuing):', e.message);
