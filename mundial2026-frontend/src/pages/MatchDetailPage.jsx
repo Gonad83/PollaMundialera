@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi, groupApi } from '../lib/api'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star } from 'lucide-react'
+import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupIdProp } = {}) {
@@ -81,6 +81,32 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   const isLocked = isAfter(new Date(), deadline)
   const isFinished = status === 'FINISHED'
   const isElim = !['GROUP'].includes(phase)
+
+  // Countdown al cierre
+  const [msLeft, setMsLeft] = useState(deadline.getTime() - Date.now())
+  useEffect(() => {
+    if (isLocked || isFinished) return
+    const id = setInterval(() => setMsLeft(deadline.getTime() - Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [deadline, isLocked, isFinished])
+
+  const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
+  const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
+  const secondsLeft = Math.max(0, Math.floor((msLeft % 60_000) / 1_000))
+  const isUrgent    = msLeft < 30 * 60_000  // < 30 min
+  const isWarning   = msLeft < 2 * 3_600_000 // < 2 h
+  const showCountdown = !isLocked && !isFinished && msLeft > 0
+
+  // Comunidad: agrupar predicciones por marcador
+  const predGroups = useMemo(() => {
+    const map = {}
+    allPreds.forEach(p => {
+      const key = `${p.predHome}-${p.predAway}`
+      if (!map[key]) map[key] = { score: key, predHome: p.predHome, predAway: p.predAway, count: 0, pts: p.pointsTotal }
+      map[key].count++
+    })
+    return Object.values(map).sort((a, b) => b.count - a.count)
+  }, [allPreds])
 
   const handleSubmit = (e) => {
     e?.preventDefault()
@@ -169,7 +195,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
       {/* Betting Section */}
       {!isFinished && (
         <div className="card p-8 mb-6 border-t border-t-white/5">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-2xl text-white flex items-center gap-3">
               <Trophy size={24} className="text-mundial-gold" />
               TU PRONÓSTICO
@@ -186,6 +212,33 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
               ) : null}
             </AnimatePresence>
           </div>
+
+          {/* Countdown al cierre */}
+          <AnimatePresence>
+            {showCountdown && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className={`mb-6 px-4 py-3 rounded-2xl flex items-center gap-3 border ${
+                  isUrgent   ? 'bg-mundial-red/10 border-mundial-red/30' :
+                  isWarning  ? 'bg-amber-500/10 border-amber-500/30' :
+                               'bg-white/5 border-white/5'
+                }`}
+              >
+                {isUrgent ? <AlertTriangle size={14} className="text-mundial-red shrink-0" /> : <Clock size={14} className={`shrink-0 ${isWarning ? 'text-amber-400' : 'text-zinc-500'}`} />}
+                <div className="flex-1">
+                  <p className={`text-[9px] font-black uppercase tracking-widest ${isUrgent ? 'text-mundial-red' : isWarning ? 'text-amber-400' : 'text-zinc-500'}`}>
+                    {isUrgent ? '¡Cierra pronto!' : 'Tiempo para apostar'}
+                  </p>
+                  <p className={`font-display text-xl leading-none mt-0.5 tabular-nums ${isUrgent ? 'text-mundial-red' : isWarning ? 'text-amber-300' : 'text-white'}`}>
+                    {hoursLeft > 0 && `${hoursLeft}h `}{String(minutesLeft).padStart(2,'0')}m {String(secondsLeft).padStart(2,'0')}s
+                  </p>
+                </div>
+                <p className="text-[9px] text-zinc-600 font-bold text-right hidden sm:block">
+                  Cierra a las<br />{format(deadline, 'HH:mm')}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {isLocked ? (
             <div className="bg-white/5 rounded-2xl p-10 border border-white/5 text-center">
@@ -333,23 +386,55 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
         </motion.div>
       )}
 
-      {/* Global Predictions Community */}
+      {/* Comunidad: distribución de pronósticos */}
       {isFinished && allPreds.length > 0 && (
-        <div className="card p-8">
-          <h2 className="font-display text-xl text-white mb-6 uppercase tracking-widest">Comunidad ({allPreds.length})</h2>
-          <div className="space-y-3">
-            {allPreds.slice(0, 15).map((p) => (
-              <div key={p.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+        <div className="card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl text-white uppercase tracking-widest">Comunidad</h2>
+            <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">{allPreds.length} pronósticos</span>
+          </div>
+
+          {/* Marcadores más populares */}
+          <div className="space-y-2">
+            {predGroups.slice(0, 8).map((g, i) => {
+              const pct = Math.round((g.count / allPreds.length) * 100)
+              const isWinner = g.pts > 0
+              return (
+                <div key={g.score} className="flex items-center gap-3">
+                  <span className={`font-display text-base w-12 text-right tabular-nums shrink-0 ${i === 0 ? 'text-mundial-gold' : 'text-zinc-300'}`}>
+                    {g.predHome}–{g.predAway}
+                  </span>
+                  <div className="flex-1 h-6 bg-white/5 rounded-lg overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${pct}%` }}
+                      transition={{ duration: 0.6, ease: 'easeOut', delay: i * 0.05 }}
+                      className={`h-full rounded-lg ${isWinner ? 'bg-mundial-gold/50' : 'bg-white/10'}`}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 w-20 justify-end">
+                    <span className="text-[10px] text-zinc-500 font-bold tabular-nums">{pct}%</span>
+                    <span className="text-[9px] text-zinc-700">({g.count})</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Lista individual */}
+          <div className="pt-4 border-t border-white/5 space-y-2">
+            {allPreds.slice(0, 10).map((p) => (
+              <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-white/3 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-mundial-navyLight flex items-center justify-center text-xs font-bold text-mundial-gold border border-white/10">
+                  <div className="w-7 h-7 rounded-lg bg-mundial-navyLight flex items-center justify-center text-[10px] font-black text-mundial-gold border border-white/10">
                     {p.user?.username?.[0]?.toUpperCase()}
                   </div>
-                  <span className="text-sm font-semibold text-zinc-300">{p.user?.username}</span>
+                  <span className="text-xs font-bold text-zinc-400">{p.user?.username}</span>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span className="font-display text-lg text-white">{p.predHome}–{p.predAway}</span>
-                  <span className={`w-12 text-right font-mono text-xs font-bold ${p.pointsTotal > 0 ? 'text-mundial-gold' : 'text-zinc-600'}`}>
-                    +{p.pointsTotal} pts
+                <div className="flex items-center gap-3">
+                  <span className="font-display text-sm text-white tabular-nums">{p.predHome}–{p.predAway}</span>
+                  <span className={`text-[9px] font-black tabular-nums w-10 text-right ${p.pointsTotal > 0 ? 'text-mundial-gold' : 'text-zinc-700'}`}>
+                    +{p.pointsTotal}
                   </span>
                 </div>
               </div>
