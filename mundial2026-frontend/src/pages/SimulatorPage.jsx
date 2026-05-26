@@ -389,34 +389,38 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="text-[8px] text-zinc-600 uppercase tracking-widest bg-white/3">
-              <th className="text-left px-3 py-1.5 w-5">#</th>
+              <th className="text-left px-2 py-1.5 w-5">#</th>
               <th className="text-left px-1 py-1.5">Equipo</th>
-              <th className="text-center px-1.5 py-1.5 w-7 text-mundial-gold font-black">PTS</th>
-              <th className="text-center px-1.5 py-1.5 w-6">PJ</th>
-              <th className="text-center px-1.5 py-1.5 w-6">G</th>
-              <th className="text-center px-1.5 py-1.5 w-6">E</th>
-              <th className="text-center px-1.5 py-1.5 w-6">P</th>
-              <th className="text-center px-1.5 py-1.5 w-7">DG</th>
+              <th className="text-center px-1 py-1.5 text-mundial-gold font-black">PTS</th>
+              <th className="text-center px-1 py-1.5">PJ</th>
+              <th className="text-center px-1 py-1.5">G</th>
+              <th className="text-center px-1 py-1.5">E</th>
+              <th className="text-center px-1 py-1.5">P</th>
+              <th className="text-center px-1 py-1.5">GA</th>
+              <th className="text-center px-1 py-1.5">GC</th>
+              <th className="text-center px-1 py-1.5">DG</th>
             </tr>
           </thead>
           <tbody>
             {standings.map((row, i) => (
               <tr key={row.name} className={`border-t border-white/5 ${i < 2 ? 'bg-mundial-gold/[0.02]' : ''}`}>
-                <td className="px-3 py-1.5 text-zinc-600 text-[10px]">{i + 1}</td>
+                <td className="px-2 py-1.5 text-zinc-600 text-[10px]">{i + 1}</td>
                 <td className="px-1 py-1.5">
                   <span className="flex items-center gap-1.5">
                     <Flag name={row.name} />
-                    <span className={`text-[10px] font-bold truncate max-w-[110px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
+                    <span className={`text-[10px] font-bold truncate max-w-[100px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
                     {i < 2 && <span className="text-[7px] text-mundial-gold font-black">✓</span>}
                     {i === 2 && <span className="text-[7px] text-zinc-600 font-black">3°</span>}
                   </span>
                 </td>
-                <td className="text-center px-1.5 py-1.5 text-[10px] font-black text-white">{row.pts}</td>
-                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.pj}</td>
-                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.w}</td>
-                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.d}</td>
-                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.l}</td>
-                <td className={`text-center px-1.5 py-1.5 text-[10px] font-bold ${(row.gf-row.gc)>0?'text-green-500':(row.gf-row.gc)<0?'text-red-400':'text-zinc-600'}`}>
+                <td className="text-center px-1 py-1.5 text-[10px] font-black text-white">{row.pts}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.pj}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.w}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.d}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.l}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gf}</td>
+                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gc}</td>
+                <td className={`text-center px-1 py-1.5 text-[10px] font-bold ${(row.gf-row.gc)>0?'text-green-500':(row.gf-row.gc)<0?'text-red-400':'text-zinc-600'}`}>
                   {row.gf-row.gc>0?'+':''}{row.gf-row.gc}
                 </td>
               </tr>
@@ -435,8 +439,8 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
           const winAway = hasResult && aScore > hScore
           return (
             <div key={mi} className="grid items-center px-3 py-2" style={{ gridTemplateColumns: '1fr 90px 1fr' }}>
-              <span className={`text-right text-[11px] font-black flex items-center justify-end gap-1.5 shrink-0 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
-                {getTeamCode(teams[i])}
+              <span className={`text-right text-[10px] font-bold flex items-center justify-end gap-1.5 min-w-0 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
+                <span className="truncate">{teams[i]}</span>
                 <Flag name={teams[i]} size="md" />
               </span>
               <div className="flex items-center justify-center gap-1 shrink-0">
@@ -444,9 +448,9 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
                 <span className="text-zinc-600 font-bold text-xs">–</span>
                 <ScoreInput value={ag} onChange={v => onScoreChange(mi, 1, v)} isWin={winAway} isLose={winHome} />
               </div>
-              <span className={`text-left text-[11px] font-black flex items-center gap-1.5 shrink-0 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
+              <span className={`text-left text-[10px] font-bold flex items-center gap-1.5 min-w-0 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
                 <Flag name={teams[j]} size="md" />
-                {getTeamCode(teams[j])}
+                <span className="truncate">{teams[j]}</span>
               </span>
             </div>
           )

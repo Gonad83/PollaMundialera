@@ -269,38 +269,50 @@ export default function MatchesPage({ groupId }) {
 }
 
 function StandingsTable({ rows, gold }) {
+  const th = 'text-center px-1.5 py-2.5'
+  const td = 'text-center px-1.5 py-3 font-mono text-[11px] text-zinc-400'
   return (
     <div className={`card overflow-hidden border-b-4 ${gold ? 'border-b-mundial-gold/40' : 'border-b-white/10'}`}>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className={`border-b border-white/5 text-[10px] text-zinc-500 uppercase tracking-widest ${gold ? 'bg-mundial-gold/5' : 'bg-white/5'}`}>
-              <th className="text-left px-4 py-3 w-8">#</th>
-              <th className="text-left px-2 py-3">Selección</th>
-              <th className="text-center px-3 py-3 w-10">PJ</th>
-              <th className="text-center px-3 py-3 w-10">DG</th>
-              <th className={`text-center px-4 py-3 w-12 font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>PTS</th>
+            <tr className={`border-b border-white/5 text-[9px] text-zinc-500 uppercase tracking-widest ${gold ? 'bg-mundial-gold/5' : 'bg-white/5'}`}>
+              <th className="text-left px-3 py-2.5 w-6">#</th>
+              <th className="text-left px-2 py-2.5">Selección</th>
+              <th className={th}>PJ</th>
+              <th className={th}>G</th>
+              <th className={th}>E</th>
+              <th className={th}>P</th>
+              <th className={th}>GA</th>
+              <th className={th}>GC</th>
+              <th className={th}>DG</th>
+              <th className={`${th} font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>PTS</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, idx) => (
               <tr key={row.team.id} className={`border-b border-white/5 last:border-0 ${idx < 2 ? 'bg-mundial-gold/[0.03]' : ''}`}>
-                <td className="px-4 py-4 font-mono text-zinc-500 text-xs">
+                <td className="px-3 py-3 font-mono text-zinc-500 text-[11px]">
                   {idx < 2 ? <Star size={9} className="text-mundial-gold" /> : idx + 1}
                 </td>
-                <td className="px-2 py-4">
+                <td className="px-2 py-3">
                   <div className="flex items-center gap-2">
                     <TeamFlag team={row.team} size="sm" />
-                    <span className={`text-xs font-bold truncate max-w-[100px] ${idx < 2 ? 'text-white' : 'text-zinc-400'}`}>
+                    <span className={`text-[11px] font-bold truncate max-w-[90px] ${idx < 2 ? 'text-white' : 'text-zinc-400'}`}>
                       {row.team.name}
                     </span>
                   </div>
                 </td>
-                <td className="text-center px-3 py-4 text-zinc-400 font-mono text-xs">{row.pj}</td>
-                <td className="text-center px-3 py-4 font-mono text-xs text-zinc-500">
-                  {row.gf - row.gc > 0 ? '+' : ''}{row.gf - row.gc}
+                <td className={td}>{row.pj}</td>
+                <td className={td}>{row.w}</td>
+                <td className={td}>{row.d}</td>
+                <td className={td}>{row.l}</td>
+                <td className={td}>{row.gf}</td>
+                <td className={td}>{row.gc}</td>
+                <td className={`${td} ${row.gf-row.gc>0?'text-green-500':row.gf-row.gc<0?'text-red-400':''}`}>
+                  {row.gf-row.gc>0?'+':''}{row.gf-row.gc}
                 </td>
-                <td className={`text-center px-4 py-4 font-display text-lg font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>{row.pts}</td>
+                <td className={`text-center px-1.5 py-3 font-display text-base font-bold ${gold ? 'text-mundial-gold' : 'text-white'}`}>{row.pts}</td>
               </tr>
             ))}
           </tbody>
@@ -443,15 +455,16 @@ function buildStandings(matches) {
     const update = (team, myG, opG) => {
       if (!team) return
       if (!groups[gl][team.id]) {
-        groups[gl][team.id] = { team, pj: 0, pts: 0, gf: 0, gc: 0 }
+        groups[gl][team.id] = { team, pj: 0, pts: 0, gf: 0, gc: 0, w: 0, d: 0, l: 0 }
       }
       const st = groups[gl][team.id]
       if (m.status === 'FINISHED') {
         st.pj += 1
         st.gf += (myG || 0)
         st.gc += (opG || 0)
-        if (myG > opG) st.pts += 3
-        else if (myG === opG) st.pts += 1
+        if (myG > opG)       { st.pts += 3; st.w += 1 }
+        else if (myG === opG) { st.pts += 1; st.d += 1 }
+        else                  { st.l += 1 }
       }
     }
 
