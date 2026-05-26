@@ -49,10 +49,15 @@ export default function MatchesPage({ groupId }) {
   const [phase, setPhase] = useState('')
   const [viewMode, setViewMode] = useState('apostado') // 'apostado' | 'real'
 
-  const { data: allMatches = [], isLoading } = useQuery({
+  const { data: allMatches = [], isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['matches-all'],
     queryFn: () => matchApi.list({}).then(r => r.data),
+    // Auto-refresh cada 30 segundos cuando hay al menos un partido EN VIVO
+    refetchInterval: (query) =>
+      query.state.data?.some(m => m.status === 'LIVE') ? 30_000 : false,
   })
+
+  const hasLive = allMatches.some(m => m.status === 'LIVE')
 
   // All user predictions (always fetched — needed for list display and standings)
   const { data: allMyPreds = [] } = useQuery({
@@ -121,7 +126,15 @@ export default function MatchesPage({ groupId }) {
             United 2026 • Road to the Final
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {hasLive && (
+            <div className="px-3 py-2 bg-mundial-red/10 border border-mundial-red/25 rounded-2xl flex items-center gap-2">
+              <span className={`w-1.5 h-1.5 bg-mundial-red rounded-full ${isFetching ? 'animate-ping' : 'animate-pulse'}`} />
+              <span className="text-[9px] text-mundial-red font-black uppercase tracking-widest">
+                {isFetching ? 'Actualizando…' : `Vivo · ${new Date(dataUpdatedAt).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`}
+              </span>
+            </div>
+          )}
           <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
             <Calendar size={14} className="text-mundial-gold" />
             <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{allMatches.length} PARTIDOS</span>
