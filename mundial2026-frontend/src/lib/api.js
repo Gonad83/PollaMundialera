@@ -68,6 +68,7 @@ export const predictionApi = {
   forMatch:   (matchId, params) => api.get(`/predictions/match/${matchId}`, { params }),
   save:       (matchId, data) => api.post(`/predictions/match/${matchId}`, data),
   allForMatch: (matchId, params) => api.get(`/predictions/match/${matchId}/all`, { params }),
+  compare:    (groupId) => api.get(`/predictions/group/${groupId}/compare`),
 }
 
 export const tournamentApi = {

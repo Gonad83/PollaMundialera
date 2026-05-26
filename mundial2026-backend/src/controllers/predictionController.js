@@ -189,6 +189,46 @@ const getMyPredictions = async (req, res) => {
   return res.json(predictions);
 };
 
+// GET /api/predictions/group/:groupId/compare — Tabla comparativa de todos los miembros
+const getGroupCompare = async (req, res) => {
+  const { groupId } = req.params;
+
+  const membership = await prisma.groupMember.findFirst({
+    where: { userId: req.user.id, groupId },
+  });
+  if (!membership) return res.status(403).json({ error: 'No eres miembro de este grupo' });
+
+  const predictions = await prisma.prediction.findMany({
+    where: { groupId, match: { status: 'FINISHED' } },
+    select: {
+      id: true,
+      predHome: true,
+      predAway: true,
+      pointsTotal: true,
+      pointsExact: true,
+      pointsWinner: true,
+      userId: true,
+      matchId: true,
+      user: { select: { id: true, username: true } },
+      match: {
+        select: {
+          id: true,
+          dateUtc: true,
+          scoreHome: true,
+          scoreAway: true,
+          groupLetter: true,
+          phase: true,
+          teamHome: { select: { id: true, name: true, flagUrl: true, code: true } },
+          teamAway: { select: { id: true, name: true, flagUrl: true, code: true } },
+        },
+      },
+    },
+    orderBy: { match: { dateUtc: 'asc' } },
+  });
+
+  return res.json(predictions);
+};
+
 // GET /api/predictions/match/:matchId/all — Ver predicciones de todos (solo post-partido)
 const getAllForMatch = async (req, res) => {
   const { matchId } = req.params;
@@ -226,5 +266,6 @@ module.exports = {
   upsert,
   getMyPredictions,
   getAllForMatch,
+  getGroupCompare,
   calculatePredictionPoints,
 };

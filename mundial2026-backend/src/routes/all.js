@@ -17,6 +17,7 @@ const { authenticate } = require('../middlewares/auth');
 
 predRouter.use(authenticate);
 predRouter.get('/my',                      pc.getMyPredictions);
+predRouter.get('/group/:groupId/compare',  pc.getGroupCompare);
 predRouter.get('/match/:matchId',          pc.getForMatch);
 predRouter.post('/match/:matchId',         pc.upsert);
 predRouter.put('/match/:matchId',          pc.upsert);

@@ -14,6 +14,7 @@ import MatchesPage from './MatchesPage'
 import TournamentPage from './TournamentPage'
 import RulesPage from './RulesPage'
 import SimulatorPage from './SimulatorPage'
+import CompareView from './CompareView'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
@@ -278,9 +279,10 @@ export default function GroupDetailPage() {
 
   // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
   const tabs = [
-    { id: 'resultados', label: 'Resultados', icon: Calendar },
-    { id: 'premios',    label: 'Pronósticos Torneo', icon: Trophy },
-    { id: 'ranking',    label: 'Ranking',    icon: BarChart3 },
+    { id: 'resultados', label: 'Resultados',  icon: Calendar },
+    { id: 'premios',    label: 'Torneo',       icon: Trophy },
+    { id: 'ranking',    label: 'Ranking',      icon: BarChart3 },
+    { id: 'comparar',   label: 'Comparativa',  icon: Star },
     { id: 'liga',       label: 'Participantes', icon: Users },
   ]
 
@@ -513,6 +515,13 @@ export default function GroupDetailPage() {
         {activeTab === 'reglas' && (
           <motion.div key="reglas" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <RulesPage />
+          </motion.div>
+        )}
+
+        {/* ── TAB: COMPARATIVA ── */}
+        {activeTab === 'comparar' && (
+          <motion.div key="comparar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <CompareView groupId={id} members={group.members || []} />
           </motion.div>
         )}
 
