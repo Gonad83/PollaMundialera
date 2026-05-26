@@ -243,55 +243,74 @@ export default function GroupsPage() {
               </button>
             </motion.div>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-5">
               {myGroups.map((group, idx) => (
                 <motion.div
                   key={group.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.07 }}
                 >
                   <Link to={`/groups/${group.id}`} className="group block">
-                    <div className="card-hover p-6 flex flex-col sm:flex-row items-start sm:items-center gap-6 border-l-4 border-l-mundial-gold bg-mundial-navyLight/20">
-                      <div className="w-14 h-14 rounded-2xl bg-mundial-navy border border-white/10 flex items-center justify-center text-2xl shadow-inner group-hover:border-mundial-gold/30 transition-all relative">
-                        {group.isPremium ? <Crown className="text-mundial-gold" size={28} /> : <Users className="text-white/20" size={28} />}
-                        {group.isPremium && <div className="absolute -top-1 -right-1 w-3 h-3 bg-mundial-gold rounded-full animate-ping" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="font-display text-xl text-white group-hover:text-mundial-gold transition-colors">{group.name}</h3>
-                          {group.isPremium && <span className="bg-mundial-gold text-mundial-navy text-[9px] font-black px-1.5 py-0.5 rounded tracking-tighter">PREMIUM</span>}
-                        </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1.5">
-                             <UserIcon value={group.creator?.username[0]} /> Admin: {group.creator?.username}
-                          </span>
-                          <span className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${group._count?.members >= group.maxMembers ? "text-mundial-red" : "text-zinc-500"}`}>
-                             <Users size={12} /> {group._count?.members || 0} / {group.maxMembers} Miembros
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                        {/* Rank badge */}
-                        <GroupRankBadge groupId={group.id} userId={user?.id} />
+                    <div className="relative overflow-hidden rounded-[2rem] border border-white/8 hover:border-mundial-gold/40 transition-all duration-300 bg-gradient-to-br from-mundial-navyLight via-mundial-navy to-mundial-navy shadow-xl hover:shadow-mundial-gold/10 hover:shadow-2xl">
+                      {/* Degradé dorado izquierda */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-mundial-gold/10 via-transparent to-transparent pointer-events-none" />
+                      {/* Glow top-right */}
+                      <div className="absolute top-0 right-0 w-56 h-56 bg-mundial-gold/5 blur-[70px] -mr-20 -mt-20 pointer-events-none" />
+                      {/* Línea izquierda dorada */}
+                      <div className="absolute left-0 top-6 bottom-6 w-[3px] bg-gradient-to-b from-transparent via-mundial-gold to-transparent rounded-full" />
 
-                        {/* Link de invitación (solo si es creador y hay inviteToken) */}
-                        {group.creatorId === user?.id && group.inviteToken && (
-                          <button
-                            onClick={(e) => { e.preventDefault(); copyInviteLink(group) }}
-                            title="Copiar link de invitación"
-                            className={`p-2 rounded-xl border transition-all ${copiedId === group.id ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-white/5 border-white/10 text-zinc-500 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
-                          >
-                            {copiedId === group.id ? <Check size={16} /> : <Link2 size={16} />}
-                          </button>
-                        )}
-                        <div className="flex flex-col items-end">
-                          <div className="bg-white/5 px-3 py-1.5 rounded-xl border border-white/10 group-hover:border-mundial-gold/20 flex flex-col items-center min-w-[100px]">
-                            <span className="font-mono text-xs text-mundial-gold font-bold tracking-widest">{group.inviteCode}</span>
+                      <div className="relative z-10 p-6 sm:p-8">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+                          {/* Icono + nombre */}
+                          <div className="flex items-center gap-5 flex-1 min-w-0">
+                            <div className="w-16 h-16 rounded-2xl bg-mundial-gold/10 border border-mundial-gold/20 flex items-center justify-center shrink-0 group-hover:bg-mundial-gold/15 group-hover:border-mundial-gold/40 transition-all">
+                              {group.isPremium
+                                ? <Crown className="text-mundial-gold" size={28} />
+                                : <Users className="text-mundial-gold/60" size={28} />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h3 className="font-display text-2xl sm:text-3xl text-white group-hover:text-mundial-gold transition-colors uppercase leading-none tracking-tight truncate">
+                                  {group.name}
+                                </h3>
+                                {group.isPremium && (
+                                  <span className="bg-mundial-gold text-mundial-navy text-[8px] font-black px-2 py-0.5 rounded-full tracking-widest shrink-0">PREMIUM</span>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest flex items-center gap-1">
+                                  <UserIcon value={group.creator?.username[0]} /> Admin: {group.creator?.username}
+                                </span>
+                                <span className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 ${group._count?.members >= group.maxMembers ? 'text-mundial-red' : 'text-zinc-500'}`}>
+                                  <Users size={11} /> {group._count?.members || 0}/{group.maxMembers}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-[8px] text-zinc-600 uppercase tracking-widest mt-1 font-black">CÓDIGO DE ACCESO</span>
+
+                          {/* Derecha: rank + código + link + chevron */}
+                          <div className="flex items-center gap-3 sm:shrink-0 pl-0 sm:pl-4 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-5">
+                            <GroupRankBadge groupId={group.id} userId={user?.id} />
+
+                            <div className="hidden sm:flex flex-col items-center">
+                              <span className="font-mono text-sm text-mundial-gold font-black tracking-widest">{group.inviteCode}</span>
+                              <span className="text-[8px] text-zinc-600 uppercase tracking-widest font-black">código</span>
+                            </div>
+
+                            {group.creatorId === user?.id && group.inviteToken && (
+                              <button
+                                onClick={(e) => { e.preventDefault(); copyInviteLink(group) }}
+                                title="Copiar link"
+                                className={`p-2.5 rounded-xl border transition-all ${copiedId === group.id ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-white/5 border-white/10 text-zinc-500 hover:text-mundial-gold hover:border-mundial-gold/30'}`}
+                              >
+                                {copiedId === group.id ? <Check size={16} /> : <Link2 size={16} />}
+                              </button>
+                            )}
+
+                            <ChevronRight className="text-zinc-600 group-hover:text-mundial-gold group-hover:translate-x-1 transition-all" size={22} />
+                          </div>
                         </div>
-                        <ChevronRight className="text-zinc-700 group-hover:text-mundial-gold transition-all group-hover:translate-x-1" size={24} />
                       </div>
                     </div>
                   </Link>

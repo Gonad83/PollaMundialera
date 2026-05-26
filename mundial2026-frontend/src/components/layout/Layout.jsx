@@ -377,44 +377,46 @@ export default function Layout() {
         {/* Banner — hero grande en /groups, compacto en el resto, ninguno en /admin */}
         {isGroupDetail ? null : pathname.startsWith('/admin') ? null : isGroupsListing ? (
           <motion.div
-            initial={{ opacity: 0, y: -16 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-8 md:mb-12 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-3xl shadow-2xl relative overflow-hidden p-8 md:p-12"
+            className="mb-6 md:mb-8 rounded-[1.5rem] bg-white/4 border border-white/5 backdrop-blur-3xl shadow-xl relative overflow-hidden px-6 md:px-8 py-5 md:py-6"
           >
-            <div className="absolute top-0 right-0 w-96 h-96 bg-mundial-gold/5 blur-[100px] -mr-32 -mt-32 pointer-events-none" />
-            <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
-              {/* Texto izquierda */}
-              <div>
-                <p className="text-[10px] font-black text-mundial-gold uppercase tracking-[0.4em] mb-3">
-                  <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full inline-block mr-2 animate-pulse" />
-                  Mundial FIFA 2026 · {user?.username}
-                </p>
-                <h1 className="font-display text-5xl md:text-7xl text-white uppercase leading-none tracking-tight">
-                  GESTOR DE<br /><span className="text-mundial-gold">GRUPOS</span>
-                </h1>
-                {/* Plan actual */}
-                <div className="mt-5 flex items-center gap-3 flex-wrap">
-                  <PlanBadge plan={user?.plan || 'FREE'} size="md" />
-                  <span className="text-zinc-500 text-xs font-bold uppercase tracking-widest">
-                    {user?.plan === 'FREE'    && '1 grupo · 5 miembros máx'}
-                    {user?.plan === 'CLASICO' && '1 grupo · 15 miembros máx'}
-                    {user?.plan === 'DT'      && '3 grupos · 50 miembros'}
-                    {user?.plan === 'PRO'     && 'Grupos ilimitados · 150 miembros'}
-                  </span>
-                  {user?.plan === 'FREE' && !isSuperAdmin && (
-                    <NavLink
-                      to="/"
-                      className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors border border-mundial-gold/30 hover:border-mundial-gold rounded-full px-3 py-1 bg-mundial-gold/5 hover:bg-mundial-gold/10"
-                    >
-                      <ArrowUp size={9} /> Subir Plan
-                    </NavLink>
-                  )}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-mundial-gold/5 blur-[80px] -mr-24 -mt-24 pointer-events-none" />
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              {/* Texto izquierda — más compacto */}
+              <div className="flex items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full animate-pulse" />
+                    <p className="text-[9px] font-black text-mundial-gold uppercase tracking-[0.35em]">
+                      Mundial FIFA 2026 · {user?.username}
+                    </p>
+                  </div>
+                  <h1 className="font-display text-3xl md:text-4xl text-white uppercase leading-none tracking-tight">
+                    GESTOR DE <span className="text-mundial-gold">GRUPOS</span>
+                  </h1>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <PlanBadge plan={user?.plan || 'FREE'} size="sm" />
+                    <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                      {user?.plan === 'FREE'    && '1 grupo · 5 miembros'}
+                      {user?.plan === 'CLASICO' && '1 grupo · 15 miembros'}
+                      {user?.plan === 'DT'      && '3 grupos · 50 miembros'}
+                      {user?.plan === 'PRO'     && 'Grupos ilimitados · 150 miembros'}
+                    </span>
+                    {user?.plan === 'FREE' && !isSuperAdmin && (
+                      <NavLink
+                        to="/"
+                        className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors border border-mundial-gold/30 rounded-full px-2 py-0.5 bg-mundial-gold/5"
+                      >
+                        <ArrowUp size={8} /> Subir
+                      </NavLink>
+                    )}
+                  </div>
                 </div>
               </div>
-              {/* Reloj derecha — variant hero */}
+              {/* Reloj derecha */}
               <div className="shrink-0">
-                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.35em] mb-3">Mundial en:</p>
-                <CountdownTimer variant="hero" />
+                <CountdownTimer variant="mini" />
               </div>
             </div>
           </motion.div>
