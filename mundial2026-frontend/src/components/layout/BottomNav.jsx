@@ -3,7 +3,7 @@ import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 
 import { motion } from 'framer-motion'
 
 export default function BottomNav({ user, filteredNav }) {
-  const hasItems = filteredNav.length > 0 || user?.role === 'ADMIN'
+  const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN'
   if (!hasItems) return null
 
   return (
@@ -40,7 +40,7 @@ export default function BottomNav({ user, filteredNav }) {
             </NavLink>
           )
         })}
-        {user?.role === 'ADMIN' && (
+        {user?.role === 'SUPER_ADMIN' && (
           <NavLink
             to="/admin"
             className={({ isActive }) => 
