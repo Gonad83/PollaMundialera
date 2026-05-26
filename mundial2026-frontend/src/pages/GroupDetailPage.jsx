@@ -80,7 +80,7 @@ export default function GroupDetailPage() {
   const { setActions } = useHeaderActions()
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const [copied, setCopied] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
@@ -165,8 +165,8 @@ export default function GroupDetailPage() {
     // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
     if (!group) return
     const actions = [
-      { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setActiveTab('messages'), isActive: activeTab === 'messages' },
-      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setActiveTab('config'), isActive: activeTab === 'config' }] : []),
+      { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
+      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
   }, [activeTab, actingAsAdmin, setActions, group])

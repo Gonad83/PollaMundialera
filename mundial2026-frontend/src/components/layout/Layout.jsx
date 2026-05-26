@@ -179,8 +179,8 @@ export default function Layout() {
                             // PARTIDOS activo solo si no hay acción de grupo activa y tab es resultados o sin tab
                             active = !anyGroupActionActive && (!tabParam || tabParam === 'resultados')
                           } else if (to === '/rules') {
-                            // REGLAS amarillo solo cuando tab=reglas
-                            active = tabParam === 'reglas'
+                            // REGLAS amarillo solo cuando tab=reglas y ningún botón de grupo activo
+                            active = !anyGroupActionActive && tabParam === 'reglas'
                           }
                         }
                         return `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
