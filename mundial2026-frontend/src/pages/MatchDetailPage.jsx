@@ -8,10 +8,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function MatchDetailPage() {
-  const { id } = useParams()
+export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupIdProp } = {}) {
+  const { id: routeId } = useParams()
+  const id = matchIdProp || routeId
   const [searchParams] = useSearchParams()
-  const rawGroupId = searchParams.get('groupId')
+  const rawGroupId = groupIdProp || searchParams.get('groupId')
   const groupId = (rawGroupId && rawGroupId !== 'undefined' && rawGroupId !== 'null') ? rawGroupId : null
   const qc = useQueryClient()
 

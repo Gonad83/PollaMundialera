@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import MatchDetailPage from './MatchDetailPage'
 import { useQuery } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
@@ -42,6 +43,8 @@ const itemVariants = {
 }
 
 export default function MatchesPage({ groupId }) {
+  const [searchParams] = useSearchParams()
+  const matchParam = searchParams.get('match')
   const [phase, setPhase] = useState('')
   const [viewMode, setViewMode] = useState('apostado') // 'apostado' | 'real'
 
@@ -96,6 +99,11 @@ export default function MatchesPage({ groupId }) {
   }, [realStandings, predStandings])
 
   const apostadoCount = Object.keys(allPredMap).length
+
+  // Detalle de partido inline (mantiene GroupDetailPage montado → MENSAJES/AJUSTES visibles)
+  if (matchParam && groupId) {
+    return <MatchDetailPage matchId={matchParam} groupId={groupId} />
+  }
 
   return (
     <motion.div
@@ -313,7 +321,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
 
   // En REAL mode el card no es clickeable — solo se puede apostar desde APOSTADO
   const Wrapper = apostado
-    ? ({ children }) => <Link to={`/matches/${match.id}${groupId ? `?groupId=${groupId}` : ''}`} className="group block">{children}</Link>
+    ? ({ children }) => <Link to={groupId ? `/groups/${groupId}?tab=resultados&match=${match.id}` : `/matches/${match.id}`} className="group block">{children}</Link>
     : ({ children }) => <div className="block">{children}</div>
 
   return (
