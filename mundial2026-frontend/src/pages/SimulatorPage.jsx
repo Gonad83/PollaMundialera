@@ -72,6 +72,48 @@ const FIFA_TO_ISO2 = {
   CPV:'cv', COD:'cd', HTI:'ht', HAI:'ht', CUW:'cw', CUR:'cw',
 }
 
+// ── MAPEO FIFA TLA → nombre en español ───────────────────────────────────────
+const FIFA_TO_ESP = {
+  ARG:'Argentina',      BRA:'Brasil',         URU:'Uruguay',        COL:'Colombia',
+  ECU:'Ecuador',        PAR:'Paraguay',        CHI:'Chile',
+  FRA:'Francia',        ENG:'Inglaterra',      ESP:'España',         POR:'Portugal',
+  BEL:'Bélgica',        GER:'Alemania',        NED:'Países Bajos',   ITA:'Italia',
+  CRO:'Croacia',        SUI:'Suiza',           AUT:'Austria',        TUR:'Turquía',
+  SCO:'Escocia',        NOR:'Noruega',         SWE:'Suecia',         DEN:'Dinamarca',
+  SRB:'Serbia',         POL:'Polonia',         UKR:'Ucrania',
+  USA:'USA',            MEX:'México',          CAN:'Canadá',         CRC:'Costa Rica',
+  JAM:'Jamaica',        HON:'Honduras',        PAN:'Panamá',
+  MAR:'Marruecos',      SEN:'Senegal',         EGY:'Egipto',         RSA:'Sudáfrica',
+  CIV:'Costa de Marfil',GHA:'Ghana',           ALG:'Argelia',        NGA:'Nigeria',
+  CMR:'Camerún',
+  JPN:'Japón',          KOR:'Corea del Sur',   KSA:'Arabia Saudita', IRN:'Irán',
+  AUS:'Australia',      QAT:'Catar',           CHN:'China',          IRQ:'Irak',
+  NZL:'Nueva Zelanda',  UZB:'Uzbekistán',      BIH:'Bosnia y Herz.', CZE:'Rep. Checa',
+  TUN:'Túnez',          JOR:'Jordania',        CPV:'Cabo Verde',     COD:'RD Congo',
+  HTI:'Haití',          HAI:'Haití',           CUW:'Curazao',        CUR:'Curazao',
+}
+
+// ── MAPEO nombre español → código FIFA 3 letras ──────────────────────────────
+const TEAM_CODE = {
+  'España':'ESP',         'Francia':'FRA',          'Inglaterra':'ENG',       'Argentina':'ARG',
+  'Portugal':'POR',       'Brasil':'BRA',            'Alemania':'GER',         'Países Bajos':'NED',
+  'Noruega':'NOR',        'Bélgica':'BEL',           'Colombia':'COL',         'Marruecos':'MAR',
+  'Uruguay':'URU',        'México':'MEX',             'Ecuador':'ECU',          'Suiza':'SUI',
+  'Croacia':'CRO',        'USA':'USA',                'Japón':'JPN',            'Turquía':'TUR',
+  'Senegal':'SEN',        'Canadá':'CAN',             'Paraguay':'PAR',         'Suecia':'SWE',
+  'Austria':'AUT',        'Corea del Sur':'KOR',      'Australia':'AUS',        'Irán':'IRN',
+  'Rep. Checa':'CZE',     'Escocia':'SCO',            'Egipto':'EGY',           'Bosnia y Herz.':'BIH',
+  'Costa de Marfil':'CIV','Argelia':'ALG',            'Ghana':'GHA',            'Sudáfrica':'RSA',
+  'Túnez':'TUN',          'Uzbekistán':'UZB',         'Panamá':'PAN',           'Nueva Zelanda':'NZL',
+  'Irak':'IRQ',           'Jordania':'JOR',           'RD Congo':'COD',         'Catar':'QAT',
+  'Arabia Saudita':'KSA', 'Cabo Verde':'CPV',         'Haití':'HTI',            'Curazao':'CUW',
+  'Estados Unidos':'USA', 'Italia':'ITA',             'Chile':'CHI',            'Nigeria':'NGA',
+}
+
+function getTeamCode(name) {
+  return TEAM_CODE[name] || _teamMeta[name]?.fifaCode?.toUpperCase() || name.slice(0, 3).toUpperCase()
+}
+
 // Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre
 const _teamMeta = {}
 
@@ -398,8 +440,8 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
           const winAway = hasResult && aScore > hScore
           return (
             <div key={mi} className="grid items-center px-3 py-2" style={{ gridTemplateColumns: '1fr 90px 1fr' }}>
-              <span className={`text-right text-[11px] font-bold flex items-center justify-end gap-1 min-w-0 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
-                <span className="truncate">{teams[i]}</span>
+              <span className={`text-right text-[11px] font-black flex items-center justify-end gap-1.5 shrink-0 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
+                {getTeamCode(teams[i])}
                 <Flag name={teams[i]} size="md" />
               </span>
               <div className="flex items-center justify-center gap-1 shrink-0">
@@ -407,9 +449,9 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
                 <span className="text-zinc-600 font-bold text-xs">–</span>
                 <ScoreInput value={ag} onChange={v => onScoreChange(mi, 1, v)} isWin={winAway} isLose={winHome} />
               </div>
-              <span className={`text-left text-[11px] font-bold flex items-center gap-1 min-w-0 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
+              <span className={`text-left text-[11px] font-black flex items-center gap-1.5 shrink-0 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
                 <Flag name={teams[j]} size="md" />
-                <span className="truncate">{teams[j]}</span>
+                {getTeamCode(teams[j])}
               </span>
             </div>
           )
@@ -758,12 +800,14 @@ export default function SimulatorPage() {
       if (!apiGroups[gl]) apiGroups[gl] = []
       const addTeam = (team) => {
         if (!team) return
-        _teamMeta[team.name] = {
-          fifaCode: team.code,
-          iso2: FIFA_TO_ISO2[team.code?.toUpperCase()],
+        const tla = team.code?.toUpperCase()
+        const espName = FIFA_TO_ESP[tla] || team.name
+        _teamMeta[espName] = {
+          fifaCode: tla,
+          iso2: FIFA_TO_ISO2[tla],
           flagUrl: team.flagUrl,
         }
-        if (!apiGroups[gl].includes(team.name)) apiGroups[gl].push(team.name)
+        if (!apiGroups[gl].includes(espName)) apiGroups[gl].push(espName)
       }
       addTeam(m.teamHome)
       addTeam(m.teamAway)
