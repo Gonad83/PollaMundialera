@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { tournamentApi, matchApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -77,17 +77,57 @@ export default function TournamentPage({ groupId }) {
 
   const hosts = teams.filter(t => ['USA', 'MEX', 'CAN'].includes(t.code))
 
+  const { completedCount, totalCount, completionPct } = useMemo(() => {
+    const checks = [
+      !!form.champion,
+      !!form.finalist1,
+      !!form.finalist2,
+      (form.semifinalists?.length || 0) > 0,
+      (form.quarterfinalists?.length || 0) > 0,
+      !!form.hostFurthest,
+      !!form.topScorerId,
+      !!form.bestPlayerId,
+      !!form.bestKeeperId,
+      !!form.bestYoungId,
+      !!form.totalGoals,
+      !!form.mostGoalsTeamId,
+      !!form.leastGoalsTeamId,
+    ]
+    const done = checks.filter(Boolean).length
+    return { completedCount: done, totalCount: checks.length, completionPct: Math.round((done / checks.length) * 100) }
+  }, [form])
+
   if (loadingPicks) return <LoadingSkeleton />
 
   return (
     <div className="max-w-4xl mx-auto pb-32 px-4">
       {/* Header Section */}
-      <div className="mb-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-        <div className="flex flex-col">
+      <div className="mb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+        <div className="flex flex-col flex-1">
           <h1 className="font-display text-4xl text-white tracking-tight uppercase">Predicción Maestra</h1>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="flex items-center gap-2 mt-1 mb-4">
             <span className="w-2 h-2 bg-mundial-red rounded-full animate-pulse" />
             <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Cierre de Pronósticos: 11 JUN 2026</p>
+          </div>
+
+          {/* Barra de progreso */}
+          <div className="space-y-2 max-w-sm">
+            <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-widest">
+              <span className={completionPct === 100 ? 'text-green-400' : completionPct >= 50 ? 'text-amber-400' : 'text-zinc-500'}>
+                {completedCount} de {totalCount} pronósticos completados
+              </span>
+              <span className={`tabular-nums ${completionPct === 100 ? 'text-green-400' : completionPct >= 50 ? 'text-amber-400' : 'text-zinc-600'}`}>
+                {completionPct}%
+              </span>
+            </div>
+            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${completionPct}%` }}
+                transition={{ duration: 0.7, ease: 'easeOut' }}
+                className={`h-full rounded-full ${completionPct === 100 ? 'bg-green-500' : completionPct >= 50 ? 'bg-amber-500' : 'bg-mundial-gold/60'}`}
+              />
+            </div>
           </div>
         </div>
 
@@ -382,33 +422,33 @@ function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon })
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" size={16} />
          </div>
 
-         <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-            {search.length > 0 ? (
-              filtered.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => { onChange(t.id); setSearch('') }}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left
-                    ${value === t.id ? 'bg-mundial-gold border-mundial-gold text-mundial-navy' : 'bg-white/5 border-white/10 hover:bg-white/10 text-zinc-400'}`}
-                >
-                  <Flag url={t.flagUrl} name={teamEsp(t)} className="w-7 h-5 object-contain" />
-                  <span className="text-xs font-black uppercase tracking-widest truncate">{teamEsp(t)}</span>
-                </button>
-              ))
-            ) : selected ? (
-              <div className="flex items-center gap-4 p-4 rounded-2xl bg-mundial-gold border border-mundial-gold shadow-2xl shadow-mundial-gold/20">
-                 <Flag url={selected.flagUrl} name={teamEsp(selected)} className="w-12 h-10 object-contain" />
-                 <div className="flex-1">
-                    <p className="text-[10px] text-mundial-navy font-black opacity-60 uppercase tracking-widest">TU SELECCIÓN</p>
-                    <h4 className="font-display text-xl text-mundial-navy uppercase">{teamEsp(selected)}</h4>
-                 </div>
-                 <button onClick={() => onChange(null)} className="p-2 hover:bg-mundial-navy hover:text-white rounded-lg transition-colors text-mundial-navy"><Zap size={20} fill="currentColor" /></button>
-              </div>
-            ) : (
-              <div className="py-10 text-center border-2 border-dashed border-white/5 rounded-2xl">
-                 <p className="text-[10px] text-zinc-700 font-black uppercase tracking-widest">Ingresa un nombre para buscar</p>
-              </div>
-            )}
+         {/* Selección actual */}
+         {selected && !search && (
+           <div className="flex items-center gap-4 p-4 rounded-2xl bg-mundial-gold border border-mundial-gold shadow-2xl shadow-mundial-gold/20 mb-2">
+             <Flag url={selected.flagUrl} name={teamEsp(selected)} className="w-12 h-10 object-contain" />
+             <div className="flex-1">
+               <p className="text-[10px] text-mundial-navy font-black opacity-60 uppercase tracking-widest">TU SELECCIÓN</p>
+               <h4 className="font-display text-xl text-mundial-navy uppercase">{teamEsp(selected)}</h4>
+             </div>
+             <button onClick={() => onChange(null)} className="p-2 hover:bg-mundial-navy hover:text-white rounded-lg transition-colors text-mundial-navy">
+               <Zap size={20} fill="currentColor" />
+             </button>
+           </div>
+         )}
+
+         {/* Lista filtrada */}
+         <div className="grid grid-cols-1 gap-1.5 max-h-44 overflow-y-auto no-scrollbar">
+           {(search.length > 0 ? filtered : teams).map(t => (
+             <button
+               key={t.id}
+               onClick={() => { onChange(t.id); setSearch('') }}
+               className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left
+                 ${value === t.id ? 'bg-mundial-gold/20 border-mundial-gold/40 text-mundial-gold' : 'bg-white/3 border-white/5 hover:bg-white/8 hover:border-white/15 text-zinc-400'}`}
+             >
+               <Flag url={t.flagUrl} name={teamEsp(t)} className="w-7 h-5 object-contain shrink-0" />
+               <span className="text-[11px] font-bold uppercase tracking-wide truncate">{teamEsp(t)}</span>
+             </button>
+           ))}
          </div>
       </div>
     </div>
