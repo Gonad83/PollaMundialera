@@ -55,11 +55,19 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
     },
   })
 
+  // Derivar valores de match (seguros aunque match sea null todavía)
+  const deadline   = match ? new Date(new Date(match.dateUtc).getTime() - 5 * 60 * 1000) : new Date(0)
+  const isLocked   = match ? isAfter(new Date(), deadline) : true
+  const isFinished = match?.status === 'FINISHED'
+  const isElim     = !['GROUP'].includes(match?.phase || 'GROUP')
+
+  // ── Todos los hooks van ANTES de cualquier early return ──
   const [form, setForm] = useState({
     predHome: 0, predAway: 0,
     predBtts: null, predOverUnder: null, predPenalties: null,
   })
   const [saved, setSaved] = useState(false)
+  const [msLeft, setMsLeft] = useState(0)
 
   useEffect(() => {
     if (myPred) {
@@ -73,29 +81,12 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
     }
   }, [myPred])
 
-  if (isLoading) return <Skeleton />
-  if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
-
-  const { teamHome, teamAway, dateUtc, status, scoreHome, scoreAway, phase } = match
-  const deadline = new Date(new Date(dateUtc).getTime() - 5 * 60 * 1000)
-  const isLocked = isAfter(new Date(), deadline)
-  const isFinished = status === 'FINISHED'
-  const isElim = !['GROUP'].includes(phase)
-
-  // Countdown al cierre
-  const [msLeft, setMsLeft] = useState(deadline.getTime() - Date.now())
   useEffect(() => {
-    if (isLocked || isFinished) return
-    const id = setInterval(() => setMsLeft(deadline.getTime() - Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [deadline, isLocked, isFinished])
-
-  const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
-  const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
-  const secondsLeft = Math.max(0, Math.floor((msLeft % 60_000) / 1_000))
-  const isUrgent    = msLeft < 30 * 60_000  // < 30 min
-  const isWarning   = msLeft < 2 * 3_600_000 // < 2 h
-  const showCountdown = !isLocked && !isFinished && msLeft > 0
+    if (!match || isLocked || isFinished) return
+    setMsLeft(deadline.getTime() - Date.now())
+    const timer = setInterval(() => setMsLeft(deadline.getTime() - Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [match, deadline, isLocked, isFinished])
 
   // Comunidad: agrupar predicciones por marcador
   const predGroups = useMemo(() => {
@@ -107,6 +98,19 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
     })
     return Object.values(map).sort((a, b) => b.count - a.count)
   }, [allPreds])
+
+  // ── Early returns DESPUÉS de todos los hooks ──
+  if (isLoading) return <Skeleton />
+  if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
+
+  const { teamHome, teamAway, dateUtc, status, scoreHome, scoreAway, phase } = match
+
+  const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
+  const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
+  const secondsLeft = Math.max(0, Math.floor((msLeft % 60_000) / 1_000))
+  const isUrgent    = msLeft < 30 * 60_000
+  const isWarning   = msLeft < 2 * 3_600_000
+  const showCountdown = !isLocked && !isFinished && msLeft > 0
 
   const handleSubmit = (e) => {
     e?.preventDefault()
