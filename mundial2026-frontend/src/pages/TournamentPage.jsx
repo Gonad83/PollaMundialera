@@ -12,6 +12,27 @@ import { tournamentApi, matchApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown } from 'lucide-react'
 
+// FIFA code → nombre en español
+const CODE_TO_ESP = {
+  ARG:'Argentina',      BRA:'Brasil',         URU:'Uruguay',        COL:'Colombia',
+  ECU:'Ecuador',        PAR:'Paraguay',        CHI:'Chile',
+  FRA:'Francia',        ENG:'Inglaterra',      ESP:'España',         POR:'Portugal',
+  BEL:'Bélgica',        GER:'Alemania',        NED:'Países Bajos',   ITA:'Italia',
+  CRO:'Croacia',        SUI:'Suiza',           AUT:'Austria',        TUR:'Turquía',
+  SCO:'Escocia',        NOR:'Noruega',         SWE:'Suecia',         DEN:'Dinamarca',
+  SRB:'Serbia',         POL:'Polonia',         UKR:'Ucrania',
+  USA:'USA',            MEX:'México',          CAN:'Canadá',         CRC:'Costa Rica',
+  JAM:'Jamaica',        HON:'Honduras',        PAN:'Panamá',
+  MAR:'Marruecos',      SEN:'Senegal',         EGY:'Egipto',         RSA:'Sudáfrica',
+  CIV:'Costa de Marfil',GHA:'Ghana',           ALG:'Argelia',        NGA:'Nigeria',   CMR:'Camerún',
+  JPN:'Japón',          KOR:'Corea del Sur',   KSA:'Arabia Saudita', IRN:'Irán',
+  AUS:'Australia',      QAT:'Catar',           CHN:'China',          IRQ:'Irak',
+  NZL:'Nueva Zelanda',  UZB:'Uzbekistán',      BIH:'Bosnia y Herz.', CZE:'Rep. Checa',
+  TUN:'Túnez',          JOR:'Jordania',        CPV:'Cabo Verde',     COD:'RD Congo',
+  HTI:'Haití',          CUW:'Curazao',
+}
+const teamEsp = (t) => CODE_TO_ESP[t?.code?.toUpperCase()] || t?.name || ''
+
 const SECTIONS = [
   { key: 'clasificacion', label: 'CAMINO AL TÍTULO', icon: Trophy },
   { key: 'premios',       label: 'PREMIOS INDIV.',   icon: Award },
@@ -352,7 +373,7 @@ function TeamGrid({ teams, selected, onToggle, max }) {
 
 function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon }) {
   const [search, setSearch] = useState('')
-  const filtered = teams.filter(t => t.name.toLowerCase().includes(search.toLowerCase()))
+  const filtered = teams.filter(t => teamEsp(t).toLowerCase().includes(search.toLowerCase()) || t.name.toLowerCase().includes(search.toLowerCase()))
   const selected = teams.find(t => t.id === value)
 
   return (
@@ -390,16 +411,16 @@ function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon })
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left
                     ${value === t.id ? 'bg-mundial-gold border-mundial-gold text-mundial-navy' : 'bg-white/5 border-white/10 hover:bg-white/10 text-zinc-400'}`}
                 >
-                  <Flag url={t.flagUrl} name={t.name} className="w-7 h-5 object-contain" />
-                  <span className="text-xs font-black uppercase tracking-widest truncate">{t.name}</span>
+                  <Flag url={t.flagUrl} name={teamEsp(t)} className="w-7 h-5 object-contain" />
+                  <span className="text-xs font-black uppercase tracking-widest truncate">{teamEsp(t)}</span>
                 </button>
               ))
             ) : selected ? (
               <div className="flex items-center gap-4 p-4 rounded-2xl bg-mundial-gold border border-mundial-gold shadow-2xl shadow-mundial-gold/20">
-                 <Flag url={selected.flagUrl} name={selected.name} className="w-12 h-10 object-contain" />
+                 <Flag url={selected.flagUrl} name={teamEsp(selected)} className="w-12 h-10 object-contain" />
                  <div className="flex-1">
                     <p className="text-[10px] text-mundial-navy font-black opacity-60 uppercase tracking-widest">TU SELECCIÓN</p>
-                    <h4 className="font-display text-xl text-mundial-navy uppercase">{selected.name}</h4>
+                    <h4 className="font-display text-xl text-mundial-navy uppercase">{teamEsp(selected)}</h4>
                  </div>
                  <button onClick={() => onChange(null)} className="p-2 hover:bg-mundial-navy hover:text-white rounded-lg transition-colors text-mundial-navy"><Zap size={20} fill="currentColor" /></button>
               </div>
@@ -427,8 +448,8 @@ function TeamSelector({ teams, selected, onSelect }) {
           ${t ? 'bg-white/10 border-white/20 text-white' : 'bg-white/5 border-white/5 text-zinc-700'}`}
        >
           <div className="flex items-center gap-3">
-             <Flag url={t?.flagUrl} name={t?.name} className="w-8 h-6 object-contain" />
-             <span className="text-xs font-black uppercase tracking-widest">{t?.name || 'Seleccionar...'}</span>
+             <Flag url={t?.flagUrl} name={teamEsp(t)} className="w-8 h-6 object-contain" />
+             <span className="text-xs font-black uppercase tracking-widest">{t ? teamEsp(t) : 'Seleccionar...'}</span>
           </div>
           <ChevronRight size={16} className={`transition-transform ${show ? 'rotate-90' : ''}`} />
        </button>
@@ -441,10 +462,10 @@ function TeamSelector({ teams, selected, onSelect }) {
            >
               <input className="input py-2 text-[10px]" placeholder="BUSCAR..." value={search} onChange={e => setSearch(e.target.value)} autoFocus />
               <div className="overflow-y-auto no-scrollbar space-y-1">
-                 {teams.filter(i => i.name.toLowerCase().includes(search.toLowerCase())).map(i => (
+                 {teams.filter(i => teamEsp(i).toLowerCase().includes(search.toLowerCase()) || i.name.toLowerCase().includes(search.toLowerCase())).map(i => (
                    <button key={i.id} onClick={() => { onSelect(i.id); setShow(false); setSearch('') }} className="w-full p-3 rounded-xl hover:bg-white/10 flex items-center gap-3 text-left transition-all">
-                      <Flag url={i.flagUrl} name={i.name} className="w-7 h-5 object-contain" />
-                      <span className="text-xs font-black uppercase tracking-widest text-zinc-300">{i.name}</span>
+                      <Flag url={i.flagUrl} name={teamEsp(i)} className="w-7 h-5 object-contain" />
+                      <span className="text-xs font-black uppercase tracking-widest text-zinc-300">{teamEsp(i)}</span>
                    </button>
                  ))}
               </div>
