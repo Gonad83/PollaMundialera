@@ -174,12 +174,13 @@ export default function Layout() {
                         let active = isActive
                         if (currentGroupId) {
                           const tabParam = new URLSearchParams(search).get('tab')
+                          const anyGroupActionActive = headerActions.some(a => a.isActive)
                           if (to === '/matches') {
-                            // PARTIDOS activo solo en tab=resultados o sin tab
-                            active = !tabParam || tabParam === 'resultados'
+                            // PARTIDOS activo solo si no hay acción de grupo activa y tab es resultados o sin tab
+                            active = !anyGroupActionActive && (!tabParam || tabParam === 'resultados')
                           } else if (to === '/rules') {
-                            // REGLAS nunca amarillo dentro de un grupo
-                            active = false
+                            // REGLAS amarillo solo cuando tab=reglas
+                            active = tabParam === 'reglas'
                           }
                         }
                         return `flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
