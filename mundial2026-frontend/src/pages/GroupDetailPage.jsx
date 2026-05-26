@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
-  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen
+  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen, Share2
 } from 'lucide-react'
 import MatchesPage from './MatchesPage'
 import TournamentPage from './TournamentPage'
@@ -233,6 +233,27 @@ export default function GroupDetailPage() {
     onError: () => toast.error('Error al cambiar estado del link'),
   })
 
+  // ── Share helpers ──
+  const shareGroup = async () => {
+    const url = `${window.location.origin}/join/${group.inviteToken}`
+    const text = `⚽ Únete a mi liga "${group.name}" en Quién Gana · Mundial 2026!\nCódigo: ${group.inviteCode}\n${url}`
+    if (navigator.share) {
+      await navigator.share({ title: 'Quién Gana · Mundial 2026', text }).catch(() => {})
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  }
+
+  const shareMyRank = async (entry) => {
+    const url = group.inviteToken ? `${window.location.origin}/join/${group.inviteToken}` : window.location.href
+    const text = `🏆 Estoy #${entry.rank} en la liga "${group.name}" con ${entry.totalPoints} pts en Quién Gana · Mundial 2026!\n¿Te animas? ${url}`
+    if (navigator.share) {
+      await navigator.share({ title: 'Mi posición en Quién Gana', text }).catch(() => {})
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+    }
+  }
+
   // ── Clipboard helpers ──
   const copyCode = () => {
     navigator.clipboard.writeText(group.inviteCode)
@@ -387,6 +408,16 @@ export default function GroupDetailPage() {
             </button>
           )}
 
+          {group.inviteToken && (
+            <button
+              onClick={shareGroup}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest"
+              title="Compartir invitación"
+            >
+              <Share2 size={12} />
+              <span className="hidden sm:inline">Compartir</span>
+            </button>
+          )}
           {isAdmin && isFree && !showPricing && (
             <button onClick={() => setShowPricing(true)} className="btn-gold px-3 py-2 text-[9px] whitespace-nowrap">
               MEJORAR
@@ -609,6 +640,17 @@ export default function GroupDetailPage() {
                 {podium.find(e => e.rank === 2) && <PodiumCard entry={podium.find(e => e.rank === 2)} rank={2} isMe={podium.find(e => e.rank === 2).userId === user?.id} />}
                 {podium.find(e => e.rank === 1) && <PodiumCard entry={podium.find(e => e.rank === 1)} rank={1} isMe={podium.find(e => e.rank === 1).userId === user?.id} />}
                 {podium.find(e => e.rank === 3) && <PodiumCard entry={podium.find(e => e.rank === 3)} rank={3} isMe={podium.find(e => e.rank === 3).userId === user?.id} />}
+              </div>
+            )}
+
+            {leaderboard.find(e => e.userId === user?.id) && (
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={() => shareMyRank(leaderboard.find(e => e.userId === user?.id))}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest"
+                >
+                  <Share2 size={12} /> Compartir mi posición
+                </button>
               </div>
             )}
 
