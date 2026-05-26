@@ -749,7 +749,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
   )
 }
 
-const SAVE_KEY = 'mundial2026_sim_v2'
+const SAVE_KEY = 'mundial2026_sim_v3'
 
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
@@ -822,8 +822,11 @@ export default function SimulatorPage() {
       sorted
         .filter(m => m.groupLetter === gl)
         .forEach(m => {
-          const hi = cleanGroups[gl].indexOf(m.teamHome?.name)
-          const ai = cleanGroups[gl].indexOf(m.teamAway?.name)
+          // Usar nombre en español (el mismo usado en cleanGroups) para el indexOf
+          const homeEsp = FIFA_TO_ESP[m.teamHome?.code?.toUpperCase()] || m.teamHome?.name
+          const awayEsp = FIFA_TO_ESP[m.teamAway?.code?.toUpperCase()] || m.teamAway?.name
+          const hi = cleanGroups[gl].indexOf(homeEsp)
+          const ai = cleanGroups[gl].indexOf(awayEsp)
           if (hi !== -1 && ai !== -1) apiMatchOrder[gl].push([hi, ai])
         })
       // Fallback si no hay datos suficientes
