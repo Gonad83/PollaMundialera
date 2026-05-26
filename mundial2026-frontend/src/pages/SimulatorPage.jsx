@@ -376,19 +376,12 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
   return (
     <div className="card overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5 bg-white/3">
-        <div className="w-9 h-9 rounded-xl bg-mundial-gold/20 text-mundial-gold flex items-center justify-center font-display text-xl border border-mundial-gold/20 shrink-0">
-          {letter}
-        </div>
-        <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-          {teams.map((t, i) => (
-            <span key={i} className="inline-flex items-center gap-1 text-[10px] font-bold text-zinc-300">
-              <Flag name={t} size="sm" />
-              <span>{t}</span>
-            </span>
-          ))}
-        </div>
-        {groupComplete && <span className="text-[8px] font-black text-mundial-gold uppercase tracking-widest shrink-0">✓ COMPLETO</span>}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 bg-white/3">
+        <span className="font-display text-lg text-white tracking-tight">Grupo <span className="text-mundial-gold">{letter}</span></span>
+        {groupComplete
+          ? <span className="text-[8px] font-black text-mundial-gold uppercase tracking-widest">✓ COMPLETO</span>
+          : <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">{scores.filter(([a,b]) => a!==''&&b!=='').length}/{scores.length}</span>
+        }
       </div>
 
       {/* Standings */}
@@ -396,34 +389,36 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
         <table className="w-full text-xs">
           <thead>
             <tr className="text-[8px] text-zinc-600 uppercase tracking-widest bg-white/3">
-              <th className="text-left px-3 py-1.5 w-4">#</th>
+              <th className="text-left px-3 py-1.5 w-5">#</th>
               <th className="text-left px-1 py-1.5">Equipo</th>
-              <th className="text-center px-2 py-1.5 w-6">PJ</th>
-              <th className="text-center px-2 py-1.5 w-6">GF</th>
-              <th className="text-center px-2 py-1.5 w-6">GC</th>
-              <th className="text-center px-2 py-1.5 w-6">GD</th>
-              <th className="text-center px-3 py-1.5 w-8 text-mundial-gold font-black">PTS</th>
+              <th className="text-center px-1.5 py-1.5 w-7 text-mundial-gold font-black">PTS</th>
+              <th className="text-center px-1.5 py-1.5 w-6">PJ</th>
+              <th className="text-center px-1.5 py-1.5 w-6">G</th>
+              <th className="text-center px-1.5 py-1.5 w-6">E</th>
+              <th className="text-center px-1.5 py-1.5 w-6">P</th>
+              <th className="text-center px-1.5 py-1.5 w-7">DG</th>
             </tr>
           </thead>
           <tbody>
             {standings.map((row, i) => (
               <tr key={row.name} className={`border-t border-white/5 ${i < 2 ? 'bg-mundial-gold/[0.02]' : ''}`}>
-                <td className="px-3 py-2 text-zinc-600 text-[10px]">{i + 1}</td>
-                <td className="px-1 py-2">
+                <td className="px-3 py-1.5 text-zinc-600 text-[10px]">{i + 1}</td>
+                <td className="px-1 py-1.5">
                   <span className="flex items-center gap-1.5">
                     <Flag name={row.name} />
-                    <span className={`text-[10px] font-bold truncate max-w-[80px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
+                    <span className={`text-[10px] font-bold truncate max-w-[72px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
                     {i < 2 && <span className="text-[7px] text-mundial-gold font-black">✓</span>}
                     {i === 2 && <span className="text-[7px] text-zinc-600 font-black">3°</span>}
                   </span>
                 </td>
-                <td className="text-center px-2 py-2 text-zinc-500 text-[10px]">{row.pj}</td>
-                <td className="text-center px-2 py-2 text-zinc-500 text-[10px]">{row.gf}</td>
-                <td className="text-center px-2 py-2 text-zinc-500 text-[10px]">{row.gc}</td>
-                <td className={`text-center px-2 py-2 text-[10px] font-mono font-bold ${(row.gf-row.gc)>0?'text-green-500':(row.gf-row.gc)<0?'text-red-400':'text-zinc-600'}`}>
+                <td className="text-center px-1.5 py-1.5 text-[10px] font-black text-white">{row.pts}</td>
+                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.pj}</td>
+                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.w}</td>
+                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.d}</td>
+                <td className="text-center px-1.5 py-1.5 text-zinc-500 text-[10px]">{row.l}</td>
+                <td className={`text-center px-1.5 py-1.5 text-[10px] font-bold ${(row.gf-row.gc)>0?'text-green-500':(row.gf-row.gc)<0?'text-red-400':'text-zinc-600'}`}>
                   {row.gf-row.gc>0?'+':''}{row.gf-row.gc}
                 </td>
-                <td className="text-center px-3 py-2 font-display text-base text-white">{row.pts}</td>
               </tr>
             ))}
           </tbody>
