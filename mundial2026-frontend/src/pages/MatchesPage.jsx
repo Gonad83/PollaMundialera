@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
+import { teamEsp } from '../lib/teams'
 import { useQuery } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
@@ -299,7 +300,7 @@ function StandingsTable({ rows, gold }) {
                   <div className="flex items-center gap-2">
                     <TeamFlag team={row.team} size="sm" />
                     <span className={`text-[11px] font-bold truncate max-w-[90px] ${idx < 2 ? 'text-white' : 'text-zinc-400'}`}>
-                      {row.team.name}
+                      {teamEsp(row.team)}
                     </span>
                   </div>
                 </td>

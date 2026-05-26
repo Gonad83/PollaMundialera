@@ -1,4 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { tournamentApi, matchApi } from '../lib/api'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown } from 'lucide-react'
+import { teamEsp } from '../lib/teams'
 
 // Helper: muestra bandera como img si es URL, o emoji/icono si no
 const Flag = ({ url, name = '', className = 'w-8 h-6' }) => {
@@ -7,31 +12,6 @@ const Flag = ({ url, name = '', className = 'w-8 h-6' }) => {
   }
   return <span>🏴</span>
 }
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { tournamentApi, matchApi } from '../lib/api'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown } from 'lucide-react'
-
-// FIFA code → nombre en español
-const CODE_TO_ESP = {
-  ARG:'Argentina',      BRA:'Brasil',         URU:'Uruguay',        COL:'Colombia',
-  ECU:'Ecuador',        PAR:'Paraguay',        CHI:'Chile',
-  FRA:'Francia',        ENG:'Inglaterra',      ESP:'España',         POR:'Portugal',
-  BEL:'Bélgica',        GER:'Alemania',        NED:'Países Bajos',   ITA:'Italia',
-  CRO:'Croacia',        SUI:'Suiza',           AUT:'Austria',        TUR:'Turquía',
-  SCO:'Escocia',        NOR:'Noruega',         SWE:'Suecia',         DEN:'Dinamarca',
-  SRB:'Serbia',         POL:'Polonia',         UKR:'Ucrania',
-  USA:'USA',            MEX:'México',          CAN:'Canadá',         CRC:'Costa Rica',
-  JAM:'Jamaica',        HON:'Honduras',        PAN:'Panamá',
-  MAR:'Marruecos',      SEN:'Senegal',         EGY:'Egipto',         RSA:'Sudáfrica',
-  CIV:'Costa de Marfil',GHA:'Ghana',           ALG:'Argelia',        NGA:'Nigeria',   CMR:'Camerún',
-  JPN:'Japón',          KOR:'Corea del Sur',   KSA:'Arabia Saudita', IRN:'Irán',
-  AUS:'Australia',      QAT:'Catar',           CHN:'China',          IRQ:'Irak',
-  NZL:'Nueva Zelanda',  UZB:'Uzbekistán',      BIH:'Bosnia y Herz.', CZE:'Rep. Checa',
-  TUN:'Túnez',          JOR:'Jordania',        CPV:'Cabo Verde',     COD:'RD Congo',
-  HTI:'Haití',          CUW:'Curazao',
-}
-const teamEsp = (t) => CODE_TO_ESP[t?.code?.toUpperCase()] || t?.name || ''
 
 const SECTIONS = [
   { key: 'clasificacion', label: 'CAMINO AL TÍTULO', icon: Trophy },

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, ChevronRight, RotateCcw, Zap, Save, CheckCircle2 } from 'lucide-react'
 import { matchApi } from '../lib/api'
 import { THIRDS_TABLE } from '../data/annexC'
+import { CODE_TO_ESP } from '../lib/teams'
 
 // ── EQUIPOS ───────────────────────────────────────────────────────────────────
 // code = ISO 3166-1 alpha-2 para flagcdn.com (gb-eng / gb-sct para naciones UK)
@@ -72,49 +73,7 @@ const FIFA_TO_ISO2 = {
   CPV:'cv', COD:'cd', HTI:'ht', HAI:'ht', CUW:'cw', CUR:'cw',
 }
 
-// ── MAPEO FIFA TLA → nombre en español ───────────────────────────────────────
-const FIFA_TO_ESP = {
-  ARG:'Argentina',      BRA:'Brasil',         URU:'Uruguay',        COL:'Colombia',
-  ECU:'Ecuador',        PAR:'Paraguay',        CHI:'Chile',
-  FRA:'Francia',        ENG:'Inglaterra',      ESP:'España',         POR:'Portugal',
-  BEL:'Bélgica',        GER:'Alemania',        NED:'Países Bajos',   ITA:'Italia',
-  CRO:'Croacia',        SUI:'Suiza',           AUT:'Austria',        TUR:'Turquía',
-  SCO:'Escocia',        NOR:'Noruega',         SWE:'Suecia',         DEN:'Dinamarca',
-  SRB:'Serbia',         POL:'Polonia',         UKR:'Ucrania',
-  USA:'USA',            MEX:'México',          CAN:'Canadá',         CRC:'Costa Rica',
-  JAM:'Jamaica',        HON:'Honduras',        PAN:'Panamá',
-  MAR:'Marruecos',      SEN:'Senegal',         EGY:'Egipto',         RSA:'Sudáfrica',
-  CIV:'Costa de Marfil',GHA:'Ghana',           ALG:'Argelia',        NGA:'Nigeria',
-  CMR:'Camerún',
-  JPN:'Japón',          KOR:'Corea del Sur',   KSA:'Arabia Saudita', IRN:'Irán',
-  AUS:'Australia',      QAT:'Catar',           CHN:'China',          IRQ:'Irak',
-  NZL:'Nueva Zelanda',  UZB:'Uzbekistán',      BIH:'Bosnia y Herz.', CZE:'Rep. Checa',
-  TUN:'Túnez',          JOR:'Jordania',        CPV:'Cabo Verde',     COD:'RD Congo',
-  HTI:'Haití',          HAI:'Haití',           CUW:'Curazao',        CUR:'Curazao',
-}
-
-// ── MAPEO nombre español → código FIFA 3 letras ──────────────────────────────
-const TEAM_CODE = {
-  'España':'ESP',         'Francia':'FRA',          'Inglaterra':'ENG',       'Argentina':'ARG',
-  'Portugal':'POR',       'Brasil':'BRA',            'Alemania':'GER',         'Países Bajos':'NED',
-  'Noruega':'NOR',        'Bélgica':'BEL',           'Colombia':'COL',         'Marruecos':'MAR',
-  'Uruguay':'URU',        'México':'MEX',             'Ecuador':'ECU',          'Suiza':'SUI',
-  'Croacia':'CRO',        'USA':'USA',                'Japón':'JPN',            'Turquía':'TUR',
-  'Senegal':'SEN',        'Canadá':'CAN',             'Paraguay':'PAR',         'Suecia':'SWE',
-  'Austria':'AUT',        'Corea del Sur':'KOR',      'Australia':'AUS',        'Irán':'IRN',
-  'Rep. Checa':'CZE',     'Escocia':'SCO',            'Egipto':'EGY',           'Bosnia y Herz.':'BIH',
-  'Costa de Marfil':'CIV','Argelia':'ALG',            'Ghana':'GHA',            'Sudáfrica':'RSA',
-  'Túnez':'TUN',          'Uzbekistán':'UZB',         'Panamá':'PAN',           'Nueva Zelanda':'NZL',
-  'Irak':'IRQ',           'Jordania':'JOR',           'RD Congo':'COD',         'Catar':'QAT',
-  'Arabia Saudita':'KSA', 'Cabo Verde':'CPV',         'Haití':'HTI',            'Curazao':'CUW',
-  'Estados Unidos':'USA', 'Italia':'ITA',             'Chile':'CHI',            'Nigeria':'NGA',
-}
-
-function getTeamCode(name) {
-  return TEAM_CODE[name] || _teamMeta[name]?.fifaCode?.toUpperCase() || name.slice(0, 3).toUpperCase()
-}
-
-// Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre
+// Cache de metadatos de equipos del API (code, flagUrl) indexado por nombre español
 const _teamMeta = {}
 
 // ── PROBABILIDADES REALES (hoja de cálculo) ───────────────────────────────────
@@ -800,7 +759,7 @@ export default function SimulatorPage() {
       const addTeam = (team) => {
         if (!team) return
         const tla = team.code?.toUpperCase()
-        const espName = FIFA_TO_ESP[tla] || team.name
+        const espName = CODE_TO_ESP[tla] || team.name
         _teamMeta[espName] = {
           fifaCode: tla,
           iso2: FIFA_TO_ISO2[tla],
@@ -823,8 +782,8 @@ export default function SimulatorPage() {
         .filter(m => m.groupLetter === gl)
         .forEach(m => {
           // Usar nombre en español (el mismo usado en cleanGroups) para el indexOf
-          const homeEsp = FIFA_TO_ESP[m.teamHome?.code?.toUpperCase()] || m.teamHome?.name
-          const awayEsp = FIFA_TO_ESP[m.teamAway?.code?.toUpperCase()] || m.teamAway?.name
+          const homeEsp = CODE_TO_ESP[m.teamHome?.code?.toUpperCase()] || m.teamHome?.name
+          const awayEsp = CODE_TO_ESP[m.teamAway?.code?.toUpperCase()] || m.teamAway?.name
           const hi = cleanGroups[gl].indexOf(homeEsp)
           const ai = cleanGroups[gl].indexOf(awayEsp)
           if (hi !== -1 && ai !== -1) apiMatchOrder[gl].push([hi, ai])

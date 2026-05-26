@@ -35,6 +35,11 @@ api.interceptors.response.use(
       }
     }
 
+    // Sin respuesta del servidor → probablemente cold start de Railway
+    if (!error.response && error.code !== 'ERR_CANCELED') {
+      window.dispatchEvent(new Event('server:waking'))
+    }
+
     return Promise.reject(error)
   }
 )

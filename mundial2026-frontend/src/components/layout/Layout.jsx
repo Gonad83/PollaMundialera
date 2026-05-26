@@ -3,8 +3,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
+import { useServerStatus } from '../../hooks/useServerStatus'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -47,6 +48,7 @@ export default function Layout() {
   const { pathname, search } = location
 
   const { actions: headerActions } = useHeaderActions()
+  const { status: serverStatus } = useServerStatus()
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
@@ -277,6 +279,24 @@ export default function Layout() {
           </div>
         </div>
       </header>
+
+      {/* Cold-start banner */}
+      <AnimatePresence>
+        {serverStatus === 'waking' && (
+          <motion.div
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="relative z-40 bg-amber-900/80 border-b border-amber-600/30 backdrop-blur-sm px-4 py-2 flex items-center justify-center gap-2"
+          >
+            <Wifi size={13} className="text-amber-400 animate-pulse" />
+            <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest">
+              Conectando con el servidor — puede tardar unos segundos…
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Container */}
       <main className={`relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pb-32 md:pb-12 ${isGroupDetail ? 'pt-0' : 'pt-6 md:pt-12'}`}>
