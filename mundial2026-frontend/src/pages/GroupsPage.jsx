@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { groupApi } from '../lib/api'
+import { groupApi, leaderboardApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, Link2, Copy, Check, Trophy } from 'lucide-react'
+import { Plus, Search, Users, Crown, ChevronRight, Lock, Sparkles, AlertCircle, Link2, Check, Trophy, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const PLAN_GROUP_LIMIT = { FREE: 1, CLASICO: 1, DT: 3, PRO: 99 }
@@ -272,6 +272,9 @@ export default function GroupsPage() {
                         </div>
                       </div>
                       <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-white/5">
+                        {/* Rank badge */}
+                        <GroupRankBadge groupId={group.id} userId={user?.id} />
+
                         {/* Link de invitación (solo si es creador y hay inviteToken) */}
                         {group.creatorId === user?.id && group.inviteToken && (
                           <button
@@ -362,6 +365,31 @@ export default function GroupsPage() {
           )
         )}
       </div>
+    </div>
+  )
+}
+
+function GroupRankBadge({ groupId, userId }) {
+  const { data = [] } = useQuery({
+    queryKey: ['group-leaderboard', groupId],
+    queryFn: () => leaderboardApi.group(groupId).then(r => r.data),
+    staleTime: 60_000,
+  })
+  const ranked = data.filter(e => e.user?.role !== 'SUPER_ADMIN')
+  const entry  = ranked.find(e => e.userId === userId)
+  if (!entry) return null
+
+  const medalColor =
+    entry.rank === 1 ? 'text-mundial-gold border-mundial-gold/30 bg-mundial-gold/10' :
+    entry.rank === 2 ? 'text-zinc-300 border-zinc-500/30 bg-zinc-700/20' :
+    entry.rank === 3 ? 'text-orange-400 border-orange-500/30 bg-orange-900/20' :
+                       'text-zinc-400 border-white/10 bg-white/5'
+
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${medalColor} shrink-0`}>
+      <TrendingUp size={11} />
+      <span className="font-display text-base leading-none tabular-nums">#{entry.rank}</span>
+      <span className="text-[9px] font-black uppercase tracking-widest opacity-70">{entry.totalPoints} pts</span>
     </div>
   )
 }
