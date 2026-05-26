@@ -3,10 +3,11 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
 import { useServerStatus } from '../../hooks/useServerStatus'
 import { useMatchReminders } from '../../hooks/useMatchReminders'
+import { usePWAInstall } from '../../hooks/usePWAInstall'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -51,6 +52,8 @@ export default function Layout() {
   const { actions: headerActions } = useHeaderActions()
   const { status: serverStatus } = useServerStatus()
   const { permission: notifPerm, requestPermission, activeCount } = useMatchReminders()
+  const { canInstall, install } = usePWAInstall()
+  const [dismissedPWA, setDismissedPWA] = useState(false)
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
@@ -449,6 +452,36 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+
+      {/* PWA install banner — solo móvil, solo cuando el navegador ofrece el prompt */}
+      <AnimatePresence>
+        {canInstall && !dismissedPWA && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed bottom-20 md:bottom-6 left-4 right-4 z-[80] md:left-auto md:right-6 md:w-80"
+          >
+            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-mundial-navyLight border border-mundial-gold/30 shadow-2xl backdrop-blur-xl">
+              <img src="/logo.png" alt="" className="w-10 h-10 object-contain shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-black text-white leading-tight">Instalar Quién Gana</p>
+                <p className="text-[9px] text-zinc-500 leading-tight mt-0.5">Acceso rápido desde tu pantalla de inicio</p>
+              </div>
+              <button
+                onClick={async () => { await install() }}
+                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl bg-mundial-gold text-mundial-navy text-[9px] font-black uppercase tracking-widest hover:opacity-90 transition-opacity"
+              >
+                <Download size={11} /> Instalar
+              </button>
+              <button onClick={() => setDismissedPWA(true)} className="shrink-0 text-zinc-600 hover:text-white transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Navigation (Native-like) */}
       <BottomNav user={user} filteredNav={filteredNav} />

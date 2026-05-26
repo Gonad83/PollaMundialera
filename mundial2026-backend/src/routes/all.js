@@ -105,18 +105,19 @@ userRouter.get('/:id/profile', authenticate, async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.params.id },
     select: {
-      id: true, username: true, avatarUrl: true, totalPoints: true, createdAt: true,
+      id: true, username: true, avatarUrl: true, totalPoints: true, createdAt: true, plan: true,
       predictions: {
-        select: { pointsTotal: true, pointsExact: true },
+        select: { pointsTotal: true, pointsExact: true, pointsWinner: true },
         where: { match: { status: 'FINISHED' } },
       },
     },
   });
   if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-  const played = user.predictions.length;
-  const exactHits = user.predictions.filter((p) => p.pointsExact >= 5).length;
-  return res.json({ ...user, predictions: undefined, played, exactHits });
+  const played      = user.predictions.length;
+  const exactHits   = user.predictions.filter(p => p.pointsExact >= 5).length;
+  const winnerHits  = user.predictions.filter(p => p.pointsExact > 0 || p.pointsWinner > 0).length;
+  return res.json({ ...user, predictions: undefined, played, exactHits, winnerHits });
 });
 
 module.exports.userRouter = userRouter;
