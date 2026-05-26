@@ -3,9 +3,10 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
 import { useServerStatus } from '../../hooks/useServerStatus'
+import { useMatchReminders } from '../../hooks/useMatchReminders'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
 
@@ -49,6 +50,7 @@ export default function Layout() {
 
   const { actions: headerActions } = useHeaderActions()
   const { status: serverStatus } = useServerStatus()
+  const { permission: notifPerm, requestPermission, activeCount } = useMatchReminders()
   const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // Restricción: Si el usuario no tiene grupos, solo ve Grupos y Reglas
   const isRestricted = !isSuperAdmin && (user?.groupCount === 0 || user?.groupCount === undefined)
@@ -268,6 +270,46 @@ export default function Layout() {
                 <Settings size={20} />
               </NavLink>
             )}
+
+            {/* Botón recordatorios */}
+            <button
+              onClick={async () => {
+                if (notifPerm === 'denied') {
+                  import('react-hot-toast').then(({ default: toast }) =>
+                    toast.error('Notificaciones bloqueadas. Actívalas en la configuración de tu navegador.', { duration: 4000 })
+                  )
+                } else if (notifPerm === 'granted') {
+                  import('react-hot-toast').then(({ default: toast }) =>
+                    toast.success(`Recordatorios activos para ${activeCount} partido${activeCount !== 1 ? 's' : ''} próximo${activeCount !== 1 ? 's' : ''}.`, { duration: 3000 })
+                  )
+                } else {
+                  const perm = await requestPermission()
+                  import('react-hot-toast').then(({ default: toast }) => {
+                    if (perm === 'granted') toast.success('¡Recordatorios activados! Te avisamos 60 y 15 min antes de cada partido.', { duration: 4000 })
+                    else toast.error('Permiso denegado. No podrás recibir recordatorios.', { duration: 3000 })
+                  })
+                }
+              }}
+              title={notifPerm === 'granted' ? `Recordatorios activos (${activeCount} partidos)` : notifPerm === 'denied' ? 'Notificaciones bloqueadas' : 'Activar recordatorios de partidos'}
+              className={`relative hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
+                ${notifPerm === 'granted'
+                  ? 'text-mundial-gold border-mundial-gold/20 bg-mundial-gold/8 hover:bg-mundial-gold/15'
+                  : notifPerm === 'denied'
+                  ? 'text-zinc-700 border-transparent cursor-not-allowed'
+                  : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`}
+            >
+              {notifPerm === 'granted'
+                ? <BellRing size={18} />
+                : notifPerm === 'denied'
+                ? <BellOff size={18} />
+                : <Bell size={18} />
+              }
+              {notifPerm === 'granted' && activeCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-mundial-gold text-mundial-navy text-[8px] font-black rounded-full flex items-center justify-center leading-none">
+                  {activeCount > 9 ? '9+' : activeCount}
+                </span>
+              )}
+            </button>
 
             <button
               onClick={logout}
