@@ -7,7 +7,7 @@ import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Crosshair, Check, X } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -323,6 +323,15 @@ function StandingsTable({ rows, gold }) {
   )
 }
 
+function predResult(pred) {
+  if (!pred) return null
+  const pts = pred.pointsTotal || 0
+  if ((pred.pointsExact || 0) >= 5) return { icon: Flame,     label: 'Exacto',     cls: 'text-mundial-gold', pts }
+  if ((pred.pointsExact || 0) >= 3) return { icon: Crosshair, label: 'Dif. exacta', cls: 'text-blue-400',     pts }
+  if ((pred.pointsWinner || 0) > 0) return { icon: Check,     label: 'Ganador',    cls: 'text-green-400',    pts }
+  return                                    { icon: X,         label: 'Fallo',      cls: 'text-zinc-600',     pts }
+}
+
 function MatchRow({ match, pred, groupId, apostado = false }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isLive     = status === 'LIVE'
@@ -330,6 +339,8 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   const hasPred    = !!pred
   // Bonus chips y score verde solo en APOSTADO mode
   const showPred   = apostado && hasPred && !isFinished && !isLive
+  const showResult = apostado && hasPred && isFinished
+  const result     = showResult ? predResult(pred) : null
   const hasBonus   = showPred && (pred.predBtts !== null || pred.predOverUnder !== null)
 
   // En REAL mode el card no es clickeable — solo se puede apostar desde APOSTADO
@@ -340,7 +351,12 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   return (
     <Wrapper>
       <div className={`${apostado ? 'card-hover' : 'card'} flex flex-col relative overflow-hidden
-        ${isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' : ''}`}>
+        ${isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' :
+          showResult && result ? (
+            result.pts >= 5 ? 'border-mundial-gold/20' :
+            result.pts >= 3 ? 'border-blue-500/20' :
+            result.pts >= 1 ? 'border-green-500/15' : ''
+          ) : ''}`}>
 
         {/* Main row */}
         <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-5 sm:gap-6">
@@ -366,13 +382,20 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
             </div>
 
             {/* Center: marcador real / pronóstico verde (solo apostado) / VS */}
-            <div className="shrink-0">
+            <div className="shrink-0 flex flex-col items-center gap-1">
               {isFinished || isLive ? (
                 /* Partido terminado o en vivo: marcador real */
-                <div className="flex items-center gap-1.5">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
-                  <span className="text-zinc-600 font-bold text-sm">:</span>
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
+                    <span className="text-zinc-600 font-bold text-sm">:</span>
+                    <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
+                  </div>
+                  {showResult && (
+                    <p className="text-center text-[9px] text-zinc-600 font-bold mt-1.5 tracking-widest">
+                      tú: <span className="text-zinc-400">{pred.predHome}–{pred.predAway}</span>
+                    </p>
+                  )}
                 </div>
               ) : showPred ? (
                 /* APOSTADO + próximo + tiene apuesta: marcador verde */
@@ -395,7 +418,16 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
 
           {/* Action */}
           <div className="w-full sm:w-36 shrink-0 border-t sm:border-t-0 sm:border-l border-white/5 pt-4 sm:pt-0 sm:pl-4 flex items-center justify-center">
-            {showPred ? (
+            {showResult && result ? (
+              <div className="flex flex-col items-center gap-1">
+                <span className={`font-display text-2xl leading-none ${result.pts > 0 ? result.cls : 'text-zinc-600'}`}>
+                  {result.pts > 0 ? `+${result.pts}` : '0'}
+                </span>
+                <span className={`flex items-center gap-1 text-[8px] font-black uppercase tracking-widest ${result.cls}`}>
+                  <result.icon size={9} /> {result.label}
+                </span>
+              </div>
+            ) : showPred ? (
               <span className="flex items-center gap-1.5 text-[9px] font-black text-green-400 uppercase tracking-widest">
                 <CheckCircle2 size={13} /> REGISTRADO
               </span>
