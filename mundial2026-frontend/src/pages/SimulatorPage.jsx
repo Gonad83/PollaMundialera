@@ -406,7 +406,7 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
                 <td className="px-1 py-1.5">
                   <span className="flex items-center gap-1.5">
                     <Flag name={row.name} />
-                    <span className={`text-[10px] font-bold truncate max-w-[72px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
+                    <span className={`text-[10px] font-bold truncate max-w-[110px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
                     {i < 2 && <span className="text-[7px] text-mundial-gold font-black">✓</span>}
                     {i === 2 && <span className="text-[7px] text-zinc-600 font-black">3°</span>}
                   </span>
@@ -1041,7 +1041,7 @@ export default function SimulatorPage() {
 
       {/* ── FASE DE GRUPOS ── */}
       {phase === 'groups' && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Object.entries(groups).map(([letter, teams]) => (
             <GroupCard
               key={letter}
