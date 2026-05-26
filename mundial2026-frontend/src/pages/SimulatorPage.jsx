@@ -319,7 +319,7 @@ function ScoreInput({ value, onChange, disabled, isWin, isLose }) {
       onChange={e => onChange(e.target.value)}
       disabled={disabled}
       style={{ colorScheme: 'dark' }}
-      className={`w-10 h-9 text-center bg-zinc-900 border rounded-lg font-display text-base focus:outline-none focus:ring-1 disabled:opacity-30 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors
+      className={`w-9 sm:w-10 h-8 sm:h-9 text-center bg-zinc-900 border rounded-lg font-display text-sm sm:text-base focus:outline-none focus:ring-1 disabled:opacity-30 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-colors
         ${isWin  ? 'border-mundial-gold/60 text-mundial-gold  focus:ring-mundial-gold  focus:border-mundial-gold'
         : isLose ? 'border-red-500/30    text-red-400/70    focus:ring-red-500      focus:border-red-500'
                  : 'border-white/15       text-white         focus:ring-mundial-gold  focus:border-mundial-gold'}`}
@@ -351,12 +351,12 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
               <th className="text-left px-2 py-1.5 w-5">#</th>
               <th className="text-left px-1 py-1.5">Equipo</th>
               <th className="text-center px-1 py-1.5 text-mundial-gold font-black">PTS</th>
-              <th className="text-center px-1 py-1.5">PJ</th>
-              <th className="text-center px-1 py-1.5">G</th>
-              <th className="text-center px-1 py-1.5">E</th>
-              <th className="text-center px-1 py-1.5">P</th>
-              <th className="text-center px-1 py-1.5">GA</th>
-              <th className="text-center px-1 py-1.5">GC</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">PJ</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">G</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">E</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">P</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">GA</th>
+              <th className="hidden sm:table-cell text-center px-1 py-1.5">GC</th>
               <th className="text-center px-1 py-1.5">DG</th>
             </tr>
           </thead>
@@ -367,18 +367,18 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
                 <td className="px-1 py-1.5">
                   <span className="flex items-center gap-1.5">
                     <Flag name={row.name} />
-                    <span className={`text-[10px] font-bold truncate max-w-[100px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
+                    <span className={`text-[10px] font-bold truncate max-w-[120px] sm:max-w-[100px] ${i < 2 ? 'text-white' : 'text-zinc-500'}`}>{row.name}</span>
                     {i < 2 && <span className="text-[7px] text-mundial-gold font-black">✓</span>}
                     {i === 2 && <span className="text-[7px] text-zinc-600 font-black">3°</span>}
                   </span>
                 </td>
                 <td className="text-center px-1 py-1.5 text-[10px] font-black text-white">{row.pts}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.pj}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.w}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.d}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.l}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gf}</td>
-                <td className="text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gc}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.pj}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.w}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.d}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.l}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gf}</td>
+                <td className="hidden sm:table-cell text-center px-1 py-1.5 text-zinc-500 text-[10px]">{row.gc}</td>
                 <td className={`text-center px-1 py-1.5 text-[10px] font-bold ${(row.gf-row.gc)>0?'text-green-500':(row.gf-row.gc)<0?'text-red-400':'text-zinc-600'}`}>
                   {row.gf-row.gc>0?'+':''}{row.gf-row.gc}
                 </td>
