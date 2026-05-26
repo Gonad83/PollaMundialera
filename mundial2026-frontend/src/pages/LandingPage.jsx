@@ -75,7 +75,7 @@ const PLANS = [
 const FAQS = [
   { q: '¿Cómo creo una liga privada?', a: 'Regístrate, ve a "Grupos", haz clic en "Crear Liga" y elige tu plan. Recibirás un código de invitación único para compartir.' },
   { q: '¿Cómo se calculan los puntos?', a: '5 puntos por resultado exacto, 3 por acertar ganador y diferencia de goles, 1 punto por acertar solo el ganador o empate.' },
-  { q: '¿Puedo cambiar mi predicción?', a: 'Sí, puedes editarla hasta 15 minutos antes del inicio de cada partido.' },
+  { q: '¿Puedo cambiar mi predicción?', a: 'Sí, puedes editarla hasta 5 minutos antes del inicio de cada partido. Pasado ese tiempo el mercado cierra y tu pronóstico queda registrado.' },
   { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos tarjetas de crédito, débito y transferencias a través de Mercado Pago.' },
 ]
 
@@ -289,6 +289,110 @@ export default function LandingPage() {
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ── CÓMO FUNCIONA ── */}
+      <section style={{ padding: '96px 24px' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 12 }}>
+              Fácil como un penal
+            </p>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#fff', lineHeight: 1, margin: 0 }}>
+              TU LIGA EN 3 PASOS
+            </h2>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 0, position: 'relative' }}>
+            {/* Línea conectora (solo desktop) */}
+            <div style={{
+              position: 'absolute', top: 40, left: '16.6%', right: '16.6%', height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.2), rgba(255,215,0,0.2), transparent)',
+              pointerEvents: 'none',
+            }} />
+
+            {[
+              {
+                num: '01',
+                title: 'Crea tu liga',
+                desc: 'Regístrate y nombra tu comunidad en menos de 30 segundos. Gratis, sin tarjeta de crédito.',
+                icon: Trophy,
+                color: '#FFD700',
+              },
+              {
+                num: '02',
+                title: 'Invita a todos',
+                desc: 'Comparte el código de acceso o el link directo. Tus amigos entran en un clic.',
+                icon: Users,
+                color: '#60a5fa',
+              },
+              {
+                num: '03',
+                title: 'Sigue el mundial',
+                desc: 'Los puntos se calculan solos al terminar cada partido. Tú solo disfruta la competencia.',
+                icon: Zap,
+                color: '#34d399',
+              },
+            ].map(({ num, title, desc, icon: Icon, color }) => (
+              <div key={num} style={{
+                padding: '40px 32px', textAlign: 'center', position: 'relative',
+              }}
+                onMouseOver={e => e.currentTarget.querySelector('.step-card').style.borderColor = `${color}33`}
+                onMouseOut={e => e.currentTarget.querySelector('.step-card').style.borderColor = 'rgba(255,255,255,0.06)'}
+              >
+                <div className="step-card" style={{
+                  padding: '36px 24px', borderRadius: 24,
+                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                  transition: 'border-color 0.3s',
+                }}>
+                  {/* Número */}
+                  <div style={{
+                    fontFamily: '"Bebas Neue", cursive', fontSize: 72, lineHeight: 1,
+                    color: 'rgba(255,255,255,0.04)', marginBottom: -16, userSelect: 'none',
+                  }}>
+                    {num}
+                  </div>
+
+                  {/* Ícono */}
+                  <div style={{
+                    width: 64, height: 64, borderRadius: 18, margin: '0 auto 20px',
+                    background: `${color}15`, border: `1px solid ${color}30`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color,
+                  }}>
+                    <Icon size={28} />
+                  </div>
+
+                  <h3 style={{
+                    fontFamily: '"Bebas Neue", cursive', fontSize: 26, color: '#fff',
+                    letterSpacing: 1, marginBottom: 12,
+                  }}>
+                    {title}
+                  </h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: '#71717a', margin: 0 }}>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA inline */}
+          <div style={{ textAlign: 'center', marginTop: 48 }}>
+            <Link to="/register" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              background: 'rgba(255,215,0,0.08)', color: '#FFD700',
+              padding: '14px 32px', borderRadius: 999,
+              fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
+              letterSpacing: '0.25em', textDecoration: 'none',
+              border: '1px solid rgba(255,215,0,0.25)',
+              transition: 'background 0.2s',
+            }}
+              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,215,0,0.15)'}
+              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,215,0,0.08)'}
+            >
+              <ArrowRight size={14} /> Empezar ahora — es gratis
+            </Link>
+          </div>
         </div>
       </section>
 
