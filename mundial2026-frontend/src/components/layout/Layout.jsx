@@ -1,15 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Component } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download, Star, AlertTriangle } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
 import { useServerStatus } from '../../hooks/useServerStatus'
 import { useMatchReminders } from '../../hooks/useMatchReminders'
 import { usePWAInstall } from '../../hooks/usePWAInstall'
 import BottomNav from './BottomNav'
 import CountdownTimer from '../common/CountdownTimer'
+
+class ErrorBoundary extends Component {
+  state = { hasError: false }
+  static getDerivedStateFromError() { return { hasError: true } }
+  componentDidCatch(err) { console.error('[ErrorBoundary]', err) }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24 gap-5">
+          <AlertTriangle size={40} className="text-mundial-red opacity-60" />
+          <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">Algo salió mal en esta página</p>
+          <button
+            onClick={() => { this.setState({ hasError: false }); window.location.reload() }}
+            className="px-5 py-2.5 rounded-2xl bg-mundial-gold/10 border border-mundial-gold/30 text-mundial-gold text-xs font-black uppercase tracking-widest hover:bg-mundial-gold/20 transition-all"
+          >
+            Recargar
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 // ── Plan Badge ──────────────────────────────────────────────────────────────
 const PLAN_CONFIG = {
@@ -351,8 +374,8 @@ export default function Layout() {
       {/* Main Container */}
       <main className={`relative z-10 flex-1 w-full max-w-7xl mx-auto px-4 pb-32 md:pb-12 ${isGroupDetail ? 'pt-0' : 'pt-6 md:pt-12'}`}>
         
-        {/* Banner — hero grande en /groups, compacto en el resto */}
-        {isGroupDetail ? null : isGroupsListing ? (
+        {/* Banner — hero grande en /groups, compacto en el resto, ninguno en /admin */}
+        {isGroupDetail ? null : pathname.startsWith('/admin') ? null : isGroupsListing ? (
           <motion.div
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -404,12 +427,19 @@ export default function Layout() {
             <div className="absolute top-0 right-0 w-64 h-64 bg-mundial-gold/5 blur-[80px] -mr-32 -mt-32" />
             <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
               <div className="w-16 h-16 bg-mundial-navy border border-white/10 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:border-mundial-gold/50 transition-colors">
-                <Calendar className="text-mundial-gold" />
+                {pathname === '/leaderboard' ? <Trophy className="text-mundial-gold" /> :
+                 pathname === '/tournament'  ? <Star className="text-mundial-gold" /> :
+                 <Calendar className="text-mundial-gold" />}
               </div>
               <div>
                 <h2 className="font-display text-2xl md:text-3xl text-white leading-tight uppercase tracking-tight">
-                  {pathname === '/leaderboard' ? 'RANKING MUNDIAL' :
-                   pathname === '/tournament'  ? 'CUADRO DEL TORNEO' :
+                  {pathname === '/leaderboard'        ? 'RANKING MUNDIAL' :
+                   pathname === '/tournament'         ? 'CUADRO DEL TORNEO' :
+                   pathname === '/simulator'          ? 'SIMULADOR' :
+                   pathname === '/rules'              ? 'REGLAS' :
+                   pathname === '/settings'           ? 'AJUSTES' :
+                   pathname.startsWith('/profile')   ? 'PERFIL' :
+                   pathname === '/payment-success'    ? 'PAGO CONFIRMADO' :
                    'TUS PRONÓSTICOS'}
                 </h2>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -436,7 +466,9 @@ export default function Layout() {
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
-            <Outlet />
+            <ErrorBoundary key={pathname}>
+              <Outlet />
+            </ErrorBoundary>
           </motion.div>
         </AnimatePresence>
       </main>
