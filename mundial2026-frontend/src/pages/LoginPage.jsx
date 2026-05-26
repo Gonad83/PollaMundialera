@@ -73,12 +73,12 @@ export default function LoginPage() {
         <div className="relative">
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs text-zinc-400 font-mono uppercase tracking-wider">Contraseña</label>
-            <Link to="/forgot-password" size="xs" className="text-[10px] text-zinc-500 hover:text-gold-400 transition">
+            <Link to="/forgot-password" className="text-[10px] text-zinc-500 hover:text-mundial-gold transition">
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
           <div className="relative">
-            <input className="input pr-12 transition-all focus:ring-gold-500" type={showPassword ? 'text' : 'password'} value={form.password}
+            <input className="input pr-12" type={showPassword ? 'text' : 'password'} value={form.password}
               onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
               placeholder="••••••••" required />
             <button
@@ -95,7 +95,7 @@ export default function LoginPage() {
           <input
             type="checkbox"
             id="remember"
-            className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-field-600 focus:ring-field-600 focus:ring-offset-zinc-950"
+            className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 accent-mundial-gold focus:ring-offset-zinc-950"
             checked={remember}
             onChange={(e) => setRemember(e.target.checked)}
           />
@@ -104,12 +104,16 @@ export default function LoginPage() {
           </label>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3 text-base shadow-lg shadow-field-900/20 active:scale-95">
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-2xl font-black text-sm uppercase tracking-widest bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20 hover:shadow-mundial-gold/40 active:scale-95 transition-all flex items-center justify-center"
+        >
           {loading ? 'Ingresando...' : 'Ingresar →'}
         </button>
         <p className="text-center text-sm text-zinc-500">
           ¿No tienes cuenta?{' '}
-          <Link to="/register" className="text-field-400 hover:text-field-300 font-bold">Regístrate gratis</Link>
+          <Link to="/register" className="text-mundial-gold hover:opacity-80 font-bold transition-opacity">Regístrate gratis</Link>
         </p>
       </form>
     </AuthLayout>
@@ -126,7 +130,7 @@ export function AuthLayout({ title, subtitle, children }) {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex flex-col items-center gap-1">
             <img src="/logo.png" alt="MUNDIAL 2026" className="w-24 h-auto" />
-            <span className="font-display text-2xl text-field-500">MUNDIAL 2026</span>
+            <span className="font-display text-2xl text-mundial-gold">MUNDIAL 2026</span>
           </Link>
           <h1 className="font-display text-3xl text-zinc-100 mt-4">{title}</h1>
           <p className="text-zinc-500 text-sm mt-1">{subtitle}</p>

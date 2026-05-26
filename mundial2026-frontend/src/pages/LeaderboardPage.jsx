@@ -5,7 +5,7 @@ import { leaderboardApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Star, TrendingUp, ChevronLeft, ChevronRight, Hash, User as UserIcon, Zap } from 'lucide-react'
+import { Trophy, Star, TrendingUp, ChevronLeft, ChevronRight, Hash, User as UserIcon, Zap, ArrowUp, ArrowDown, Minus } from 'lucide-react'
 
 const MEDAL_COLORS = {
   1: 'from-mundial-gold to-yellow-600',
@@ -19,6 +19,12 @@ export default function LeaderboardPage() {
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
   const [flash, setFlash] = useState(false)
+
+  // Trend arrows: compare current rank vs. previous visit snapshot
+  const [prevRanks] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('lb_prev_ranks') || '{}') }
+    catch { return {} }
+  })
 
   const { data, isLoading } = useQuery({
     queryKey: ['leaderboard', page],
@@ -46,6 +52,17 @@ export default function LeaderboardPage() {
   const entries = data?.entries || []
   const total = data?.pagination?.total || 0
   const pages = data?.pagination?.pages || 1
+
+  // Save current snapshot after 4 seconds (trend shows during session, updates for next visit)
+  useEffect(() => {
+    if (entries.length === 0) return
+    const timer = setTimeout(() => {
+      const snapshot = {}
+      entries.forEach(e => { snapshot[e.userId] = e.rank })
+      localStorage.setItem('lb_prev_ranks', JSON.stringify(snapshot))
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [entries])
 
   const podium = entries.filter(e => e.rank <= 3)
   const rest = entries.filter(e => e.rank > 3)
@@ -126,7 +143,8 @@ export default function LeaderboardPage() {
 
       {/* Global List */}
       <div className="card overflow-hidden border border-white/5 bg-white/5 backdrop-blur-xl">
-        <div className="hidden sm:grid grid-cols-[80px_1fr_100px_100px_120px] items-center px-8 py-4 bg-white/5 border-b border-white/5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+        <div className="hidden sm:grid grid-cols-[48px_80px_1fr_100px_100px_120px] items-center px-8 py-4 bg-white/5 border-b border-white/5 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
+           <span><TrendingUp size={12} /></span>
            <span className="flex items-center gap-2"><Hash size={12} /> POS</span>
            <span className="flex items-center gap-2"><UserIcon size={12} /> COMPETIDOR</span>
            <span className="text-right">PARTIDOS</span>
@@ -147,11 +165,13 @@ export default function LeaderboardPage() {
                    animate={{ opacity: 1, x: 0 }}
                    transition={{ delay: idx * 0.03 }}
                  >
-                   <Link 
+                   <Link
                      to={`/profile/${entry.userId}`}
-                     className={`grid grid-cols-[60px_1fr_80px] sm:grid-cols-[80px_1fr_100px_100px_120px] items-center px-6 sm:px-8 py-6 transition-all group hover:bg-white/5
+                     className={`grid grid-cols-[60px_1fr_80px] sm:grid-cols-[48px_80px_1fr_100px_100px_120px] items-center px-6 sm:px-8 py-6 transition-all group hover:bg-white/5
                        ${isMe ? 'bg-mundial-gold/5 border-l-4 border-l-mundial-gold' : ''}`}
                    >
+                     {/* Trend */}
+                     <span className="hidden sm:block"><TrendBadge current={entry.rank} prev={prevRanks[entry.userId]} /></span>
                      {/* Rank */}
                      <span className="font-display text-xl text-zinc-500 tabular-nums">#{entry.rank}</span>
 
@@ -269,6 +289,26 @@ function PodiumCard({ entry, rank, isMe }) {
         </div>
       </div>
     </motion.div>
+  )
+}
+
+function TrendBadge({ current, prev }) {
+  if (!prev || prev === current) {
+    return <Minus size={12} className="text-zinc-700" />
+  }
+  if (current < prev) {
+    return (
+      <span className="flex items-center gap-0.5 text-green-400 text-[10px] font-black">
+        <ArrowUp size={11} strokeWidth={3} />
+        {prev - current}
+      </span>
+    )
+  }
+  return (
+    <span className="flex items-center gap-0.5 text-red-400 text-[10px] font-black">
+      <ArrowDown size={11} strokeWidth={3} />
+      {current - prev}
+    </span>
   )
 }
 
