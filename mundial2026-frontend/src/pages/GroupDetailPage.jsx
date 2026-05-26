@@ -307,6 +307,8 @@ export default function GroupDetailPage() {
   const isFree = !group.isPremium
   const memberCount = group._count?.members || group.members?.length || 0
   const isAtLimit = isFree && memberCount >= group.maxMembers
+  const planLabel = group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : group.isPremium ? 'ELITE' : 'AMATEUR'
+  const planPrice = !group.isPremium ? 'Gratis' : group.activePlan === 'TIER1' ? '$2.990/mes' : group.activePlan === 'TIER2' ? '$4.990/mes' : '$9.990/mes'
   const podium = leaderboard.filter(e => e.rank <= 3)
   const rest = leaderboard.filter(e => e.rank > 3)
 
@@ -496,7 +498,7 @@ export default function GroupDetailPage() {
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
             { label: 'Miembros', value: memberCount, sub: `de ${group.maxMembers}`, color: 'text-white' },
-            { label: 'Plan', value: group.activePlan === 'TIER3' ? 'ELITE' : group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : 'AMATEUR', sub: group.isPremium ? `$${group.activePlan === 'TIER3' ? '9.990' : group.activePlan === 'TIER2' ? '4.990' : '2.990'}/mes` : 'Gratis', color: group.isPremium ? 'text-mundial-gold' : 'text-zinc-400' },
+            { label: 'Plan', value: planLabel, sub: planPrice, color: group.isPremium ? 'text-mundial-gold' : 'text-zinc-400' },
             { label: 'Link', value: group.inviteActive ? 'ACTIVO' : 'CERRADO', sub: 'de invitación', color: group.inviteActive ? 'text-green-400' : 'text-mundial-red' },
           ].map(m => (
             <div key={m.label} className="card p-4 text-center bg-white/3 border-white/5">
@@ -888,7 +890,7 @@ export default function GroupDetailPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className={`font-display text-2xl ${group.isPremium ? 'text-mundial-gold' : 'text-zinc-400'}`}>
-                    {group.activePlan === 'TIER3' ? 'ELITE' : group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : 'AMATEUR'}
+                    {planLabel}
                   </p>
                   <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-1">
                     Hasta {group.maxMembers} miembros
