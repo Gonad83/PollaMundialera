@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { adminApi, matchApi, groupApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
@@ -8,7 +9,7 @@ import {
   ShieldCheck, Users, Trophy, BarChart3, RefreshCw, Zap,
   Trash2, Crown, Mail, Search, Settings,
   AlertTriangle, CheckCircle2, LayoutDashboard, Send,
-  Database, FileDigit, Globe, Plus, Minus, Radio, X
+  Database, FileDigit, Globe, Plus, Minus, Radio, X, ChevronLeft
 } from 'lucide-react'
 
 const TABS = [
@@ -25,6 +26,9 @@ const PLAN_COLORS = { FREE: 'text-zinc-400', CLASICO: 'text-blue-400', PRO: 'tex
 
 export default function AdminPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const fromPath = location.state?.from || null
   const [activeTab, setActiveTab] = useState('overview')
   const [feedback, setFeedback] = useState(null)
   
@@ -144,6 +148,15 @@ export default function AdminPage() {
       {/* Admin Sidebar */}
       <aside className="w-full lg:w-72 shrink-0">
         <div className="sticky top-28 space-y-6">
+          {/* Botón volver */}
+          <button
+            onClick={() => fromPath ? navigate(fromPath) : navigate(-1)}
+            className="flex items-center gap-2 text-zinc-500 hover:text-mundial-gold transition-colors text-[10px] font-black uppercase tracking-widest px-2"
+          >
+            <ChevronLeft size={14} strokeWidth={3} />
+            {fromPath?.startsWith('/groups/') ? 'Volver al Grupo' : 'Volver'}
+          </button>
+
           <div className="flex items-center gap-4 px-2">
              <div className="w-12 h-12 rounded-2xl bg-mundial-gold/20 flex items-center justify-center text-mundial-gold border border-mundial-gold/30">
                <ShieldCheck size={24} />

@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function BottomNav({ user, filteredNav }) {
+  const { pathname } = useLocation()
   const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN'
   if (!hasItems) return null
 
@@ -43,7 +44,8 @@ export default function BottomNav({ user, filteredNav }) {
         {user?.role === 'SUPER_ADMIN' && (
           <NavLink
             to="/admin"
-            className={({ isActive }) => 
+            state={{ from: pathname }}
+            className={({ isActive }) =>
               `flex flex-col items-center gap-1 p-2 transition-all ${
                 isActive ? 'text-mundial-gold' : 'text-zinc-500'
               }`

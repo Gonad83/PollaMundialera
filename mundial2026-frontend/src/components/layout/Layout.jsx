@@ -292,6 +292,7 @@ export default function Layout() {
             {isSuperAdmin && (
               <NavLink
                 to="/admin"
+                state={{ from: pathname }}
                 className={({ isActive }) =>
                   `hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
                    ${isActive ? 'bg-mundial-gold text-mundial-navy border-mundial-gold' : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`
