@@ -397,19 +397,19 @@ function GroupCard({ letter, teams, scores, pairOrder, onScoreChange }) {
           const winHome = hasResult && hScore > aScore
           const winAway = hasResult && aScore > hScore
           return (
-            <div key={mi} className="flex items-center gap-2 px-3 py-2">
-              <span className={`flex-1 text-right text-[11px] font-bold flex items-center justify-end gap-1.5 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
-                <span className="truncate max-w-[65px]">{teams[i]}</span>
+            <div key={mi} className="grid items-center px-3 py-2" style={{ gridTemplateColumns: '1fr 90px 1fr' }}>
+              <span className={`text-right text-[11px] font-bold flex items-center justify-end gap-1 min-w-0 ${winHome ? 'text-white' : 'text-zinc-500'}`}>
+                <span className="truncate">{teams[i]}</span>
                 <Flag name={teams[i]} size="md" />
               </span>
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center justify-center gap-1 shrink-0">
                 <ScoreInput value={hg} onChange={v => onScoreChange(mi, 0, v)} isWin={winHome} isLose={winAway} />
-                <span className="text-zinc-600 font-bold text-xs px-0.5">–</span>
+                <span className="text-zinc-600 font-bold text-xs">–</span>
                 <ScoreInput value={ag} onChange={v => onScoreChange(mi, 1, v)} isWin={winAway} isLose={winHome} />
               </div>
-              <span className={`flex-1 text-left text-[11px] font-bold flex items-center gap-1.5 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
+              <span className={`text-left text-[11px] font-bold flex items-center gap-1 min-w-0 ${winAway ? 'text-white' : 'text-zinc-500'}`}>
                 <Flag name={teams[j]} size="md" />
-                <span className="truncate max-w-[65px]">{teams[j]}</span>
+                <span className="truncate">{teams[j]}</span>
               </span>
             </div>
           )
