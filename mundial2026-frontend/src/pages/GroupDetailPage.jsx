@@ -161,16 +161,28 @@ export default function GroupDetailPage() {
     }
   }, [searchParams, group]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Badge mensajes no leídos
+  const lastReadKey = `msg_read_${id}`
+  const lastRead = Number(localStorage.getItem(lastReadKey) || 0)
+  const unreadCount = messages.filter(m => m.sentAt && new Date(m.sentAt).getTime() > lastRead).length
+
+  // Marcar como leídos al abrir la tab
+  useEffect(() => {
+    if (activeTab === 'messages' && messages.length > 0) {
+      localStorage.setItem(lastReadKey, Date.now().toString())
+    }
+  }, [activeTab, messages, lastReadKey])
+
   // Inyectar botones Mensajes + Ajustes en el header — sin cleanup aquí para evitar parpadeo
   useEffect(() => {
     // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
     if (!group) return
     const actions = [
-      { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
+      { id: 'messages', icon: MessageSquare, label: 'Mensajes', badge: unreadCount || null, onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
       ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
-  }, [activeTab, actingAsAdmin, setActions, group])
+  }, [activeTab, actingAsAdmin, setActions, group, unreadCount])
 
   // Limpiar acciones del header solo al desmontar el grupo
   useEffect(() => () => setActions([]), [setActions])
@@ -635,6 +647,29 @@ export default function GroupDetailPage() {
         {/* ── TAB: RANKING ── */}
         {activeTab === 'ranking' && (
           <motion.div key="ranking" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+
+            {/* Estadísticas del grupo */}
+            {leaderboard.length > 1 && (() => {
+              const leader    = leaderboard[0]
+              const avgPts    = Math.round(leaderboard.reduce((s, e) => s + (e.totalPoints || 0), 0) / leaderboard.length)
+              const topMatch  = leaderboard.reduce((a, b) => (b.matchPoints || 0) > (a.matchPoints || 0) ? b : a, leaderboard[0])
+              return (
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Líder',     value: leader.user?.username,          sub: `${leader.totalPoints} pts`,      color: 'text-mundial-gold' },
+                    { label: 'Promedio',  value: `${avgPts} pts`,                sub: `${leaderboard.length} jugadores`, color: 'text-white' },
+                    { label: 'Partidos',  value: topMatch.user?.username,        sub: `${topMatch.matchPoints || 0} pts partido`, color: 'text-blue-400' },
+                  ].map(({ label, value, sub, color }) => (
+                    <div key={label} className="card p-3 text-center bg-white/3 border border-white/5">
+                      <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-1">{label}</p>
+                      <p className={`font-display text-sm leading-tight truncate ${color}`}>{value}</p>
+                      <p className="text-[8px] text-zinc-600 mt-0.5">{sub}</p>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+
             {podium.length > 0 && (
               <div className="flex items-end justify-center gap-2 sm:gap-6 py-8">
                 {podium.find(e => e.rank === 2) && <PodiumCard entry={podium.find(e => e.rank === 2)} rank={2} isMe={podium.find(e => e.rank === 2).userId === user?.id} />}

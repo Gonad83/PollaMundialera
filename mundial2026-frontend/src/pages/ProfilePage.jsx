@@ -1,10 +1,10 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { Star, Trophy, Target, TrendingUp, Calendar, Zap, BarChart3 } from 'lucide-react'
+import { Star, Trophy, Target, TrendingUp, Calendar, Zap, BarChart3, Settings } from 'lucide-react'
 import api, { predictionApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
 
@@ -113,10 +113,17 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Puntos totales */}
-          <div className="shrink-0 text-right">
-            <p className="font-display text-5xl text-mundial-gold leading-none">{profile.totalPoints}</p>
-            <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">pts totales</p>
+          {/* Puntos totales + ajustes */}
+          <div className="shrink-0 text-right flex flex-col items-end gap-3">
+            <div>
+              <p className="font-display text-5xl text-mundial-gold leading-none">{profile.totalPoints}</p>
+              <p className="text-[9px] text-zinc-600 font-black uppercase tracking-widest mt-1">pts totales</p>
+            </div>
+            {isMe && (
+              <Link to="/settings" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-zinc-500 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest">
+                <Settings size={11} /> Ajustes
+              </Link>
+            )}
           </div>
         </div>
       </div>

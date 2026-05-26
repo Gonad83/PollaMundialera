@@ -53,6 +53,7 @@ export const authApi = {
   login:    (data)   => api.post('/auth/login', data),
   logout:   ()       => api.post('/auth/logout', { refreshToken: localStorage.getItem('refreshToken') }),
   me:       ()       => api.get('/auth/me'),
+  updateMe: (data)   => api.patch('/auth/me', data),
 }
 
 export const matchApi = {

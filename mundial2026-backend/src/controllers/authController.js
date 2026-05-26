@@ -226,4 +226,40 @@ const me = async (req, res) => {
   });
 };
 
-module.exports = { register, login, refresh, logout, me };
+const updateMe = async (req, res) => {
+  try {
+    const { username, avatarUrl } = req.body;
+    const data = {};
+
+    if (username !== undefined) {
+      const result = z.string().min(3).max(20).regex(/^[a-zA-Z0-9_]+$/, {
+        message: 'Solo letras, números y guión bajo (3-20 caracteres)',
+      }).safeParse(username);
+      if (!result.success) return res.status(400).json({ error: result.error.errors[0].message });
+
+      const taken = await prisma.user.findFirst({ where: { username, NOT: { id: req.user.id } } });
+      if (taken) return res.status(409).json({ error: 'Ese nombre de usuario ya está en uso' });
+      data.username = username;
+    }
+
+    if (avatarUrl !== undefined) {
+      data.avatarUrl = avatarUrl || null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      return res.status(400).json({ error: 'Nada que actualizar' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id: req.user.id },
+      data,
+      select: { id: true, username: true, email: true, avatarUrl: true, role: true, plan: true, totalPoints: true },
+    });
+
+    return res.json(user);
+  } catch (err) {
+    return res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+};
+
+module.exports = { register, login, refresh, logout, me, updateMe };

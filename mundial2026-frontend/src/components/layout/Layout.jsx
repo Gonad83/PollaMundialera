@@ -202,16 +202,21 @@ export default function Layout() {
                   )
                 })}
                 {/* Botones de grupo (Mensajes, Ajustes) pegados al mismo pill */}
-                {headerActions.map(({ id, icon: Icon, label, onClick, isActive }) => (
+                {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
                   <button
                     key={id}
                     onClick={onClick}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                    className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
                       ${isActive
                         ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
                         : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
                   >
                     <Icon size={13} /> {label}
+                    {badge > 0 && (
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-mundial-red rounded-full text-[9px] font-black text-white flex items-center justify-center leading-none">
+                        {badge > 9 ? '9+' : badge}
+                      </span>
+                    )}
                   </button>
                 ))}
               </nav>
