@@ -84,6 +84,22 @@ export default function Layout() {
   const isGroupsListing = pathname === '/groups' || pathname === '/groups/'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
   const currentGroupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
+
+  const openAdminPanel = () => {
+    if (currentGroupId) {
+      navigate(`/groups/${currentGroupId}?tab=config`)
+      return
+    }
+    navigate('/admin', { state: { from: pathname } })
+  }
+
+  const openUpgradeFlow = () => {
+    if (currentGroupId) {
+      navigate(`/groups/${currentGroupId}?upgrade=plans`)
+      return
+    }
+    navigate('/groups?upgrade=plans')
+  }
   
   useEffect(() => {
     if (!loadingProfile && isRestricted) {
@@ -250,15 +266,14 @@ export default function Layout() {
           <div className="flex items-center gap-3 shrink-0">
             {/* Botón upgrade — solo plan FREE, no admin */}
             {user?.plan === 'FREE' && !isSuperAdmin && (
-              <NavLink
-                to="/groups"
+              <button
+                onClick={openUpgradeFlow}
                 title="Actualizar a Plan Elite"
                 className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#FFD700]/40 bg-[#FFD700]/8 text-[#FFD700] text-[9px] font-black uppercase tracking-widest hover:bg-[#FFD700]/15 hover:border-[#FFD700]/60 transition-all"
-                style={{ textDecoration: 'none' }}
               >
                 <Crown size={11} />
                 Plan Free · Subir
-              </NavLink>
+              </button>
             )}
 
             <NavLink
@@ -290,17 +305,14 @@ export default function Layout() {
             </NavLink>
             
             {isSuperAdmin && (
-              <NavLink
-                to="/admin"
-                state={{ from: pathname }}
-                className={({ isActive }) =>
-                  `hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
-                   ${isActive ? 'bg-mundial-gold text-mundial-navy border-mundial-gold' : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`
-                }
-                title="Panel Admin"
+              <button
+                onClick={openAdminPanel}
+                className={`hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
+                  ${pathname.startsWith('/admin') ? 'bg-mundial-gold text-mundial-navy border-mundial-gold' : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`}
+                title={currentGroupId ? 'Ajustes del grupo' : 'Panel Admin'}
               >
                 <Settings size={20} />
-              </NavLink>
+              </button>
             )}
 
             {/* Botón recordatorios */}

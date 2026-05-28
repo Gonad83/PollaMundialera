@@ -118,7 +118,16 @@ export default function GroupDetailPage() {
     queryKey: ['group', id],
     queryFn: () => groupApi.get(id).then(r => r.data),
     placeholderData: () => {
-      try { const c = localStorage.getItem(`grp_${id}`); return c ? JSON.parse(c) : undefined } catch { return undefined }
+      try {
+        const c = localStorage.getItem(`grp_${id}`)
+        if (c) return JSON.parse(c)
+      } catch {}
+      const cachedGroups = [
+        qc.getQueryData(['my-groups']),
+        qc.getQueryData(['all-groups']),
+        qc.getQueryData(['groups-admin-list']),
+      ].flatMap(list => Array.isArray(list) ? list : [])
+      return cachedGroups.find(g => String(g.id) === String(id))
     },
     staleTime: 30_000,
     retry: 1,
@@ -145,7 +154,7 @@ export default function GroupDetailPage() {
     refetchInterval: activeTab === 'messages' ? 10000 : false,
   })
 
-  const isAdmin = group?.creatorId === user?.id
+  const isAdmin = group?.creatorId === user?.id || user?.role === 'SUPER_ADMIN'
   // En modo simulación, el admin ve la app como un participante normal
   const actingAsAdmin = isAdmin && !simMode
 

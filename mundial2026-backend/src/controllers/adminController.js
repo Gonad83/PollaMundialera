@@ -386,8 +386,67 @@ const { syncMatches: syncMatchesUtil } = require('../utils/syncFootballData');
 // POST /api/admin/sync — Sincronizar partidos desde football-data.org
 const syncMatches = async (req, res) => {
   try {
-    const result = await syncMatchesUtil();
-    return res.json({ message: `Sincronización completa`, ...result });
+    const { simulateFinished } = req.query;
+
+    // 1. Obtener partidos no finalizados antes del sync
+    const unfinishedMatches = await prisma.match.findMany({
+      where: { status: { not: 'FINISHED' } },
+      select: { id: true },
+    });
+    const unfinishedIds = unfinishedMatches.map((m) => m.id);
+
+    // 2. Ejecutar la sincronización
+    const result = await syncMatchesUtil({ simulateFinished: simulateFinished === 'true' });
+
+    // 3. Obtener los que ahora pasaron a FINISHED
+    const newlyFinishedMatches = await prisma.match.findMany({
+      where: {
+        id: { in: unfinishedIds },
+        status: 'FINISHED',
+      },
+      include: {
+        predictions: true,
+      },
+    });
+
+    // 4. Procesar resultados y puntos para cada uno
+    for (const match of newlyFinishedMatches) {
+      const matchWithScorer = { ...match, firstScorerId: null };
+
+      await prisma.$transaction(async (tx) => {
+        for (const pred of match.predictions) {
+          const pts = calculatePredictionPoints(pred, matchWithScorer);
+
+          await tx.prediction.update({
+            where: { id: pred.id },
+            data: pts,
+          });
+
+          // Actualizar puntos totales del usuario
+          await tx.user.update({
+            where: { id: pred.userId },
+            data: { totalPoints: { increment: pts.pointsTotal } },
+          });
+        }
+      });
+
+      // Procesar bonos/rachas
+      await processBonuses(match.id);
+    }
+
+    // 5. Reconstruir el leaderboard si hubo cambios
+    if (newlyFinishedMatches.length > 0) {
+      await rebuildLeaderboard();
+
+      // Emitir actualización por Socket.io si existe
+      const io = req.app.get('io');
+      if (io) {
+        const topPlayers = await getTopN(10);
+        io.to('global').emit('leaderboard:update', { topPlayers });
+      }
+    }
+
+    return res.json({ message: `Sincronización completa`, ...result, newlyFinished: newlyFinishedMatches.length });
   } catch (err) {
     console.error('Sync error:', err.message);
     return res.status(500).json({ error: err.message });

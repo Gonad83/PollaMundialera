@@ -1,11 +1,21 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function BottomNav({ user, filteredNav }) {
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
+  const navigate = useNavigate()
+  const currentGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
   const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN'
   if (!hasItems) return null
+
+  const openAdminPanel = () => {
+    if (currentGroupId) {
+      navigate(`/groups/${currentGroupId}?tab=config`)
+      return
+    }
+    navigate('/admin', { state: { from: pathname } })
+  }
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 bg-mundial-navy/80 backdrop-blur-2xl border-t border-white/10 safe-area-bottom">
@@ -42,18 +52,17 @@ export default function BottomNav({ user, filteredNav }) {
           )
         })}
         {user?.role === 'SUPER_ADMIN' && (
-          <NavLink
-            to="/admin"
-            state={{ from: pathname }}
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 p-2 transition-all ${
-                isActive ? 'text-mundial-gold' : 'text-zinc-500'
-              }`
-            }
+          <button
+            onClick={openAdminPanel}
+            className={`flex flex-col items-center gap-1 p-2 transition-all ${
+              pathname.startsWith('/admin') || new URLSearchParams(search).get('tab') === 'config'
+                ? 'text-mundial-gold'
+                : 'text-zinc-500'
+            }`}
           >
             <Settings size={20} />
             <span className="text-[10px] font-bold uppercase tracking-tighter">Admin</span>
-          </NavLink>
+          </button>
         )}
       </div>
     </nav>
