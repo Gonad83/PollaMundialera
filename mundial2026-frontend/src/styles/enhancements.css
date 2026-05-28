@@ -1,0 +1,469 @@
+/* ═══════════════════════════════════════════════════════════
+   MEJORAS VISUALES PREMIUM - Mundial 2026
+   Gradientes, glassmorphism, animaciones y efectos premium
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
+/* ── VARIABLES MEJORADAS ── */
+:root {
+  /* Gradientes Premium */
+  --grad-gold-red: linear-gradient(135deg, #FFD700 0%, #E31B23 100%);
+  --grad-primary: linear-gradient(135deg, #1a365d 0%, #0A192F 100%);
+  --grad-accent: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  --grad-danger: linear-gradient(135deg, #E31B23 0%, #C41E3A 100%);
+  --grad-success: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
+  --grad-glass: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(227,27,35,0.05));
+
+  /* Sombras elevadas */
+  --shadow-sm: 0 4px 12px rgba(255, 215, 0, 0.1);
+  --shadow-md: 0 12px 32px rgba(227, 27, 35, 0.2);
+  --shadow-lg: 0 20px 60px rgba(255, 215, 0, 0.15);
+  --shadow-xl: 0 30px 80px rgba(0, 0, 0, 0.4);
+  --shadow-gold: 0 0 40px rgba(255, 215, 0, 0.25);
+
+  /* Blur effects */
+  --blur-sm: blur(8px);
+  --blur-md: blur(16px);
+  --blur-lg: blur(24px);
+}
+
+/* ── ANIMACIONES KEYFRAMES ── */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+  }
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* ── MEJORAS GENERALES ── */
+
+body {
+  background: linear-gradient(135deg, #0A192F 0%, #0f1d35 100%);
+  background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(255,215,0,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(227,27,35,0.08) 0%, transparent 60%);
+}
+
+/* ── CARD IMPROVEMENTS ── */
+.card {
+  background: linear-gradient(135deg,
+    rgba(17, 17, 25, 0.8) 0%,
+    rgba(25, 20, 40, 0.6) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200px;
+  height: 200px;
+  background: var(--grad-gold-red);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.6s ease;
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.card-hover {
+  @apply card;
+}
+
+.card-hover:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg,
+    rgba(99, 102, 241, 0.1) 0%,
+    rgba(139, 92, 246, 0.05) 100%),
+    linear-gradient(135deg,
+    rgba(17, 17, 25, 0.9) 0%,
+    rgba(25, 20, 40, 0.7) 100%);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-8px);
+}
+
+.card-hover:hover::before {
+  opacity: 0.15;
+  top: -30%;
+  right: -30%;
+}
+
+/* ── BUTTON IMPROVEMENTS ── */
+.btn {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: left 0.5s ease;
+  z-index: -1;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn-primary {
+  background: var(--grad-danger);
+  box-shadow: var(--shadow-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 30px 80px rgba(227, 27, 35, 0.4);
+  letter-spacing: 0.03em;
+}
+
+.btn-gold {
+  background: var(--grad-accent);
+  box-shadow: var(--shadow-gold);
+  color: #0A192F !important;
+  font-weight: 800;
+}
+
+.btn-gold:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 30px 80px rgba(255, 215, 0, 0.4);
+}
+
+.btn-ghost {
+  border: 2px solid transparent;
+  background: linear-gradient(#0A192F, #0A192F) padding-box,
+              var(--grad-accent) border-box;
+  color: #FFD700;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 40px rgba(255, 215, 0, 0.2);
+}
+
+/* ── INPUT IMPROVEMENTS ── */
+.input {
+  background: linear-gradient(135deg,
+    rgba(10, 25, 47, 0.8) 0%,
+    rgba(15, 29, 53, 0.7) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  transition: all 0.3s ease;
+  backdrop-filter: var(--blur-sm);
+}
+
+.input:focus {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+  transform: scale(1.02);
+}
+
+/* ── BADGE IMPROVEMENTS ── */
+.badge {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  transition: all 0.3s ease;
+}
+
+.badge-green {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(34, 197, 94, 0.1));
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ADE80;
+}
+
+.badge-gold {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFD700;
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.badge-red {
+  background: linear-gradient(135deg, rgba(227, 27, 35, 0.15), rgba(196, 30, 58, 0.1));
+  border: 1px solid rgba(227, 27, 35, 0.3);
+  color: #E31B23;
+}
+
+/* ── SCORE BOX IMPROVEMENTS ── */
+.score-box {
+  background: linear-gradient(135deg,
+    rgba(17, 17, 25, 0.8) 0%,
+    rgba(25, 20, 40, 0.6) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.1);
+  transition: all 0.3s ease;
+  backdrop-filter: var(--blur-sm);
+}
+
+.score-box:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: var(--shadow-gold);
+  transform: scale(1.05);
+}
+
+.score-input {
+  background: linear-gradient(135deg,
+    rgba(10, 25, 47, 0.8) 0%,
+    rgba(15, 29, 53, 0.7) 100%);
+  border: 2px solid rgba(255, 215, 0, 0.2);
+  color: #FFD700;
+  font-weight: 800;
+  transition: all 0.3s ease;
+}
+
+.score-input:focus {
+  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3),
+              inset 0 0 20px rgba(255, 215, 0, 0.05);
+}
+
+/* ── CONTROL BUTTON IMPROVEMENTS ── */
+.btn-control {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(227, 27, 35, 0.05));
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: var(--blur-sm);
+}
+
+.btn-control:hover {
+  border-color: rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(227, 27, 35, 0.1));
+  box-shadow: var(--shadow-lg);
+  transform: scale(1.1) rotate(5deg);
+}
+
+.btn-control:active {
+  transform: scale(0.9);
+}
+
+/* ── RANKING IMPROVEMENTS ── */
+.rank-1 {
+  color: #FFD700;
+  font-weight: 800;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.rank-2 {
+  color: #C0C0C0;
+  font-weight: 700;
+}
+
+.rank-3 {
+  color: #CD7F32;
+  font-weight: 700;
+}
+
+/* ── PLAN CARD ENHANCEMENTS ── */
+.plan-card {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 300px;
+  height: 300px;
+  background: var(--grad-gold-red);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.6s ease;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.plan-card:hover {
+  transform: translateY(-15px) scale(1.02);
+  box-shadow: var(--shadow-xl);
+}
+
+.plan-card:hover::before {
+  opacity: 0.12;
+  top: -30%;
+  right: -30%;
+}
+
+.plan-card.elite {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(227, 27, 35, 0.05) 100%);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 80px rgba(255, 215, 0, 0.13),
+              0 0 30px rgba(255, 215, 0, 0.08) inset;
+}
+
+.plan-card.elite:hover {
+  box-shadow: 0 0 100px rgba(255, 215, 0, 0.25),
+              0 0 50px rgba(255, 215, 0, 0.15) inset;
+}
+
+/* ── FEATURE CARD IMPROVEMENTS ── */
+.feature-card {
+  background: linear-gradient(135deg,
+    rgba(17, 17, 25, 0.7) 0%,
+    rgba(25, 20, 40, 0.5) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  backdrop-filter: var(--blur-sm);
+}
+
+.feature-card:hover {
+  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg,
+    rgba(255, 215, 0, 0.05) 0%,
+    rgba(227, 27, 35, 0.03) 100%);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(227, 27, 35, 0.1));
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFD700;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.feature-card:hover .feature-icon {
+  transform: rotate(10deg) scale(1.2);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(227, 27, 35, 0.15));
+  color: #FFD700;
+}
+
+/* ── TITULO IMPROVEMENTS ── */
+h1, h2, h3, h4 {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── RESPONSIVE TWEAKS ── */
+@media (max-width: 768px) {
+  .plan-card:hover {
+    transform: translateY(-8px);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ── ACCESSIBILITY ── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── DARK MODE (ya lo usa) ── */
+@media (prefers-color-scheme: dark) {
+  .input {
+    color-scheme: dark;
+  }
+}

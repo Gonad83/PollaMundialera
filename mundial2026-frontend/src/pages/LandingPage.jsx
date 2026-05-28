@@ -432,9 +432,9 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <StaggerContainer delay={0.1}>
-            {FEATURES.map(({ Icon, title, desc }) => (
-              <AnimationWrapper key={title} type="fadeUp">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+            {FEATURES.map(({ Icon, title, desc }, idx) => (
+              <AnimationWrapper key={title} type="fadeUp" delay={idx * 0.08}>
                 <HoverScale scale={1.02}>
                   <div style={{
                     padding: '40px 32px', borderRadius: 24,
@@ -453,7 +453,7 @@ export default function LandingPage() {
                 </HoverScale>
               </AnimationWrapper>
             ))}
-          </StaggerContainer>
+          </div>
         </div>
       </section>
 
@@ -470,18 +470,17 @@ export default function LandingPage() {
           </div>
 
           <div className="plans-grid">
-            <StaggerContainer delay={0.15}>
-              {PLANS.map((plan, idx) => {
-                const s = PLAN_CARD_STYLE[plan.style]
-                const isElite = plan.style === 'elite'
-                return (
-                  <AnimationWrapper key={plan.name} type="scaleIn" delay={idx * 0.1}>
-                    <HoverScale scale={isElite ? 1.04 : 1.02}>
-                      <div style={{
-                        padding: '28px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden',
-                        ...s.card,
-                        transition: 'transform 0.3s, box-shadow 0.3s',
-                      }}>
+            {PLANS.map((plan, idx) => {
+              const s = PLAN_CARD_STYLE[plan.style]
+              const isElite = plan.style === 'elite'
+              return (
+                <AnimationWrapper key={plan.name} type="scaleIn" delay={idx * 0.1}>
+                  <HoverScale scale={isElite ? 1.04 : 1.02}>
+                    <div style={{
+                      padding: '28px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden',
+                      ...s.card,
+                      transition: 'transform 0.3s, box-shadow 0.3s',
+                    }}>
                   {/* Badge superior */}
                   {plan.badge && (
                     <div style={{
@@ -540,12 +539,11 @@ export default function LandingPage() {
                       >
                         {plan.cta}
                       </Link>
-                      </div>
-                    </HoverScale>
-                  </AnimationWrapper>
-                )
-              })}
-            </StaggerContainer>
+                    </div>
+                  </HoverScale>
+                </AnimationWrapper>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -559,15 +557,14 @@ export default function LandingPage() {
             </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <StaggerContainer delay={0.08}>
-              {FAQS.map((item, i) => (
-                <AnimationWrapper key={i} type="fadeUp">
-                  <div style={{
-                    borderRadius: 20, overflow: 'hidden',
-                    border: activeFaq === i ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                    background: activeFaq === i ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)',
-                    transition: 'all 0.2s',
-                  }}>
+            {FAQS.map((item, i) => (
+              <AnimationWrapper key={i} type="fadeUp" delay={i * 0.08}>
+                <div style={{
+                  borderRadius: 20, overflow: 'hidden',
+                  border: activeFaq === i ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.06)',
+                  background: activeFaq === i ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)',
+                  transition: 'all 0.2s',
+                }}>
                 <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} style={{
                   width: '100%', padding: '24px 28px', display: 'flex', alignItems: 'center',
                   justifyContent: 'space-between', gap: 16, background: 'none', border: 'none',
@@ -576,15 +573,14 @@ export default function LandingPage() {
                   <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#e4e4e7', letterSpacing: 0.5 }}>{item.q}</span>
                   <ChevronDown size={18} style={{ color: activeFaq === i ? '#FFD700' : '#52525b', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                 </button>
-                  {activeFaq === i && (
-                    <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#71717a', lineHeight: 1.7, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ paddingTop: 16 }}>{item.a}</div>
-                    </div>
-                  )}
+                {activeFaq === i && (
+                  <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#71717a', lineHeight: 1.7, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ paddingTop: 16 }}>{item.a}</div>
                   </div>
-                </AnimationWrapper>
-              ))}
-            </StaggerContainer>
+                )}
+                </div>
+              </AnimationWrapper>
+            ))}
           </div>
         </div>
       </section>
