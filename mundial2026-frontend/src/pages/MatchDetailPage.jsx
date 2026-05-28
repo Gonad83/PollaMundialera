@@ -65,6 +65,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   const [form, setForm] = useState({
     predHome: 0, predAway: 0,
     predBtts: null, predOverUnder: null, predPenalties: null,
+    predWinnerId: null,
   })
   const [saved, setSaved] = useState(false)
   const [msLeft, setMsLeft] = useState(0)
@@ -77,9 +78,29 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
         predBtts: myPred.predBtts,
         predOverUnder: myPred.predOverUnder,
         predPenalties: myPred.predPenalties,
+        predWinnerId: myPred.predWinnerId ?? null,
       })
     }
   }, [myPred])
+
+  // Auto-calcular campeón/ganador de eliminatorias según marcadores
+  useEffect(() => {
+    if (!isElim) return
+    const diff = form.predHome - form.predAway
+    if (diff > 0) {
+      setForm(f => ({ ...f, predWinnerId: teamHome?.id || null }))
+    } else if (diff < 0) {
+      setForm(f => ({ ...f, predWinnerId: teamAway?.id || null }))
+    } else {
+      // Si es empate, mantener selección sólo si ya corresponde a uno de los dos equipos
+      setForm(f => {
+        if (f.predWinnerId !== teamHome?.id && f.predWinnerId !== teamAway?.id) {
+          return { ...f, predWinnerId: null }
+        }
+        return f
+      })
+    }
+  }, [form.predHome, form.predAway, teamHome, teamAway, isElim])
 
   useEffect(() => {
     if (!match || isLocked || isFinished) return
@@ -117,6 +138,10 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
     if (isLocked) return
     if (!effectiveGroupId) {
       toast.error('Únete a un grupo para guardar pronósticos')
+      return
+    }
+    if (isElim && form.predHome === form.predAway && !form.predWinnerId) {
+      toast.error('Selecciona qué equipo clasifica / levanta la Copa')
       return
     }
     mutation.mutate(form)
@@ -246,14 +271,23 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
 
           {isLocked ? (
             <div className="bg-white/5 rounded-2xl p-10 border border-white/5 text-center">
-              {myPred ? (
-                <div className="space-y-4">
-                   <p className="text-zinc-500 text-xs uppercase tracking-widest">Tu apuesta final fue</p>
-                   <p className="font-display text-6xl text-white">
-                      {myPred.predHome} <span className="text-mundial-gold mx-2">–</span> {myPred.predAway}
-                   </p>
-                </div>
-              ) : (
+               {myPred ? (
+                 <div className="space-y-4 flex flex-col items-center">
+                    <p className="text-zinc-500 text-xs uppercase tracking-widest">Tu apuesta final fue</p>
+                    <p className="font-display text-6xl text-white">
+                       {myPred.predHome} <span className="text-mundial-gold mx-2">–</span> {myPred.predAway}
+                    </p>
+                    {isElim && myPred.predWinner && (
+                      <div className="inline-flex items-center gap-2 bg-mundial-gold/10 border border-mundial-gold/20 px-4 py-2 rounded-full mt-2">
+                        <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Campeón Pronosticado:</span>
+                        <TeamFlag team={myPred.predWinner} size="sm" />
+                        <span className="text-[10px] text-mundial-gold font-black uppercase tracking-widest">
+                          {myPred.predWinner.name}
+                        </span>
+                      </div>
+                    )}
+                 </div>
+               ) : (
                 <p className="text-zinc-500 font-medium">No se registró pronóstico para este encuentro.</p>
               )}
             </div>
@@ -325,8 +359,56 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                         options={[{v:true, l:'Sí'}, {v:false, l:'No'}]}
                       />
                     )}
-                 </div>
-              </div>
+                    
+                    {isElim && form.predHome === form.predAway && (
+                      <div className="flex flex-col p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all space-y-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-white">¿Quién clasifica / es Campeón?</span>
+                          <span className="text-[10px] text-mundial-gold font-mono uppercase tracking-widest leading-none mt-0.5">+30 pts de bonus</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({ ...f, predWinnerId: teamHome?.id }))}
+                            className={`py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2
+                              ${form.predWinnerId === teamHome?.id
+                                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
+                                : 'bg-white/5 border-white/5 text-zinc-500 hover:text-white'}`}
+                          >
+                            <TeamFlag team={teamHome} size="sm" />
+                            {teamHome?.name}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({ ...f, predWinnerId: teamAway?.id }))}
+                            className={`py-3.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center justify-center gap-2
+                              ${form.predWinnerId === teamAway?.id
+                                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-lg shadow-mundial-gold/20'
+                                : 'bg-white/5 border-white/5 text-zinc-500 hover:text-white'}`}
+                          >
+                            <TeamFlag team={teamAway} size="sm" />
+                            {teamAway?.name}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {isElim && form.predHome !== form.predAway && (
+                      <div className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 transition-all">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-zinc-400">Campeón / Clasificado Pronosticado</span>
+                          <span className="text-[10px] text-zinc-600 font-mono uppercase tracking-widest leading-none mt-0.5">Determinado por el marcador</span>
+                        </div>
+                        <div className="flex items-center gap-2 bg-mundial-gold/10 border border-mundial-gold/20 px-4 py-2 rounded-xl">
+                          <TeamFlag team={form.predHome > form.predAway ? teamHome : teamAway} size="sm" />
+                          <span className="text-[10px] font-black text-mundial-gold uppercase tracking-widest">
+                            {form.predHome > form.predAway ? teamHome?.name : teamAway?.name}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+               </div>
             </div>
           )}
         </div>

@@ -9,6 +9,7 @@ const matchResultSchema = z.object({
   scoreAway: z.number().int().min(0).max(20),
   firstScorerId: z.string().optional().nullable(),
   wentToPenalties: z.boolean().default(false),
+  winnerId: z.string().optional().nullable(),
 });
 
 const STREAK_BONUS = 5;  // Puntos por racha de 3 exactos seguidos
@@ -38,17 +39,17 @@ const setMatchResult = async (req, res) => {
     return res.status(409).json({ error: 'Este partido ya tiene resultado cargado' });
   }
 
-  const { scoreHome, scoreAway, firstScorerId, wentToPenalties } = parsed.data;
+  const { scoreHome, scoreAway, firstScorerId, wentToPenalties, winnerId } = parsed.data;
 
   // Enriquecer el match con el primer goleador para el cálculo
-  const matchWithScorer = { ...match, firstScorerId, scoreHome, scoreAway, wentToPenalties };
+  const matchWithScorer = { ...match, firstScorerId, scoreHome, scoreAway, wentToPenalties, winnerId };
 
   // ─── Transacción: actualizar partido + calcular todos los puntos ──────────
   await prisma.$transaction(async (tx) => {
     // 1. Actualizar el partido
     await tx.match.update({
       where: { id: matchId },
-      data: { scoreHome, scoreAway, wentToPenalties, status: 'FINISHED' },
+      data: { scoreHome, scoreAway, wentToPenalties, winnerId, status: 'FINISHED' },
     });
 
     // 2. Calcular puntos para cada predicción

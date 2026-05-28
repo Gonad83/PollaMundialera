@@ -6,6 +6,12 @@ import {
   ChevronDown, Layout, Play, CheckCircle2,
   ArrowRight, Smartphone, Award
 } from 'lucide-react'
+import {
+  AnimationWrapper,
+  HoverScale,
+  StaggerContainer,
+  GlowEffect
+} from '../components/AnimationWrapper'
 
 // ── Constants ────────────────────────────────────────────────────────
 const WORLD_CUP_DATE = new Date('2026-06-11T15:00:00Z')
@@ -217,77 +223,95 @@ export default function LandingPage() {
 
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
           {/* Badge */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            padding: '8px 20px', background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, marginBottom: 32,
-          }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD700', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#FFD700' }}>
-              Inscripciones abiertas · Mundial 2026
-            </span>
-          </div>
+          <AnimationWrapper type="fadeUp" delay={0}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 10,
+              padding: '8px 20px', background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, marginBottom: 32,
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD700', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#FFD700' }}>
+                Inscripciones abiertas · Mundial 2026
+              </span>
+            </div>
+          </AnimationWrapper>
 
           {/* Headline */}
-          <h1 style={{
-            fontFamily: '"Bebas Neue", cursive',
-            fontSize: 'clamp(52px, 10vw, 110px)',
-            lineHeight: 0.92, color: '#fff',
-            letterSpacing: '-1px', marginBottom: 32,
-          }}>
-            La Polla del Mundial<br />
-            <span style={{ WebkitTextStroke: '2px #FFD700', color: 'transparent' }}>que se gestiona sola.</span>
-          </h1>
-
-          <p style={{ maxWidth: 600, margin: '0 auto 40px', fontSize: 18, lineHeight: 1.75, color: '#a1a1aa', fontWeight: 500 }}>
-            Olvida los Excel y los mensajes perdidos. Crea tu liga privada en 30 segundos, automatiza los puntos en tiempo real y vive el mundial como un profesional.
-          </p>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
-            <Link to="/register" style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: '#FFD700', color: '#0A192F', padding: '18px 36px',
-              borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
-              letterSpacing: '0.25em', textDecoration: 'none',
-              boxShadow: '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-            }}
-              onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 0 80px rgba(255,215,0,0.55), 0 8px 30px rgba(255,215,0,0.4)' }}
-              onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)' }}
-            >
-              <Trophy size={18} /> CREAR MI LIGA AHORA
-            </Link>
-            <button onClick={() => scrollTo('características')} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 12,
-              background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
-              letterSpacing: '0.2em', color: '#71717a',
+          <AnimationWrapper type="slideLeft" delay={0.1}>
+            <h1 style={{
+              fontFamily: '"Bebas Neue", cursive',
+              fontSize: 'clamp(52px, 10vw, 110px)',
+              lineHeight: 0.92, color: '#fff',
+              letterSpacing: '-1px', marginBottom: 32,
             }}>
-              <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Play size={16} style={{ fill: '#a1a1aa', color: '#a1a1aa' }} />
-              </span>
-              Cómo funciona
-            </button>
-          </div>
+              La Polla del Mundial<br />
+              <span style={{ WebkitTextStroke: '2px #FFD700', color: 'transparent' }}>que se gestiona sola.</span>
+            </h1>
+          </AnimationWrapper>
+
+          <AnimationWrapper type="fadeUp" delay={0.2}>
+            <p style={{ maxWidth: 600, margin: '0 auto 40px', fontSize: 18, lineHeight: 1.75, color: '#a1a1aa', fontWeight: 500 }}>
+              Olvida los Excel y los mensajes perdidos. Crea tu liga privada en 30 segundos, automatiza los puntos en tiempo real y vive el mundial como un profesional.
+            </p>
+          </AnimationWrapper>
+
+          <AnimationWrapper type="fadeUp" delay={0.3}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
+              <GlowEffect color="gold">
+                <HoverScale scale={1.05}>
+                  <Link to="/register" style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 10,
+                    background: '#FFD700', color: '#0A192F', padding: '18px 36px',
+                    borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
+                    letterSpacing: '0.25em', textDecoration: 'none',
+                    boxShadow: '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                  }}
+                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 0 80px rgba(255,215,0,0.55), 0 8px 30px rgba(255,215,0,0.4)' }}
+                    onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)' }}
+                  >
+                    <Trophy size={18} /> CREAR MI LIGA AHORA
+                  </Link>
+                </HoverScale>
+              </GlowEffect>
+              <HoverScale scale={1.05}>
+                <button onClick={() => scrollTo('características')} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 12,
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
+                  letterSpacing: '0.2em', color: '#71717a',
+                }}>
+                  <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Play size={16} style={{ fill: '#a1a1aa', color: '#a1a1aa' }} />
+                  </span>
+                  Cómo funciona
+                </button>
+              </HoverScale>
+            </div>
+          </AnimationWrapper>
 
           {/* Countdown */}
           {time && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 600, margin: '64px auto 0' }}>
-              {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map(item => (
-                <div key={item.l} style={{
-                  padding: '24px 16px', borderRadius: 24,
-                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                }}>
-                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
-                    {pad(item.v)}
-                  </span>
-                  <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#52525b' }}>
-                    {item.l}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <AnimationWrapper type="scaleIn" delay={0.4}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 600, margin: '64px auto 0' }}>
+                <StaggerContainer delay={0.1}>
+                  {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map(item => (
+                    <div key={item.l} style={{
+                      padding: '24px 16px', borderRadius: 24,
+                      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    }}>
+                      <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
+                        {pad(item.v)}
+                      </span>
+                      <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#52525b' }}>
+                        {item.l}
+                      </span>
+                    </div>
+                  ))}
+                </StaggerContainer>
+              </div>
+            </AnimationWrapper>
           )}
         </div>
       </section>
@@ -408,24 +432,28 @@ export default function LandingPage() {
             </h2>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 20 }}>
+          <StaggerContainer delay={0.1}>
             {FEATURES.map(({ Icon, title, desc }) => (
-              <div key={title} style={{
-                padding: '40px 32px', borderRadius: 24,
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                transition: 'border-color 0.3s, transform 0.3s',
-              }}
-                onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.3)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
-                onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}
-              >
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: '#112240', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#FFD700' }}>
-                  <Icon size={24} />
-                </div>
-                <h3 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#fff', marginBottom: 12, letterSpacing: 1 }}>{title}</h3>
-                <p style={{ fontSize: 14, lineHeight: 1.7, color: '#71717a', margin: 0 }}>{desc}</p>
-              </div>
+              <AnimationWrapper key={title} type="fadeUp">
+                <HoverScale scale={1.02}>
+                  <div style={{
+                    padding: '40px 32px', borderRadius: 24,
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                    transition: 'border-color 0.3s, transform 0.3s',
+                  }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.3)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                  >
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: '#112240', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#FFD700' }}>
+                      <Icon size={24} />
+                    </div>
+                    <h3 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#fff', marginBottom: 12, letterSpacing: 1 }}>{title}</h3>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#71717a', margin: 0 }}>{desc}</p>
+                  </div>
+                </HoverScale>
+              </AnimationWrapper>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </section>
 
@@ -442,15 +470,18 @@ export default function LandingPage() {
           </div>
 
           <div className="plans-grid">
-            {PLANS.map((plan) => {
-              const s = PLAN_CARD_STYLE[plan.style]
-              const isElite = plan.style === 'elite'
-              return (
-                <div key={plan.name} style={{
-                  padding: '28px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden',
-                  ...s.card,
-                  transition: 'transform 0.3s, box-shadow 0.3s',
-                }}>
+            <StaggerContainer delay={0.15}>
+              {PLANS.map((plan, idx) => {
+                const s = PLAN_CARD_STYLE[plan.style]
+                const isElite = plan.style === 'elite'
+                return (
+                  <AnimationWrapper key={plan.name} type="scaleIn" delay={idx * 0.1}>
+                    <HoverScale scale={isElite ? 1.04 : 1.02}>
+                      <div style={{
+                        padding: '28px 20px', borderRadius: 24, position: 'relative', overflow: 'hidden',
+                        ...s.card,
+                        transition: 'transform 0.3s, box-shadow 0.3s',
+                      }}>
                   {/* Badge superior */}
                   {plan.badge && (
                     <div style={{
@@ -496,22 +527,25 @@ export default function LandingPage() {
                     ))}
                   </div>
 
-                  <Link to="/register" style={{
-                    display: 'block', width: '100%', padding: isElite ? '13px' : '11px',
-                    textAlign: 'center', borderRadius: 12, fontSize: 9, fontWeight: 900,
-                    textTransform: 'uppercase', letterSpacing: '0.15em', textDecoration: 'none',
-                    transition: 'all 0.2s',
-                    boxShadow: isElite ? '0 0 30px rgba(255,215,0,0.35)' : 'none',
-                    ...s.btn,
-                  }}
-                    onMouseOver={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 50px rgba(255,215,0,0.55)'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
-                    onMouseOut={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 30px rgba(255,215,0,0.35)'; e.currentTarget.style.transform = 'translateY(0)' } }}
-                  >
-                    {plan.cta}
-                  </Link>
-                </div>
-              )
-            })}
+                      <Link to="/register" style={{
+                        display: 'block', width: '100%', padding: isElite ? '13px' : '11px',
+                        textAlign: 'center', borderRadius: 12, fontSize: 9, fontWeight: 900,
+                        textTransform: 'uppercase', letterSpacing: '0.15em', textDecoration: 'none',
+                        transition: 'all 0.2s',
+                        boxShadow: isElite ? '0 0 30px rgba(255,215,0,0.35)' : 'none',
+                        ...s.btn,
+                      }}
+                        onMouseOver={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 50px rgba(255,215,0,0.55)'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
+                        onMouseOut={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 30px rgba(255,215,0,0.35)'; e.currentTarget.style.transform = 'translateY(0)' } }}
+                      >
+                        {plan.cta}
+                      </Link>
+                      </div>
+                    </HoverScale>
+                  </AnimationWrapper>
+                )
+              })}
+            </StaggerContainer>
           </div>
         </div>
       </section>
@@ -525,13 +559,15 @@ export default function LandingPage() {
             </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {FAQS.map((item, i) => (
-              <div key={i} style={{
-                borderRadius: 20, overflow: 'hidden',
-                border: activeFaq === i ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                background: activeFaq === i ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)',
-                transition: 'all 0.2s',
-              }}>
+            <StaggerContainer delay={0.08}>
+              {FAQS.map((item, i) => (
+                <AnimationWrapper key={i} type="fadeUp">
+                  <div style={{
+                    borderRadius: 20, overflow: 'hidden',
+                    border: activeFaq === i ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.06)',
+                    background: activeFaq === i ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)',
+                    transition: 'all 0.2s',
+                  }}>
                 <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} style={{
                   width: '100%', padding: '24px 28px', display: 'flex', alignItems: 'center',
                   justifyContent: 'space-between', gap: 16, background: 'none', border: 'none',
@@ -540,40 +576,48 @@ export default function LandingPage() {
                   <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#e4e4e7', letterSpacing: 0.5 }}>{item.q}</span>
                   <ChevronDown size={18} style={{ color: activeFaq === i ? '#FFD700' : '#52525b', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                 </button>
-                {activeFaq === i && (
-                  <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#71717a', lineHeight: 1.7, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div style={{ paddingTop: 16 }}>{item.a}</div>
+                  {activeFaq === i && (
+                    <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#71717a', lineHeight: 1.7, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ paddingTop: 16 }}>{item.a}</div>
+                    </div>
+                  )}
                   </div>
-                )}
-              </div>
-            ))}
+                </AnimationWrapper>
+              ))}
+            </StaggerContainer>
           </div>
         </div>
       </section>
 
       {/* ── CIERRE / URGENCIA ── */}
-      <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(255,215,0,0.03)', borderTop: '1px solid rgba(255,215,0,0.1)', borderBottom: '1px solid rgba(255,215,0,0.1)' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto' }}>
-          <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 16 }}>
-            ⏱ Precio de Lanzamiento
-          </p>
-          <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 6vw, 64px)', color: '#fff', lineHeight: 1.1, marginBottom: 20 }}>
-            No dejes tu polla para última hora.
-          </h2>
-          <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.7, marginBottom: 36 }}>
-            Configura tu liga hoy y asegura el precio de lanzamiento antes de que empiece el torneo.
-          </p>
-          <Link to="/register" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
-            background: '#FFD700', color: '#0A192F', padding: '16px 36px',
-            borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
-            letterSpacing: '0.25em', textDecoration: 'none',
-            boxShadow: '0 0 50px rgba(255,215,0,0.35)',
-          }}>
-            <Trophy size={16} /> CREAR MI LIGA AHORA
-          </Link>
-        </div>
-      </section>
+      <AnimationWrapper type="fadeUp">
+        <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(255,215,0,0.03)', borderTop: '1px solid rgba(255,215,0,0.1)', borderBottom: '1px solid rgba(255,215,0,0.1)' }}>
+          <div style={{ maxWidth: 700, margin: '0 auto' }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 16 }}>
+              ⏱ Precio de Lanzamiento
+            </p>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 6vw, 64px)', color: '#fff', lineHeight: 1.1, marginBottom: 20 }}>
+              No dejes tu polla para última hora.
+            </h2>
+            <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.7, marginBottom: 36 }}>
+              Configura tu liga hoy y asegura el precio de lanzamiento antes de que empiece el torneo.
+            </p>
+            <GlowEffect color="gold">
+              <HoverScale scale={1.05}>
+                <Link to="/register" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 10,
+                  background: '#FFD700', color: '#0A192F', padding: '16px 36px',
+                  borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
+                  letterSpacing: '0.25em', textDecoration: 'none',
+                  boxShadow: '0 0 50px rgba(255,215,0,0.35)',
+                }}>
+                  <Trophy size={16} /> CREAR MI LIGA AHORA
+                </Link>
+              </HoverScale>
+            </GlowEffect>
+          </div>
+        </section>
+      </AnimationWrapper>
 
       {/* ── FOOTER ── */}
       <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>

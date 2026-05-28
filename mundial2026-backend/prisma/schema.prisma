@@ -133,6 +133,8 @@ model Team {
 
   homeMatches Match[]  @relation("HomeTeam")
   awayMatches Match[]  @relation("AwayTeam")
+  winnerMatches Match[]  @relation("WinnerTeam")
+  predWinnerPredictions Prediction[] @relation("PredWinnerTeam")
   players     Player[]
 }
 
@@ -158,6 +160,8 @@ model Match {
   teamAwayId   String
   teamHome     Team        @relation("HomeTeam", fields: [teamHomeId], references: [id])
   teamAway     Team        @relation("AwayTeam", fields: [teamAwayId], references: [id])
+  winnerId     String?
+  winner       Team?       @relation("WinnerTeam", fields: [winnerId], references: [id])
   scoreHome    Int?
   scoreAway    Int?
   wentToPenalties Boolean  @default(false)
@@ -188,6 +192,8 @@ model Prediction {
   predBtts        Boolean?
   predOverUnder   String?
   predPenalties   Boolean?
+  predWinnerId    String?
+  predWinner      Team?   @relation("PredWinnerTeam", fields: [predWinnerId], references: [id])
 
   pointsExact     Int     @default(0)
   pointsWinner    Int     @default(0)

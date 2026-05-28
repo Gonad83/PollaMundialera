@@ -139,6 +139,17 @@ async function syncMatches(options = {}) {
     const scoreAway     = m.score?.fullTime?.away ?? null;
     const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
 
+    let winnerId = null;
+    if (status === 'FINISHED' && m.score?.winner) {
+      if (m.score.winner === 'HOME_TEAM') {
+        winnerId = homeTeam.id;
+      } else if (m.score.winner === 'AWAY_TEAM') {
+        winnerId = awayTeam.id;
+      }
+    }
+
+    const wentToPenalties = m.score?.duration === 'PENALTY_SHOOTOUT' || m.score?.penalties !== undefined || false;
+
     // Buscar si ya existe por externalId guardado en el venue field
     const existing = await prisma.match.findFirst({ where: { venue: externalId } });
 
@@ -153,6 +164,8 @@ async function syncMatches(options = {}) {
       city: m.venue || m.area?.name || null,
       scoreHome,
       scoreAway,
+      wentToPenalties,
+      winnerId,
     };
 
     if (existing) {

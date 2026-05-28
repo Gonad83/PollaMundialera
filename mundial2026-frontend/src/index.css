@@ -1,6 +1,10 @@
+@import './styles/enhancements.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mejoras visuales premium */
 
 @layer base {
   * { box-sizing: border-box; }

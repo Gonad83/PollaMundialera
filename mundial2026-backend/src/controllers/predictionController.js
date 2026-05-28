@@ -12,6 +12,7 @@ const POINTS = {
   OVER_UNDER_BONUS: 1,   // Over/Under correcto
   PENALTIES_BONUS: 3,    // ¿Va a penales? correcto (eliminatoria)
   SCORER_ELIMINATION: 7, // Goleador del partido en eliminatoria
+  CHAMPION_BONUS: 30,    // Acierto de campeón/clasificado en eliminatoria
 };
 
 // Multiplicadores por fase
@@ -29,8 +30,8 @@ const PHASE_MULTIPLIERS = {
  * Calcula los puntos de una predicción dado el resultado real
  */
 const calculatePredictionPoints = (prediction, match) => {
-  const { predHome, predAway, predScorerId, predBtts, predOverUnder, predPenalties } = prediction;
-  const { scoreHome, scoreAway, phase, wentToPenalties } = match;
+  const { predHome, predAway, predScorerId, predBtts, predOverUnder, predPenalties, predWinnerId } = prediction;
+  const { scoreHome, scoreAway, phase, wentToPenalties, winnerId } = match;
   const multiplier = PHASE_MULTIPLIERS[phase] || 1;
 
   let pointsExact = 0;
@@ -78,6 +79,12 @@ const calculatePredictionPoints = (prediction, match) => {
     if (predPenalties === wentToPenalties) pointsBonus += POINTS.PENALTIES_BONUS;
   }
 
+  // 8. Bonus: ¿acertó el ganador de la eliminatoria / campeón?
+  const isElim = phase !== 'GROUP';
+  if (isElim && predWinnerId && winnerId === predWinnerId) {
+    pointsBonus += POINTS.CHAMPION_BONUS;
+  }
+
   const base = pointsExact + pointsWinner;
   const total = Math.round(base * multiplier) + pointsBonus;
 
@@ -93,6 +100,7 @@ const predictionSchema = z.object({
   predBtts: z.boolean().optional().nullable(),
   predOverUnder: z.enum(['over', 'under']).optional().nullable(),
   predPenalties: z.boolean().optional().nullable(),
+  predWinnerId: z.string().optional().nullable(),
 });
 
 // ─── Controllers ──────────────────────────────────────────────────────────────
@@ -110,6 +118,7 @@ const getForMatch = async (req, res) => {
       match: {
         include: { teamHome: true, teamAway: true },
       },
+      predWinner: true,
     },
   });
 
@@ -182,6 +191,7 @@ const getMyPredictions = async (req, res) => {
       match: {
         include: { teamHome: true, teamAway: true },
       },
+      predWinner: true,
     },
     orderBy: { match: { dateUtc: 'asc' } },
   });
@@ -209,6 +219,7 @@ const getGroupCompare = async (req, res) => {
       pointsWinner: true,
       userId: true,
       matchId: true,
+      predWinnerId: true,
       user: { select: { id: true, username: true } },
       match: {
         select: {
@@ -254,6 +265,7 @@ const getAllForMatch = async (req, res) => {
     where: whereClause,
     include: {
       user: { select: { id: true, username: true, avatarUrl: true } },
+      predWinner: true,
     },
     orderBy: { pointsTotal: 'desc' },
   });
