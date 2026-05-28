@@ -195,6 +195,7 @@ export default function GroupDetailPage() {
     // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
     if (!group) return
     const actions = [
+      { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => setActiveTab('simulador'), isActive: activeTab === 'simulador' },
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', badge: unreadCount || null, onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
       ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
@@ -554,12 +555,6 @@ export default function GroupDetailPage() {
         {/* ── TAB: RESULTADOS ── */}
         {activeTab === 'resultados' && (
           <motion.div key="resultados" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            {/* Simulador button at the top of Resultados */}
-            <div className="mb-6 flex justify-end">
-               <button onClick={() => setActiveTab('simulador')} className="btn-gold px-4 py-2 text-[10px] flex items-center gap-2">
-                 <Calendar size={14} /> ABRIR SIMULADOR DE FASE DE GRUPOS
-               </button>
-            </div>
             <MatchesPage groupId={id} />
           </motion.div>
         )}
