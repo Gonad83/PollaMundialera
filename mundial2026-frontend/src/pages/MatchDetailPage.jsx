@@ -56,6 +56,8 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   })
 
   // Derivar valores de match (seguros aunque match sea null todavía)
+  const teamHome   = match?.teamHome ?? null
+  const teamAway   = match?.teamAway ?? null
   const deadline   = match ? new Date(new Date(match.dateUtc).getTime() - 5 * 60 * 1000) : new Date(0)
   const isLocked   = match ? isAfter(new Date(), deadline) : true
   const isFinished = match?.status === 'FINISHED'
