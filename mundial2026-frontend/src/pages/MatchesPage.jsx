@@ -182,6 +182,7 @@ export default function MatchesPage({ groupId }) {
       {clFinalMatch && clFinalMatch.status !== 'FINISHED' && (
         <motion.div
           variants={itemVariants}
+          id="tour-champions-banner"
           className="mb-8 p-6 rounded-[2rem] bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-blue-950/40 border border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group"
         >
           {/* Background glowing sphere */}

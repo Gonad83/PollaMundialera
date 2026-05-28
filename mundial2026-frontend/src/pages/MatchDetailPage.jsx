@@ -258,7 +258,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
               )}
             </div>
           ) : (
-            <div className="space-y-8">
+            <div id="tour-score-inputs" className="space-y-8">
               {/* Massive Score Controls */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                 {/* Home Control */}
@@ -278,7 +278,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                     <button onClick={() => setScore('home', 1)} className="btn-control"><Plus size={20}/></button>
                   </div>
                 </div>
-
+ 
                 {/* Away Control */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-1">
@@ -297,7 +297,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                   </div>
                 </div>
               </div>
-
+ 
               {/* Bonus Toggle Section */}
               <div className="pt-6 border-t border-white/5 space-y-4">
                  <p className="text-[10px] text-zinc-500 uppercase font-extrabold tracking-widest mb-2">Bonificadores Especiales</p>
@@ -331,12 +331,13 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
           )}
         </div>
       )}
-
+ 
       {/* Sticky Bottom Action Bar (Functional) */}
       {!isLocked && !isFinished && (
         <div className="fixed bottom-20 md:bottom-0 left-0 right-0 p-4 bg-mundial-navy/80 backdrop-blur-xl border-t border-white/10 z-[60] flex justify-center">
            <div className="max-w-2xl w-full">
             <motion.button 
+              id="tour-save-prediction"
               whileTap={{ scale: 0.98 }}
               onClick={handleSubmit} 
               disabled={mutation.isPending}

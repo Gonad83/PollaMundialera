@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { groupApi, leaderboardApi, paymentApi, matchApi, tournamentApi } from '../lib/api'
+import { groupApi, leaderboardApi, paymentApi, matchApi, tournamentApi, predictionApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useHeaderActions } from '../context/HeaderActionsContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -19,6 +19,7 @@ import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import OnboardingTour from '../components/layout/OnboardingTour'
 
 const MEDAL_COLORS = {
   1: 'from-mundial-gold to-yellow-600',
@@ -147,6 +148,12 @@ export default function GroupDetailPage() {
 
   // Excluir SUPER_ADMIN del ranking competitivo
   const leaderboard = rawLeaderboard.filter(e => e.user?.role !== 'SUPER_ADMIN')
+
+  const { data: myPredictions = [] } = useQuery({
+    queryKey: ['my-predictions-group', id],
+    queryFn: () => predictionApi.my({ groupId: id }).then(r => r.data),
+    enabled: !!id,
+  })
 
   const { data: messages = [], refetch: refetchMessages } = useQuery({
     queryKey: ['group-messages', id],
@@ -407,21 +414,23 @@ export default function GroupDetailPage() {
 
         {/* Right: invite code + header actions */}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 hover:border-mundial-gold/30 transition-all">
-            <div>
-              <p className="text-[7px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-0.5">CÓDIGO</p>
-              <span className="font-mono text-sm text-mundial-gold font-bold tracking-widest leading-none">{group.inviteCode}</span>
+          <div id="tour-invite-code" className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 hover:border-mundial-gold/30 transition-all">
+              <div>
+                <p className="text-[7px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-0.5">CÓDIGO</p>
+                <span className="font-mono text-sm text-mundial-gold font-bold tracking-widest leading-none">{group.inviteCode}</span>
+              </div>
+              <button onClick={copyCode} className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-green-500 text-white' : 'hover:bg-mundial-gold hover:text-mundial-navy text-zinc-400'}`}>
+                {copied ? <Sparkles size={12} /> : <Copy size={12} />}
+              </button>
             </div>
-            <button onClick={copyCode} className={`p-1.5 rounded-lg transition-all ${copied ? 'bg-green-500 text-white' : 'hover:bg-mundial-gold hover:text-mundial-navy text-zinc-400'}`}>
-              {copied ? <Sparkles size={12} /> : <Copy size={12} />}
-            </button>
-          </div>
-          {/* Mobile: compact code */}
-          <div className="flex sm:hidden items-center gap-1 bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
-            <span className="font-mono text-xs text-mundial-gold font-bold">{group.inviteCode}</span>
-            <button onClick={copyCode} className={`p-1 rounded transition-all ${copied ? 'text-green-400' : 'text-zinc-500'}`}>
-              <Copy size={11} />
-            </button>
+            {/* Mobile: compact code */}
+            <div className="flex sm:hidden items-center gap-1 bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
+              <span className="font-mono text-xs text-mundial-gold font-bold">{group.inviteCode}</span>
+              <button onClick={copyCode} className={`p-1 rounded transition-all ${copied ? 'text-green-400' : 'text-zinc-500'}`}>
+                <Copy size={11} />
+              </button>
+            </div>
           </div>
           {isAdmin && group.inviteToken && (
             <button onClick={copyLink} className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all
@@ -522,7 +531,7 @@ export default function GroupDetailPage() {
       {/* ── Tabs ── */}
       <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-6 overflow-x-auto no-scrollbar">
         {tabs.map(({ id: tabId, label, icon: Icon }) => (
-          <button key={tabId} onClick={() => setActiveTab(tabId)}
+          <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
             className={`flex-1 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
               ${activeTab === tabId ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
           >
@@ -917,6 +926,14 @@ export default function GroupDetailPage() {
         )}
 
       </AnimatePresence>
+      <OnboardingTour
+        group={group}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        matchParam={searchParams.get('match')}
+        setSearchParams={setSearchParams}
+        predictionsCount={myPredictions.length}
+      />
     </div>
   )
 }
