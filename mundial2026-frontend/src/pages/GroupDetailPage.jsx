@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
-  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen, Share2
+  Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen, Share2, HelpCircle
 } from 'lucide-react'
 import MatchesPage from './MatchesPage'
 import TournamentPage from './TournamentPage'
@@ -94,6 +94,7 @@ export default function GroupDetailPage() {
   const [editName, setEditName] = useState('')
   const [editingName, setEditingName] = useState(false)
   const [simMode, setSimMode] = useState(false) // "Ver como participante"
+  const [startTour, setStartTour] = useState(false)
   const [msgText, setMsgText] = useState('')
   const messagesEndRef = useRef(null)
 
@@ -450,6 +451,14 @@ export default function GroupDetailPage() {
               <span className="hidden sm:inline">Compartir</span>
             </button>
           )}
+          <button
+            onClick={() => setStartTour(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest"
+            title="Ver tutorial de la liga"
+          >
+            <HelpCircle size={12} />
+            <span className="hidden sm:inline">Guía</span>
+          </button>
           {isAdmin && isFree && !showPricing && (
             <button onClick={() => setShowPricing(true)} className="btn-gold px-3 py-2 text-[9px] whitespace-nowrap">
               MEJORAR
@@ -928,11 +937,14 @@ export default function GroupDetailPage() {
       </AnimatePresence>
       <OnboardingTour
         group={group}
+        user={user}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         matchParam={searchParams.get('match')}
         setSearchParams={setSearchParams}
         predictionsCount={myPredictions.length}
+        startTour={startTour}
+        setStartTour={setStartTour}
       />
     </div>
   )

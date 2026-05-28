@@ -4,25 +4,40 @@ import { Trophy, HelpCircle, X, ChevronRight, ChevronLeft, Target, Star, Users }
 
 export default function OnboardingTour({ 
   group, 
+  user,
   activeTab, 
   setActiveTab, 
   matchParam, 
   setSearchParams,
-  predictionsCount
+  predictionsCount,
+  startTour,
+  setStartTour
 }) {
   const [step, setStep] = useState(0) // 0: inactive, 1: welcome, 2: resultados tab, 3: UCL banner, 4: score inputs, 5: ranking tab, 6: invite code
   const [coords, setCoords] = useState(null)
 
+  const tourKey = useMemo(() => {
+    return `has_seen_onboarding_tour_${user?.id || 'guest'}`
+  }, [user])
+
   // Iniciar tour si no se ha visto nunca y tenemos grupo
   useEffect(() => {
     if (!group) return
-    const hasSeenTour = localStorage.getItem('has_seen_onboarding_tour')
+    const hasSeenTour = localStorage.getItem(tourKey)
     if (!hasSeenTour) {
       // Retrasar el inicio un segundo para que la página cargue suavemente
       const t = setTimeout(() => setStep(1), 1000)
       return () => clearTimeout(t)
     }
-  }, [group])
+  }, [group, tourKey])
+
+  // Trigger manual del tour
+  useEffect(() => {
+    if (startTour) {
+      setStep(1)
+      setStartTour(false)
+    }
+  }, [startTour, setStartTour])
 
   // Configuración de los pasos del tour
   const stepsConfig = useMemo(() => [
@@ -147,7 +162,7 @@ export default function OnboardingTour({
   }
 
   const handleComplete = () => {
-    localStorage.setItem('has_seen_onboarding_tour', 'true')
+    localStorage.setItem(tourKey, 'true')
     setStep(0)
   }
 
