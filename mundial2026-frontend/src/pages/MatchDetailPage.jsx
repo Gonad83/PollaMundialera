@@ -126,7 +126,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   if (isLoading) return <Skeleton />
   if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
 
-  const { teamHome, teamAway, dateUtc, status, scoreHome, scoreAway, phase } = match
+  const { dateUtc, status, scoreHome, scoreAway, phase } = match
 
   const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
   const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
