@@ -226,17 +226,18 @@ export default function LandingPage() {
             src="/mundial-2026-world-cup%20(1).svg"
             alt=""
             aria-hidden="true"
-            initial={{ opacity: 0, x: 60 }}
+            initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 1.2, delay: 0.5, ease: 'easeOut' }}
             style={{
               position: 'absolute',
-              right: '-4%',
+              right: '2%',
               top: '50%',
-              transform: 'translateY(-52%)',
-              width: 'min(48%, 520px)',
-              opacity: 0.09,
-              filter: 'brightness(0) invert(1) sepia(1) saturate(4) hue-rotate(5deg)',
+              transform: 'translateY(-50%)',
+              height: '85%',
+              width: 'auto',
+              maxHeight: 520,
+              opacity: 0.18,
               pointerEvents: 'none',
               userSelect: 'none',
             }}
