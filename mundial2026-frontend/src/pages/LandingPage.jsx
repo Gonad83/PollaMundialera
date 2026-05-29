@@ -330,16 +330,37 @@ export default function LandingPage() {
             transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
             style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <img
-              src="/mundial-2026-world-cup%20(1).svg"
-              alt="Copa del Mundo 2026"
-              style={{
-                width: 'min(42vw, 460px)',
-                height: 'auto',
-                filter: 'drop-shadow(0 0 60px rgba(255,215,0,0.25)) drop-shadow(0 0 120px rgba(7,121,71,0.15))',
-                userSelect: 'none',
-              }}
-            />
+            {/* Flotación continua */}
+            <motion.div
+              animate={{ y: [0, -18, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {/* Rotación suave */}
+              <motion.div
+                animate={{ rotate: [-2, 2, -2] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                {/* Glow pulsante */}
+                <motion.img
+                  src="/mundial-2026-world-cup%20(1).svg"
+                  alt="Copa del Mundo 2026"
+                  animate={{
+                    filter: [
+                      'drop-shadow(0 0 30px rgba(255,215,0,0.3)) drop-shadow(0 20px 40px rgba(0,0,0,0.4))',
+                      'drop-shadow(0 0 70px rgba(255,215,0,0.6)) drop-shadow(0 20px 40px rgba(0,0,0,0.4))',
+                      'drop-shadow(0 0 30px rgba(255,215,0,0.3)) drop-shadow(0 20px 40px rgba(0,0,0,0.4))',
+                    ]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{
+                    width: 'min(42vw, 460px)',
+                    height: 'auto',
+                    userSelect: 'none',
+                    display: 'block',
+                  }}
+                />
+              </motion.div>
+            </motion.div>
           </motion.div>
 
         </div>
