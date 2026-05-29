@@ -186,48 +186,21 @@ export default function OnboardingTour({
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 99 }}>
       {/* ── SPOTLIGHT OVERLAYS (Bloquean clics fuera, permiten clics dentro del objetivo) ── */}
       {coords && (
-        <div className="fixed inset-0 pointer-events-auto" style={{ zIndex: 100 }}>
-          {/* Panel Superior */}
-          <div 
-            className="fixed bg-black/50" 
-            style={{ top: 0, left: 0, right: 0, height: Math.max(0, coords.top - scrollY) }} 
-          />
-          {/* Panel Inferior */}
-          <div 
-            className="fixed bg-black/50" 
-            style={{ top: coords.top - scrollY + coords.height, left: 0, right: 0, bottom: 0 }} 
-          />
-          {/* Panel Izquierdo */}
-          <div 
-            className="fixed bg-black/50" 
-            style={{ 
-              top: Math.max(0, coords.top - scrollY), 
-              height: coords.height, 
-              left: 0, 
-              width: Math.max(0, coords.left) 
-            }} 
-          />
-          {/* Panel Derecho */}
-          <div 
-            className="fixed bg-black/50" 
-            style={{ 
-              top: Math.max(0, coords.top - scrollY), 
-              height: coords.height, 
-              left: coords.left + coords.width, 
-              right: 0 
-            }} 
-          />
+        // El contenedor padre es pointer-events-none para que el área iluminada sea clickeable
+        <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 100 }}>
+          {/* Solo los 4 paneles oscuros bloquean clicks — el hueco central queda libre */}
+          <div className="fixed bg-black/50 pointer-events-auto"
+            style={{ top: 0, left: 0, right: 0, height: Math.max(0, coords.top - scrollY) }} />
+          <div className="fixed bg-black/50 pointer-events-auto"
+            style={{ top: coords.top - scrollY + coords.height, left: 0, right: 0, bottom: 0 }} />
+          <div className="fixed bg-black/50 pointer-events-auto"
+            style={{ top: Math.max(0, coords.top - scrollY), height: coords.height, left: 0, width: Math.max(0, coords.left) }} />
+          <div className="fixed bg-black/50 pointer-events-auto"
+            style={{ top: Math.max(0, coords.top - scrollY), height: coords.height, left: coords.left + coords.width, right: 0 }} />
 
-          {/* Marco del recorte dorado */}
-          <div
-            className="absolute rounded-2xl border-2 border-mundial-gold shadow-[0_0_20px_rgba(255,215,0,0.5)] transition-all duration-300 pointer-events-none"
-            style={{
-              top: coords.top - 8,
-              left: coords.left - 8,
-              width: coords.width + 16,
-              height: coords.height + 16,
-            }}
-          />
+          {/* Marco dorado — solo visual */}
+          <div className="fixed rounded-2xl border-2 border-mundial-gold shadow-[0_0_20px_rgba(255,215,0,0.5)] pointer-events-none transition-all duration-300"
+            style={{ top: coords.top - scrollY - 8, left: coords.left - 8, width: coords.width + 16, height: coords.height + 16 }} />
         </div>
       )}
 
