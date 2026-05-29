@@ -220,6 +220,27 @@ export default function LandingPage() {
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: '5%', left: '5%', width: '40%', height: '40%', background: 'rgba(227,27,35,0.08)', borderRadius: '50%', filter: 'blur(80px)' }} />
           <div style={{ position: 'absolute', bottom: '5%', right: '5%', width: '40%', height: '40%', background: 'rgba(255,215,0,0.06)', borderRadius: '50%', filter: 'blur(80px)' }} />
+
+          {/* Copa del Mundo — elemento decorativo derecho */}
+          <motion.img
+            src="/mundial-2026-world-cup%20(1).svg"
+            alt=""
+            aria-hidden="true"
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1.2, delay: 0.5, ease: 'easeOut' }}
+            style={{
+              position: 'absolute',
+              right: '-4%',
+              top: '50%',
+              transform: 'translateY(-52%)',
+              width: 'min(48%, 520px)',
+              opacity: 0.09,
+              filter: 'brightness(0) invert(1) sepia(1) saturate(4) hue-rotate(5deg)',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
         </div>
 
         <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
