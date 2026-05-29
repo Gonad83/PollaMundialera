@@ -86,52 +86,52 @@ const FAQS = [
   { q: '¿Qué métodos de pago aceptan?', a: 'Aceptamos tarjetas de crédito, débito y transferencias a través de Mercado Pago.' },
 ]
 
-// ── Plan card styles ──────────────────────────────────────────────────
+// ── Plan card styles — light theme ───────────────────────────────────
 const PLAN_CARD_STYLE = {
   ghost: {
     card: {
-      background: 'rgba(255,255,255,0.02)',
-      border: '1px solid rgba(255,255,255,0.07)',
-      boxShadow: 'none',
+      background: '#ffffff',
+      border: '1px solid rgba(0,0,0,0.08)',
+      boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
       transform: 'scale(1)',
     },
-    price: '#a1a1aa',
+    price: '#64748b',
     btn: {
       background: 'transparent',
-      color: '#71717a',
-      border: '1px solid rgba(255,255,255,0.12)',
+      color: '#475569',
+      border: '1px solid rgba(0,0,0,0.2)',
     },
-    check: '#52525b',
+    check: '#94a3b8',
   },
   steel: {
     card: {
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(100,120,160,0.25)',
-      boxShadow: 'none',
+      background: '#ffffff',
+      border: '1px solid rgba(29,110,255,0.2)',
+      boxShadow: '0 4px 24px rgba(29,110,255,0.08)',
       transform: 'scale(1)',
     },
-    price: '#94a3b8',
+    price: '#1d6eff',
     btn: {
-      background: 'rgba(100,120,160,0.15)',
-      color: '#94a3b8',
-      border: '1px solid rgba(100,120,160,0.3)',
+      background: '#1d6eff',
+      color: '#ffffff',
+      border: 'none',
     },
-    check: '#64748b',
+    check: '#1d6eff',
   },
   elite: {
     card: {
-      background: 'rgba(255,215,0,0.05)',
-      border: '2px solid rgba(255,215,0,0.55)',
-      boxShadow: '0 0 80px rgba(255,215,0,0.13), 0 0 30px rgba(255,215,0,0.08) inset',
+      background: '#fffbf0',
+      border: '2px solid rgba(201,150,12,0.45)',
+      boxShadow: '0 8px 40px rgba(201,150,12,0.15)',
       transform: 'scale(1.04)',
     },
-    price: '#FFD700',
+    price: '#c9960c',
     btn: {
       background: '#FFD700',
-      color: '#0A192F',
+      color: '#0f172a',
       border: 'none',
     },
-    check: '#FFD700',
+    check: '#c9960c',
   },
 }
 
@@ -190,7 +190,7 @@ export default function LandingPage() {
           {user ? (
             <Link to="/matches" style={{
               display: 'flex', alignItems: 'center', gap: 8,
-              background: '#FFD700', color: '#0A192F', padding: '10px 20px',
+              background: '#FFD700', color: '#0f172a', padding: '10px 20px',
               borderRadius: 999, fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
               letterSpacing: '0.2em', textDecoration: 'none',
             }}>
@@ -267,7 +267,7 @@ export default function LandingPage() {
                   <HoverScale scale={1.05}>
                     <Link to="/register" style={{
                       display: 'inline-flex', alignItems: 'center', gap: 10,
-                      background: '#FFD700', color: '#0A192F', padding: '18px 36px',
+                      background: '#FFD700', color: '#0f172a', padding: '18px 36px',
                       borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
                       letterSpacing: '0.25em', textDecoration: 'none',
                       boxShadow: '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)',
@@ -394,7 +394,7 @@ export default function LandingPage() {
                 title: 'Crea tu liga',
                 desc: 'Regístrate y nombra tu comunidad en menos de 30 segundos. Gratis, sin tarjeta de crédito.',
                 icon: Trophy,
-                color: '#FFD700',
+                color: '#c9960c',
               },
               {
                 num: '02',
@@ -457,15 +457,15 @@ export default function LandingPage() {
           <div style={{ textAlign: 'center', marginTop: 48 }}>
             <Link to="/register" style={{
               display: 'inline-flex', alignItems: 'center', gap: 10,
-              background: 'rgba(255,215,0,0.08)', color: '#FFD700',
+              background: '#0f172a', color: '#ffffff',
               padding: '14px 32px', borderRadius: 999,
               fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
               letterSpacing: '0.25em', textDecoration: 'none',
-              border: '1px solid rgba(255,215,0,0.25)',
-              transition: 'background 0.2s',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              transition: 'all 0.2s',
             }}
-              onMouseOver={e => e.currentTarget.style.background = 'rgba(255,215,0,0.15)'}
-              onMouseOut={e => e.currentTarget.style.background = 'rgba(255,215,0,0.08)'}
+              onMouseOver={e => { e.currentTarget.style.background = '#1d6eff'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+              onMouseOut={e => { e.currentTarget.style.background = '#0f172a'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
               <ArrowRight size={14} /> Empezar ahora — es gratis
             </Link>
@@ -539,8 +539,8 @@ export default function LandingPage() {
                   {plan.badge && (
                     <div style={{
                       position: 'absolute', top: 0, left: 0, right: 0,
-                      background: 'linear-gradient(90deg, #b8860b, #FFD700, #b8860b)',
-                      color: '#0A192F', padding: '7px 16px',
+                      background: 'linear-gradient(90deg, #c9960c, #FFD700, #c9960c)',
+                      color: '#0f172a', padding: '7px 16px',
                       fontSize: 8, fontWeight: 900,
                       textTransform: 'uppercase', letterSpacing: '0.18em',
                       textAlign: 'center', whiteSpace: 'nowrap',
@@ -551,10 +551,9 @@ export default function LandingPage() {
 
                   <h3 style={{
                     fontFamily: '"Bebas Neue", cursive', fontSize: 32,
-                    color: isElite ? '#FFD700' : '#fff',
+                    color: isElite ? '#c9960c' : '#0f172a',
                     marginTop: plan.badge ? 28 : 0,
                     marginBottom: 6, letterSpacing: 2,
-                    textShadow: isElite ? '0 0 30px rgba(255,215,0,0.4)' : 'none',
                   }}>
                     {plan.name}
                   </h3>
@@ -564,18 +563,18 @@ export default function LandingPage() {
                     <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: isElite ? 48 : 42, color: s.price, lineHeight: 1 }}>
                       {plan.price}
                     </span>
-                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#52525b', marginLeft: 3 }}>
+                    <span style={{ fontSize: 8, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#94a3b8', marginLeft: 3 }}>
                       CLP/mes
                     </span>
                   </div>
 
-                  <p style={{ fontSize: 11, color: '#71717a', marginBottom: 16, lineHeight: 1.5 }}>{plan.desc}</p>
+                  <p style={{ fontSize: 11, color: '#64748b', marginBottom: 16, lineHeight: 1.5 }}>{plan.desc}</p>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
                     {plan.features.map(f => (
                       <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <CheckCircle2 size={12} style={{ color: s.check, flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, fontWeight: isElite ? 700 : 600, color: isElite ? '#e4e4e7' : '#a1a1aa' }}>{f}</span>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#475569' }}>{f}</span>
                       </div>
                     ))}
                   </div>
@@ -585,11 +584,11 @@ export default function LandingPage() {
                         textAlign: 'center', borderRadius: 12, fontSize: 9, fontWeight: 900,
                         textTransform: 'uppercase', letterSpacing: '0.15em', textDecoration: 'none',
                         transition: 'all 0.2s',
-                        boxShadow: isElite ? '0 0 30px rgba(255,215,0,0.35)' : 'none',
+                        boxShadow: isElite ? '0 4px 20px rgba(201,150,12,0.3)' : '0 2px 10px rgba(0,0,0,0.1)',
                         ...s.btn,
                       }}
-                        onMouseOver={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 50px rgba(255,215,0,0.55)'; e.currentTarget.style.transform = 'translateY(-2px)' } }}
-                        onMouseOut={e => { if (isElite) { e.currentTarget.style.boxShadow = '0 0 30px rgba(255,215,0,0.35)'; e.currentTarget.style.transform = 'translateY(0)' } }}
+                        onMouseOver={e => { e.currentTarget.style.opacity = '0.9'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                        onMouseOut={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'translateY(0)' }}
                       >
                         {plan.cta}
                       </Link>
@@ -657,7 +656,7 @@ export default function LandingPage() {
               <HoverScale scale={1.05}>
                 <Link to="/register" style={{
                   display: 'inline-flex', alignItems: 'center', gap: 10,
-                  background: '#FFD700', color: '#0A192F', padding: '16px 36px',
+                  background: '#FFD700', color: '#0f172a', padding: '16px 36px',
                   borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
                   letterSpacing: '0.25em', textDecoration: 'none',
                   boxShadow: '0 0 50px rgba(255,215,0,0.35)',
