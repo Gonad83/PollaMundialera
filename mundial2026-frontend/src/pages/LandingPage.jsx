@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -292,26 +293,28 @@ export default function LandingPage() {
 
           {/* Countdown */}
           {time && (
-            <AnimationWrapper type="scaleIn" delay={0.4}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 600, margin: '64px auto 0' }}>
-                <StaggerContainer delay={0.1}>
-                  {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map(item => (
-                    <div key={item.l} style={{
-                      padding: '24px 16px', borderRadius: 24,
-                      background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    }}>
-                      <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
-                        {pad(item.v)}
-                      </span>
-                      <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#52525b' }}>
-                        {item.l}
-                      </span>
-                    </div>
-                  ))}
-                </StaggerContainer>
-              </div>
-            </AnimationWrapper>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 600, margin: '64px auto 0' }}>
+              {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map((item, idx) => (
+                <motion.div
+                  key={item.l}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 + idx * 0.1, ease: 'easeOut' }}
+                  style={{
+                    padding: '24px 16px', borderRadius: 24,
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  }}
+                >
+                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
+                    {pad(item.v)}
+                  </span>
+                  <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#52525b' }}>
+                    {item.l}
+                  </span>
+                </motion.div>
+              ))}
+            </div>
           )}
         </div>
       </section>
