@@ -215,115 +215,98 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section id="inicio" style={{ position: 'relative', paddingTop: 160, paddingBottom: 96, textAlign: 'center', overflow: 'hidden' }}>
-        {/* Glow blobs */}
+      <section id="inicio" style={{ position: 'relative', paddingTop: 120, paddingBottom: 80, overflow: 'hidden', background: 'linear-gradient(135deg, #0d1f35 0%, #0f2a45 40%, #0a1a2e 100%)' }}>
+        {/* Glow blobs más claros */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: '5%', left: '5%', width: '40%', height: '40%', background: 'rgba(227,27,35,0.08)', borderRadius: '50%', filter: 'blur(80px)' }} />
-          <div style={{ position: 'absolute', bottom: '5%', right: '5%', width: '40%', height: '40%', background: 'rgba(255,215,0,0.06)', borderRadius: '50%', filter: 'blur(80px)' }} />
-
-          {/* Copa del Mundo — elemento decorativo derecho */}
-          <motion.img
-            src="/mundial-2026-world-cup%20(1).svg"
-            alt=""
-            aria-hidden="true"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1.2, delay: 0.5, ease: 'easeOut' }}
-            style={{
-              position: 'absolute',
-              right: '2%',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              height: '85%',
-              width: 'auto',
-              maxHeight: 520,
-              opacity: 0.18,
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
-          />
+          <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '55%', height: '70%', background: 'rgba(255,215,0,0.07)', borderRadius: '50%', filter: 'blur(100px)' }} />
+          <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: '55%', height: '70%', background: 'rgba(227,27,35,0.08)', borderRadius: '50%', filter: 'blur(100px)' }} />
+          <div style={{ position: 'absolute', top: '30%', left: '30%', width: '40%', height: '40%', background: 'rgba(7,121,71,0.06)', borderRadius: '50%', filter: 'blur(80px)' }} />
         </div>
 
-        <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
-          {/* Badge */}
-          <AnimationWrapper type="fadeUp" delay={0}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 10,
-              padding: '8px 20px', background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)', borderRadius: 999, marginBottom: 32,
-            }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD700', animation: 'pulse 2s infinite' }} />
-              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#FFD700' }}>
-                Inscripciones abiertas · Mundial 2026
-              </span>
-            </div>
-          </AnimationWrapper>
+        {/* Layout dos columnas */}
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 48, minHeight: 560 }}>
 
-          {/* Headline */}
-          <AnimationWrapper type="slideLeft" delay={0.1}>
-            <h1 style={{
-              fontFamily: '"Bebas Neue", cursive',
-              fontSize: 'clamp(52px, 10vw, 110px)',
-              lineHeight: 0.92, color: '#fff',
-              letterSpacing: '-1px', marginBottom: 32,
-            }}>
-              La Polla del Mundial<br />
-              <span style={{ WebkitTextStroke: '2px #FFD700', color: 'transparent' }}>que se gestiona sola.</span>
-            </h1>
-          </AnimationWrapper>
+          {/* Columna izquierda — texto */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+            {/* Badge */}
+            <AnimationWrapper type="fadeUp" delay={0}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 10,
+                padding: '8px 20px', background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999, marginBottom: 32,
+              }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD700', animation: 'pulse 2s infinite' }} />
+                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#FFD700' }}>
+                  Inscripciones abiertas · Mundial 2026
+                </span>
+              </div>
+            </AnimationWrapper>
 
-          <AnimationWrapper type="fadeUp" delay={0.2}>
-            <p style={{ maxWidth: 600, margin: '0 auto 40px', fontSize: 18, lineHeight: 1.75, color: '#a1a1aa', fontWeight: 500 }}>
-              Olvida los Excel y los mensajes perdidos. Crea tu liga privada en 30 segundos, automatiza los puntos en tiempo real y vive el mundial como un profesional.
-            </p>
-          </AnimationWrapper>
+            {/* Headline */}
+            <AnimationWrapper type="slideLeft" delay={0.1}>
+              <h1 style={{
+                fontFamily: '"Bebas Neue", cursive',
+                fontSize: 'clamp(48px, 6vw, 96px)',
+                lineHeight: 0.92, color: '#fff',
+                letterSpacing: '-1px', marginBottom: 28,
+              }}>
+                La Polla del Mundial<br />
+                <span style={{ WebkitTextStroke: '2px #FFD700', color: 'transparent' }}>que se gestiona sola.</span>
+              </h1>
+            </AnimationWrapper>
 
-          <AnimationWrapper type="fadeUp" delay={0.3}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
-              <GlowEffect color="gold">
+            <AnimationWrapper type="fadeUp" delay={0.2}>
+              <p style={{ maxWidth: 500, marginBottom: 40, fontSize: 17, lineHeight: 1.75, color: '#94a3b8', fontWeight: 500 }}>
+                Olvida los Excel y los mensajes perdidos. Crea tu liga privada en 30 segundos, automatiza los puntos en tiempo real y vive el mundial como un profesional.
+              </p>
+            </AnimationWrapper>
+
+            <AnimationWrapper type="fadeUp" delay={0.3}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                <GlowEffect color="gold">
+                  <HoverScale scale={1.05}>
+                    <Link to="/register" style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 10,
+                      background: '#FFD700', color: '#0A192F', padding: '18px 36px',
+                      borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
+                      letterSpacing: '0.25em', textDecoration: 'none',
+                      boxShadow: '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                    }}
+                      onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 0 80px rgba(255,215,0,0.55), 0 8px 30px rgba(255,215,0,0.4)' }}
+                      onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)' }}
+                    >
+                      <Trophy size={18} /> CREAR MI LIGA AHORA
+                    </Link>
+                  </HoverScale>
+                </GlowEffect>
                 <HoverScale scale={1.05}>
-                  <Link to="/register" style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 10,
-                    background: '#FFD700', color: '#0A192F', padding: '18px 36px',
-                    borderRadius: 999, fontSize: 11, fontWeight: 900, textTransform: 'uppercase',
-                    letterSpacing: '0.25em', textDecoration: 'none',
-                    boxShadow: '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                  }}
-                    onMouseOver={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 0 80px rgba(255,215,0,0.55), 0 8px 30px rgba(255,215,0,0.4)' }}
-                    onMouseOut={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(255,215,0,0.4), 0 4px 20px rgba(255,215,0,0.3)' }}
-                  >
-                    <Trophy size={18} /> CREAR MI LIGA AHORA
-                  </Link>
+                  <button onClick={() => scrollTo('características')} style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 12,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
+                    letterSpacing: '0.2em', color: '#71717a',
+                  }}>
+                    <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Play size={16} style={{ fill: '#a1a1aa', color: '#a1a1aa' }} />
+                    </span>
+                    Cómo funciona
+                  </button>
                 </HoverScale>
-              </GlowEffect>
-              <HoverScale scale={1.05}>
-                <button onClick={() => scrollTo('características')} style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 12,
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
-                  letterSpacing: '0.2em', color: '#71717a',
-                }}>
-                  <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Play size={16} style={{ fill: '#a1a1aa', color: '#a1a1aa' }} />
-                  </span>
-                  Cómo funciona
-                </button>
-              </HoverScale>
-            </div>
-          </AnimationWrapper>
+              </div>
+            </AnimationWrapper>
 
-          {/* Countdown */}
-          {time && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 600, margin: '64px auto 0' }}>
-              {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map((item, idx) => (
-                <motion.div
-                  key={item.l}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 + idx * 0.1, ease: 'easeOut' }}
-                  style={{
-                    padding: '24px 16px', borderRadius: 24,
+            {/* Countdown */}
+            {time && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 480, marginTop: 52 }}>
+                {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map((item, idx) => (
+                  <motion.div
+                    key={item.l}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.4 + idx * 0.1, ease: 'easeOut' }}
+                    style={{
+                      padding: '20px 12px', borderRadius: 20,
                     background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                   }}
@@ -338,6 +321,27 @@ export default function LandingPage() {
               ))}
             </div>
           )}
+          </div>
+
+          {/* Columna derecha — Copa del Mundo */}
+          <motion.div
+            initial={{ opacity: 0, x: 60, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
+            style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <img
+              src="/mundial-2026-world-cup%20(1).svg"
+              alt="Copa del Mundo 2026"
+              style={{
+                width: 'min(42vw, 460px)',
+                height: 'auto',
+                filter: 'drop-shadow(0 0 60px rgba(255,215,0,0.25)) drop-shadow(0 0 120px rgba(7,121,71,0.15))',
+                userSelect: 'none',
+              }}
+            />
+          </motion.div>
+
         </div>
       </section>
 
