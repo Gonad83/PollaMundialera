@@ -148,6 +148,18 @@ async function startServer() {
     await prisma.$executeRaw`
       CREATE INDEX IF NOT EXISTS "Prediction_groupId_idx" ON "Prediction"("groupId")
     `;
+    // Match.winnerId migration
+    await prisma.$executeRaw`ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "winnerId" TEXT`;
+    await prisma.$executeRaw`
+      DO $$ BEGIN
+        ALTER TABLE "Match" ADD CONSTRAINT "Match_winnerId_fkey"
+          FOREIGN KEY ("winnerId") REFERENCES "Team"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$
+    `;
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS "Match_winnerId_idx" ON "Match"("winnerId")
+    `;
     // TournamentPicks.groupId migration
     await prisma.$executeRaw`ALTER TABLE "TournamentPicks" ADD COLUMN IF NOT EXISTS "groupId" TEXT`;
     await prisma.$executeRaw`
