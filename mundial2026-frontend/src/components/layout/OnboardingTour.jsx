@@ -20,16 +20,15 @@ export default function OnboardingTour({
     return `has_seen_onboarding_tour_${user?.id || 'guest'}`
   }, [user])
 
-  // Iniciar tour si no se ha visto nunca y tenemos grupo
+  // Iniciar tour si no se ha visto nunca — esperar a que user.id esté cargado
   useEffect(() => {
-    if (!group) return
+    if (!group || !user?.id) return
     const hasSeenTour = localStorage.getItem(tourKey)
     if (!hasSeenTour) {
-      // Retrasar el inicio un segundo para que la página cargue suavemente
-      const t = setTimeout(() => setStep(1), 1000)
+      const t = setTimeout(() => setStep(1), 1200)
       return () => clearTimeout(t)
     }
-  }, [group, tourKey])
+  }, [group, user?.id, tourKey])
 
   // Trigger manual del tour
   useEffect(() => {
@@ -168,23 +167,15 @@ export default function OnboardingTour({
 
   if (step === 0) return null
 
-  // Calcular ubicación del Tooltip
-  const tooltipStyle = coords
-    ? {
-        position: 'absolute',
-        top: coords.top + coords.height + 16,
-        left: Math.max(16, Math.min(window.innerWidth - 340, coords.left + coords.width / 2 - 160)),
-        zIndex: 110,
-        width: '320px',
-      }
-    : {
-        position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        zIndex: 110,
-        width: '340px',
-      }
+  // Tooltip siempre fijo en esquina inferior derecha — más visible y sin colisiones
+  const tooltipStyle = {
+    position: 'fixed',
+    bottom: '24px',
+    right: '24px',
+    zIndex: 110,
+    width: '320px',
+    maxWidth: 'calc(100vw - 32px)',
+  }
 
   // Dimensiones de la pantalla para los paneles oscuros del spotlight
   const scrollY = window.scrollY
@@ -198,17 +189,17 @@ export default function OnboardingTour({
         <div className="fixed inset-0 pointer-events-auto" style={{ zIndex: 100 }}>
           {/* Panel Superior */}
           <div 
-            className="fixed bg-black/80 backdrop-blur-[2px]" 
+            className="fixed bg-black/50" 
             style={{ top: 0, left: 0, right: 0, height: Math.max(0, coords.top - scrollY) }} 
           />
           {/* Panel Inferior */}
           <div 
-            className="fixed bg-black/80 backdrop-blur-[2px]" 
+            className="fixed bg-black/50" 
             style={{ top: coords.top - scrollY + coords.height, left: 0, right: 0, bottom: 0 }} 
           />
           {/* Panel Izquierdo */}
           <div 
-            className="fixed bg-black/80 backdrop-blur-[2px]" 
+            className="fixed bg-black/50" 
             style={{ 
               top: Math.max(0, coords.top - scrollY), 
               height: coords.height, 
@@ -218,7 +209,7 @@ export default function OnboardingTour({
           />
           {/* Panel Derecho */}
           <div 
-            className="fixed bg-black/80 backdrop-blur-[2px]" 
+            className="fixed bg-black/50" 
             style={{ 
               top: Math.max(0, coords.top - scrollY), 
               height: coords.height, 
@@ -242,7 +233,7 @@ export default function OnboardingTour({
 
       {/* ── BACKDROP DE BIENVENIDA (Paso 1 completo) ── */}
       {!coords && step === 1 && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md pointer-events-auto" style={{ zIndex: 100 }} />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm pointer-events-auto" style={{ zIndex: 100 }} />
       )}
 
       {/* ── TOOLTIP CARD DE INSTRUCCIONES ── */}
