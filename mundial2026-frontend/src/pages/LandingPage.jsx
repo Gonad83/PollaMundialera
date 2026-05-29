@@ -173,7 +173,7 @@ export default function LandingPage() {
               onError={(e) => { e.target.style.display = 'none' }} />
           </div>
           <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#0f172a', letterSpacing: 2 }}>
-            MUNDIAL<span style={{ color: '#c9960c' }}>PRO</span>
+            MUNDIAL<span style={{ color: '#1d6eff' }}>PRO</span>
           </span>
         </button>
 
@@ -235,8 +235,8 @@ export default function LandingPage() {
                 padding: '8px 20px', background: 'rgba(0,0,0,0.04)',
                 border: '1px solid rgba(0,0,0,0.08)', borderRadius: 999, marginBottom: 32,
               }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#c9960c', animation: 'pulse 2s infinite' }} />
-                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#c9960c' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1d6eff', animation: 'pulse 2s infinite' }} />
+                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#1d6eff' }}>
                   Inscripciones abiertas · Mundial 2026
                 </span>
               </div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
                 letterSpacing: '-1px', marginBottom: 28,
               }}>
                 La Polla del Mundial<br />
-                <span style={{ color: '#c9960c' }}>que se gestiona sola.</span>
+                <span style={{ color: '#1d6eff' }}>que se gestiona sola.</span>
               </h1>
             </AnimationWrapper>
 
@@ -372,7 +372,7 @@ export default function LandingPage() {
       <section style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 12 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1d6eff', marginBottom: 12 }}>
               Fácil como un penal
             </p>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#0f172a', lineHeight: 1, margin: 0 }}>
@@ -477,7 +477,7 @@ export default function LandingPage() {
       <section id="características" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ marginBottom: 64, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 12 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1d6eff', marginBottom: 12 }}>
               Potencia Mundial
             </p>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(36px, 6vw, 72px)', color: '#0f172a', lineHeight: 1, margin: 0 }}>
@@ -498,7 +498,7 @@ export default function LandingPage() {
                     onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(201,150,12,0.4)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
                     onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(0)' }}
                   >
-                    <div style={{ width: 52, height: 52, borderRadius: 14, background: '#f0f6ff', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#c9960c' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: '#f0f6ff', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#1d6eff' }}>
                       <Icon size={24} />
                     </div>
                     <h3 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#0f172a', marginBottom: 12, letterSpacing: 1 }}>{title}</h3>
@@ -626,7 +626,7 @@ export default function LandingPage() {
                   cursor: 'pointer', textAlign: 'left',
                 }}>
                   <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#0f172a', letterSpacing: 0.5 }}>{item.q}</span>
-                  <ChevronDown size={18} style={{ color: activeFaq === i ? '#c9960c' : '#94a3b8', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                  <ChevronDown size={18} style={{ color: activeFaq === i ? '#1d6eff' : '#94a3b8', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                 </button>
                 {activeFaq === i && (
                   <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#64748b', lineHeight: 1.7, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
@@ -644,7 +644,7 @@ export default function LandingPage() {
       <AnimationWrapper type="fadeUp">
         <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(201,150,12,0.07)', borderTop: '1px solid rgba(201,150,12,0.2)', borderBottom: '1px solid rgba(201,150,12,0.2)' }}>
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 16 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1d6eff', marginBottom: 16 }}>
               ⏱ Precio de Lanzamiento
             </p>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 6vw, 64px)', color: '#0f172a', lineHeight: 1.1, marginBottom: 20 }}>
@@ -673,7 +673,7 @@ export default function LandingPage() {
       {/* ── FOOTER ── */}
       <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(0,0,0,0.08)', textAlign: 'center' }}>
         <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#0f172a', letterSpacing: 2 }}>
-          MUNDIAL<span style={{ color: '#c9960c' }}>PRO</span>
+          MUNDIAL<span style={{ color: '#1d6eff' }}>PRO</span>
         </span>
         <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
           © 2026 MundialPro · Hecho con ❤️ en Chile 🇨🇱
