@@ -154,14 +154,14 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ background: '#0A192F', color: '#a1a1aa', fontFamily: '"DM Sans", sans-serif' }}>
+    <div style={{ background: '#112244', color: '#a1a1aa', fontFamily: '"DM Sans", sans-serif' }}>
 
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 24px',
-        background: scrolled ? 'rgba(10,25,47,0.9)' : 'transparent',
+        background: scrolled ? 'rgba(17,34,68,0.92)' : 'transparent',
         backdropFilter: scrolled ? 'blur(16px)' : 'none',
         borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
         transition: 'all 0.3s ease',
@@ -215,7 +215,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section id="inicio" style={{ position: 'relative', paddingTop: 120, paddingBottom: 80, overflow: 'hidden', background: 'linear-gradient(135deg, #0d1f35 0%, #0f2a45 40%, #0a1a2e 100%)' }}>
+      <section id="inicio" style={{ position: 'relative', paddingTop: 120, paddingBottom: 80, overflow: 'hidden', background: 'linear-gradient(135deg, #112244 0%, #163354 40%, #0f2040 100%)' }}>
         {/* Glow blobs más claros */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '55%', height: '70%', background: 'rgba(255,215,0,0.07)', borderRadius: '50%', filter: 'blur(100px)' }} />
@@ -471,7 +471,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CARACTERÍSTICAS ── */}
-      <section id="características" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.2)' }}>
+      <section id="características" style={{ padding: '96px 24px', background: 'rgba(255,255,255,0.04)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ marginBottom: 64, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 12 }}>
@@ -599,7 +599,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.2)' }}>
+      <section id="faq" style={{ padding: '96px 24px', background: 'rgba(255,255,255,0.04)' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#fff', margin: 0 }}>
@@ -637,7 +637,7 @@ export default function LandingPage() {
 
       {/* ── CIERRE / URGENCIA ── */}
       <AnimationWrapper type="fadeUp">
-        <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(255,215,0,0.03)', borderTop: '1px solid rgba(255,215,0,0.1)', borderBottom: '1px solid rgba(255,215,0,0.1)' }}>
+        <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(255,215,0,0.05)', borderTop: '1px solid rgba(255,215,0,0.15)', borderBottom: '1px solid rgba(255,215,0,0.15)' }}>
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
             <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 16 }}>
               ⏱ Precio de Lanzamiento
