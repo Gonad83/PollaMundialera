@@ -6,6 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const TZ = 'America/Santiago'
+const fmtChileTime = (d) => new Date(d).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false })
+const fmtChileDay  = (d) => new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short', timeZone: TZ }).format(new Date(d))
 import { motion } from 'framer-motion'
 import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Crosshair, Check, X } from 'lucide-react'
 
@@ -78,7 +82,7 @@ export default function MatchesPage({ groupId }) {
   const listMatches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
 
   const grouped = listMatches.reduce((acc, m) => {
-    const day = format(new Date(m.dateUtc), 'EEEE d MMM', { locale: es })
+    const day = fmtChileDay(m.dateUtc)
     if (!acc[day]) acc[day] = []
     acc[day].push(m)
     return acc
@@ -419,7 +423,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
             </span>
             {!isFinished && (
               <p className={`text-lg font-display tracking-tight mt-1 ${isLive ? 'text-mundial-red' : 'text-white'}`}>
-                {format(new Date(dateUtc), 'HH:mm')}
+                {fmtChileTime(dateUtc)}
               </p>
             )}
           </div>

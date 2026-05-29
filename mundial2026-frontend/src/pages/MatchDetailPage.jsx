@@ -4,6 +4,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi, groupApi } from '../lib/api'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
+
+const TZ = 'America/Santiago'
+const fmtChileTime = (d) => new Date(d).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false })
+const fmtChileDate = (d) => new Date(d).toLocaleDateString('es-CL', { day: 'numeric', month: 'short', timeZone: TZ })
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -205,9 +209,9 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                 </div>
              ) : (
                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                  <p className="font-display text-3xl text-white">{format(new Date(dateUtc), 'HH:mm')}</p>
+                  <p className="font-display text-3xl text-white">{fmtChileTime(dateUtc)}</p>
                   <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">
-                    {format(new Date(dateUtc), "d MMM", { locale: es })}
+                    {fmtChileDate(dateUtc)}
                   </p>
                 </div>
              )}
@@ -265,7 +269,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                   </p>
                 </div>
                 <p className="text-[9px] text-zinc-600 font-bold text-right hidden sm:block">
-                  Cierra a las<br />{format(deadline, 'HH:mm')}
+                  Cierra a las<br />{fmtChileTime(deadline)}
                 </p>
               </motion.div>
             )}
