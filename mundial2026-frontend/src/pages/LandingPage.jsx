@@ -154,16 +154,16 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ background: '#112244', color: '#a1a1aa', fontFamily: '"DM Sans", sans-serif' }}>
+    <div style={{ background: 'linear-gradient(160deg, #ffffff 0%, #f0f6ff 40%, #e4eeff 70%, #dce8ff 100%)', color: '#475569', fontFamily: '"DM Sans", sans-serif', minHeight: '100vh' }}>
 
       {/* ── NAVBAR ── */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 24px',
-        background: scrolled ? 'rgba(17,34,68,0.92)' : 'transparent',
+        background: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent',
         backdropFilter: scrolled ? 'blur(16px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(0,0,0,0.08)' : 'none',
         transition: 'all 0.3s ease',
       }}>
         <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -172,15 +172,15 @@ export default function LandingPage() {
             <img src="/logo.png" alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.5)' }}
               onError={(e) => { e.target.style.display = 'none' }} />
           </div>
-          <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#fff', letterSpacing: 2 }}>
-            MUNDIAL<span style={{ color: '#FFD700' }}>PRO</span>
+          <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#0f172a', letterSpacing: 2 }}>
+            MUNDIAL<span style={{ color: '#c9960c' }}>PRO</span>
           </span>
         </button>
 
         <div style={{ display: 'none' }} className="md-nav">
           {['inicio', 'características', 'planes', 'faq'].map(id => (
             <button key={id} onClick={() => scrollTo(id)}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#71717a' }}>
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#475569' }}>
               {id}
             </button>
           ))}
@@ -198,7 +198,7 @@ export default function LandingPage() {
             </Link>
           ) : (
             <>
-              <Link to="/login" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#71717a', textDecoration: 'none' }}>
+              <Link to="/login" style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: '#475569', textDecoration: 'none' }}>
                 Ingresar
               </Link>
               <Link to="/register" style={{
@@ -215,12 +215,12 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO ── */}
-      <section id="inicio" style={{ position: 'relative', paddingTop: 120, paddingBottom: 80, overflow: 'hidden', background: 'linear-gradient(135deg, #112244 0%, #163354 40%, #0f2040 100%)' }}>
-        {/* Glow blobs más claros */}
+      <section id="inicio" style={{ position: 'relative', paddingTop: 120, paddingBottom: 80, overflow: 'hidden' }}>
+        {/* Glow blobs suaves sobre fondo claro */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '55%', height: '70%', background: 'rgba(255,215,0,0.07)', borderRadius: '50%', filter: 'blur(100px)' }} />
-          <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: '55%', height: '70%', background: 'rgba(227,27,35,0.08)', borderRadius: '50%', filter: 'blur(100px)' }} />
-          <div style={{ position: 'absolute', top: '30%', left: '30%', width: '40%', height: '40%', background: 'rgba(7,121,71,0.06)', borderRadius: '50%', filter: 'blur(80px)' }} />
+          <div style={{ position: 'absolute', top: '-10%', left: '-5%', width: '55%', height: '70%', background: 'rgba(255,215,0,0.12)', borderRadius: '50%', filter: 'blur(120px)' }} />
+          <div style={{ position: 'absolute', bottom: '-10%', right: '10%', width: '45%', height: '60%', background: 'rgba(227,27,35,0.07)', borderRadius: '50%', filter: 'blur(120px)' }} />
+          <div style={{ position: 'absolute', top: '20%', left: '35%', width: '35%', height: '35%', background: 'rgba(7,121,71,0.06)', borderRadius: '50%', filter: 'blur(100px)' }} />
         </div>
 
         {/* Layout dos columnas */}
@@ -232,11 +232,11 @@ export default function LandingPage() {
             <AnimationWrapper type="fadeUp" delay={0}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 10,
-                padding: '8px 20px', background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.10)', borderRadius: 999, marginBottom: 32,
+                padding: '8px 20px', background: 'rgba(0,0,0,0.04)',
+                border: '1px solid rgba(0,0,0,0.08)', borderRadius: 999, marginBottom: 32,
               }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#FFD700', animation: 'pulse 2s infinite' }} />
-                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#FFD700' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#c9960c', animation: 'pulse 2s infinite' }} />
+                <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.25em', color: '#c9960c' }}>
                   Inscripciones abiertas · Mundial 2026
                 </span>
               </div>
@@ -247,16 +247,16 @@ export default function LandingPage() {
               <h1 style={{
                 fontFamily: '"Bebas Neue", cursive',
                 fontSize: 'clamp(48px, 6vw, 96px)',
-                lineHeight: 0.92, color: '#fff',
+                lineHeight: 0.92, color: '#0f172a',
                 letterSpacing: '-1px', marginBottom: 28,
               }}>
                 La Polla del Mundial<br />
-                <span style={{ WebkitTextStroke: '2px #FFD700', color: 'transparent' }}>que se gestiona sola.</span>
+                <span style={{ color: '#c9960c' }}>que se gestiona sola.</span>
               </h1>
             </AnimationWrapper>
 
             <AnimationWrapper type="fadeUp" delay={0.2}>
-              <p style={{ maxWidth: 500, marginBottom: 40, fontSize: 17, lineHeight: 1.75, color: '#94a3b8', fontWeight: 500 }}>
+              <p style={{ maxWidth: 500, marginBottom: 40, fontSize: 17, lineHeight: 1.75, color: '#475569', fontWeight: 500 }}>
                 Olvida los Excel y los mensajes perdidos. Crea tu liga privada en 30 segundos, automatiza los puntos en tiempo real y vive el mundial como un profesional.
               </p>
             </AnimationWrapper>
@@ -285,10 +285,10 @@ export default function LandingPage() {
                     display: 'inline-flex', alignItems: 'center', gap: 12,
                     background: 'none', border: 'none', cursor: 'pointer',
                     fontSize: 10, fontWeight: 900, textTransform: 'uppercase',
-                    letterSpacing: '0.2em', color: '#71717a',
+                    letterSpacing: '0.2em', color: '#475569',
                   }}>
-                    <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Play size={16} style={{ fill: '#a1a1aa', color: '#a1a1aa' }} />
+                    <span style={{ width: 48, height: 48, borderRadius: '50%', border: '1px solid rgba(0,0,0,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Play size={16} style={{ fill: '#64748b', color: '#64748b' }} />
                     </span>
                     Cómo funciona
                   </button>
@@ -307,14 +307,16 @@ export default function LandingPage() {
                     transition={{ duration: 0.5, delay: 0.4 + idx * 0.1, ease: 'easeOut' }}
                     style={{
                       padding: '20px 12px', borderRadius: 20,
-                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  }}
+                      background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(0,0,0,0.07)',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      backdropFilter: 'blur(8px)',
+                    }}
                 >
-                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#fff', lineHeight: 1, marginBottom: 8 }}>
+                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 56, color: '#0f172a', lineHeight: 1, marginBottom: 8 }}>
                     {pad(item.v)}
                   </span>
-                  <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#52525b' }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.3em', color: '#94a3b8' }}>
                     {item.l}
                   </span>
                 </motion.div>
@@ -370,10 +372,10 @@ export default function LandingPage() {
       <section style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 12 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 12 }}>
               Fácil como un penal
             </p>
-            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#fff', lineHeight: 1, margin: 0 }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#0f172a', lineHeight: 1, margin: 0 }}>
               TU LIGA EN 3 PASOS
             </h2>
           </div>
@@ -382,7 +384,7 @@ export default function LandingPage() {
             {/* Línea conectora (solo desktop) */}
             <div style={{
               position: 'absolute', top: 40, left: '16.6%', right: '16.6%', height: 1,
-              background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.2), rgba(255,215,0,0.2), transparent)',
+              background: 'linear-gradient(90deg, transparent, rgba(201,150,12,0.35), rgba(201,150,12,0.35), transparent)',
               pointerEvents: 'none',
             }} />
 
@@ -412,18 +414,19 @@ export default function LandingPage() {
               <div key={num} style={{
                 padding: '40px 32px', textAlign: 'center', position: 'relative',
               }}
-                onMouseOver={e => e.currentTarget.querySelector('.step-card').style.borderColor = `${color}33`}
-                onMouseOut={e => e.currentTarget.querySelector('.step-card').style.borderColor = 'rgba(255,255,255,0.06)'}
+                onMouseOver={e => e.currentTarget.querySelector('.step-card').style.borderColor = `${color}55`}
+                onMouseOut={e => e.currentTarget.querySelector('.step-card').style.borderColor = 'rgba(0,0,0,0.07)'}
               >
                 <div className="step-card" style={{
                   padding: '36px 24px', borderRadius: 24,
-                  background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.07)',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
                   transition: 'border-color 0.3s',
                 }}>
                   {/* Número */}
                   <div style={{
                     fontFamily: '"Bebas Neue", cursive', fontSize: 72, lineHeight: 1,
-                    color: 'rgba(255,255,255,0.04)', marginBottom: -16, userSelect: 'none',
+                    color: 'rgba(0,0,0,0.04)', marginBottom: -16, userSelect: 'none',
                   }}>
                     {num}
                   </div>
@@ -439,12 +442,12 @@ export default function LandingPage() {
                   </div>
 
                   <h3 style={{
-                    fontFamily: '"Bebas Neue", cursive', fontSize: 26, color: '#fff',
+                    fontFamily: '"Bebas Neue", cursive', fontSize: 26, color: '#0f172a',
                     letterSpacing: 1, marginBottom: 12,
                   }}>
                     {title}
                   </h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.7, color: '#71717a', margin: 0 }}>{desc}</p>
+                  <p style={{ fontSize: 14, lineHeight: 1.7, color: '#64748b', margin: 0 }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -471,13 +474,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── CARACTERÍSTICAS ── */}
-      <section id="características" style={{ padding: '96px 24px', background: 'rgba(255,255,255,0.04)' }}>
+      <section id="características" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ marginBottom: 64, paddingBottom: 24, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 12 }}>
+          <div style={{ marginBottom: 64, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 12 }}>
               Potencia Mundial
             </p>
-            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(36px, 6vw, 72px)', color: '#fff', lineHeight: 1, margin: 0 }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(36px, 6vw, 72px)', color: '#0f172a', lineHeight: 1, margin: 0 }}>
               TECNOLOGÍA AL SERVICIO<br />DE TU LIGA
             </h2>
           </div>
@@ -488,17 +491,18 @@ export default function LandingPage() {
                 <HoverScale scale={1.02}>
                   <div style={{
                     padding: '40px 32px', borderRadius: 24,
-                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.07)',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
                     transition: 'border-color 0.3s, transform 0.3s',
                   }}
-                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(255,215,0,0.3)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
-                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                    onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(201,150,12,0.4)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
+                    onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.07)'; e.currentTarget.style.transform = 'translateY(0)' }}
                   >
-                    <div style={{ width: 52, height: 52, borderRadius: 14, background: '#112240', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#FFD700' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 14, background: '#f0f6ff', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: '#c9960c' }}>
                       <Icon size={24} />
                     </div>
-                    <h3 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#fff', marginBottom: 12, letterSpacing: 1 }}>{title}</h3>
-                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#71717a', margin: 0 }}>{desc}</p>
+                    <h3 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 24, color: '#0f172a', marginBottom: 12, letterSpacing: 1 }}>{title}</h3>
+                    <p style={{ fontSize: 14, lineHeight: 1.7, color: '#64748b', margin: 0 }}>{desc}</p>
                   </div>
                 </HoverScale>
               </AnimationWrapper>
@@ -511,10 +515,10 @@ export default function LandingPage() {
       <section id="planes" style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(48px, 8vw, 96px)', color: '#fff', lineHeight: 1, marginBottom: 8 }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(48px, 8vw, 96px)', color: '#0f172a', lineHeight: 1, marginBottom: 8 }}>
               ELIGE TU NIVEL
             </h2>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#52525b' }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#94a3b8' }}>
               PAGO ÚNICO MENSUAL · PRECIOS EN PESOS CHILENOS
             </p>
           </div>
@@ -556,7 +560,7 @@ export default function LandingPage() {
                   </h3>
 
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginBottom: 6 }}>
-                    <span style={{ color: '#52525b', fontSize: 16, fontWeight: 700 }}>$</span>
+                    <span style={{ color: '#94a3b8', fontSize: 16, fontWeight: 700 }}>$</span>
                     <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: isElite ? 48 : 42, color: s.price, lineHeight: 1 }}>
                       {plan.price}
                     </span>
@@ -599,10 +603,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" style={{ padding: '96px 24px', background: 'rgba(255,255,255,0.04)' }}>
+      <section id="faq" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#fff', margin: 0 }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#0f172a', margin: 0 }}>
               PREGUNTAS FRECUENTES
             </h2>
           </div>
@@ -611,8 +615,9 @@ export default function LandingPage() {
               <AnimationWrapper key={i} type="fadeUp" delay={i * 0.08}>
                 <div style={{
                   borderRadius: 20, overflow: 'hidden',
-                  border: activeFaq === i ? '1px solid rgba(255,215,0,0.2)' : '1px solid rgba(255,255,255,0.06)',
-                  background: activeFaq === i ? 'rgba(255,215,0,0.03)' : 'rgba(255,255,255,0.02)',
+                  border: activeFaq === i ? '1px solid rgba(201,150,12,0.35)' : '1px solid rgba(0,0,0,0.07)',
+                  background: activeFaq === i ? 'rgba(255,215,0,0.06)' : 'rgba(255,255,255,0.8)',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
                   transition: 'all 0.2s',
                 }}>
                 <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} style={{
@@ -620,11 +625,11 @@ export default function LandingPage() {
                   justifyContent: 'space-between', gap: 16, background: 'none', border: 'none',
                   cursor: 'pointer', textAlign: 'left',
                 }}>
-                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#e4e4e7', letterSpacing: 0.5 }}>{item.q}</span>
-                  <ChevronDown size={18} style={{ color: activeFaq === i ? '#FFD700' : '#52525b', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
+                  <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#0f172a', letterSpacing: 0.5 }}>{item.q}</span>
+                  <ChevronDown size={18} style={{ color: activeFaq === i ? '#c9960c' : '#94a3b8', transform: activeFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }} />
                 </button>
                 {activeFaq === i && (
-                  <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#71717a', lineHeight: 1.7, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ padding: '0 28px 24px', fontSize: 14, color: '#64748b', lineHeight: 1.7, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ paddingTop: 16 }}>{item.a}</div>
                   </div>
                 )}
@@ -637,15 +642,15 @@ export default function LandingPage() {
 
       {/* ── CIERRE / URGENCIA ── */}
       <AnimationWrapper type="fadeUp">
-        <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(255,215,0,0.05)', borderTop: '1px solid rgba(255,215,0,0.15)', borderBottom: '1px solid rgba(255,215,0,0.15)' }}>
+        <section style={{ padding: '80px 24px', textAlign: 'center', background: 'rgba(201,150,12,0.07)', borderTop: '1px solid rgba(201,150,12,0.2)', borderBottom: '1px solid rgba(201,150,12,0.2)' }}>
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
-            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#FFD700', marginBottom: 16 }}>
+            <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#c9960c', marginBottom: 16 }}>
               ⏱ Precio de Lanzamiento
             </p>
-            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 6vw, 64px)', color: '#fff', lineHeight: 1.1, marginBottom: 20 }}>
+            <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(32px, 6vw, 64px)', color: '#0f172a', lineHeight: 1.1, marginBottom: 20 }}>
               No dejes tu polla para última hora.
             </h2>
-            <p style={{ fontSize: 16, color: '#a1a1aa', lineHeight: 1.7, marginBottom: 36 }}>
+            <p style={{ fontSize: 16, color: '#475569', lineHeight: 1.7, marginBottom: 36 }}>
               Configura tu liga hoy y asegura el precio de lanzamiento antes de que empiece el torneo.
             </p>
             <GlowEffect color="gold">
@@ -666,11 +671,11 @@ export default function LandingPage() {
       </AnimationWrapper>
 
       {/* ── FOOTER ── */}
-      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
-        <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#fff', letterSpacing: 2 }}>
-          MUNDIAL<span style={{ color: '#FFD700' }}>PRO</span>
+      <footer style={{ padding: '40px 24px', borderTop: '1px solid rgba(0,0,0,0.08)', textAlign: 'center' }}>
+        <span style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 22, color: '#0f172a', letterSpacing: 2 }}>
+          MUNDIAL<span style={{ color: '#c9960c' }}>PRO</span>
         </span>
-        <p style={{ fontSize: 11, color: '#3f3f46', marginTop: 12, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+        <p style={{ fontSize: 11, color: '#94a3b8', marginTop: 12, letterSpacing: '0.15em', textTransform: 'uppercase' }}>
           © 2026 MundialPro · Hecho con ❤️ en Chile 🇨🇱
         </p>
       </footer>
