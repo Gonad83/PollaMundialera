@@ -141,11 +141,14 @@ async function syncMatches(options = {}) {
     const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
 
     let winnerId = null;
-    if (status === 'FINISHED' && m.score?.winner) {
-      if (m.score.winner === 'HOME_TEAM') {
+    if (status === 'FINISHED') {
+      if (m.score?.winner === 'HOME_TEAM') {
         winnerId = homeTeam.id;
-      } else if (m.score.winner === 'AWAY_TEAM') {
+      } else if (m.score?.winner === 'AWAY_TEAM') {
         winnerId = awayTeam.id;
+      } else if (scoreHome !== null && scoreAway !== null && scoreHome !== scoreAway) {
+        // Inferir ganador del marcador cuando la API no devuelve el campo winner
+        winnerId = scoreHome > scoreAway ? homeTeam.id : awayTeam.id;
       }
     }
 
