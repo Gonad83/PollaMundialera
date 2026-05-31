@@ -1,5 +1,6 @@
 const https = require('https');
 const prisma = require('./prisma');
+const { calculatePredictionPoints } = require('../controllers/predictionController');
 
 // Mapeo de stage de football-data.org a nuestro enum MatchPhase
 const STAGE_MAP = {
@@ -169,8 +170,19 @@ async function syncMatches(options = {}) {
     };
 
     if (existing) {
-      await prisma.match.update({ where: { id: existing.id }, data });
+      const wasFinished = existing.status === 'FINISHED';
+      const nowFinished = status === 'FINISHED';
+      const updatedMatch = await prisma.match.update({ where: { id: existing.id }, data });
       updated++;
+
+      // Si el partido acaba de terminar (o ya estaba terminado con resultado),
+      // recalcular puntos de todas las predicciones de este partido
+      if (nowFinished && scoreHome !== null && scoreAway !== null) {
+        if (!wasFinished) {
+          console.log(`⚽ Partido finalizado: ${homeTeam.name} ${scoreHome}-${scoreAway} ${awayTeam.name} — calculando puntos...`);
+        }
+        await scorePredictionsForMatch(updatedMatch);
+      }
     } else {
       await prisma.match.create({ data });
       created++;
@@ -180,6 +192,49 @@ async function syncMatches(options = {}) {
   const summary = `✅ Sincronización completa: ${created} creados, ${updated} actualizados, ${skipped} omitidos`;
   console.log(summary);
   return { created, updated, skipped, total: matches.length };
+}
+
+/**
+ * Recalcula y guarda los puntos de todas las predicciones de un partido finalizado
+ */
+async function scorePredictionsForMatch(match) {
+  try {
+    const predictions = await prisma.prediction.findMany({
+      where: { matchId: match.id },
+    });
+
+    if (predictions.length === 0) return;
+
+    for (const pred of predictions) {
+      const points = calculatePredictionPoints(pred, match);
+      await prisma.prediction.update({
+        where: { id: pred.id },
+        data: {
+          pointsExact:  points.pointsExact,
+          pointsWinner: points.pointsWinner,
+          pointsBonus:  points.pointsBonus,
+          pointsTotal:  points.pointsTotal,
+        },
+      });
+    }
+
+    // Actualizar totalPoints del usuario sumando todas sus predicciones
+    const userIds = [...new Set(predictions.map(p => p.userId))];
+    for (const userId of userIds) {
+      const agg = await prisma.prediction.aggregate({
+        where: { userId },
+        _sum: { pointsTotal: true },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { totalPoints: agg._sum.pointsTotal || 0 },
+      });
+    }
+
+    console.log(`✅ Puntos calculados para ${predictions.length} predicciones del partido ${match.id}`);
+  } catch (err) {
+    console.error(`⚠️  Error calculando puntos para partido ${match.id}:`, err.message);
+  }
 }
 
 module.exports = { syncMatches };

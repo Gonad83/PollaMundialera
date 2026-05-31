@@ -98,4 +98,50 @@
   @media (max-width: 1023px) {
     .plans-grid > * { transform: none !important; }
   }
+
+  /* ── Landing Hero — responsive ── */
+  .hero-layout {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    min-height: 560px;
+  }
+  .hero-cup {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  @media (max-width: 767px) {
+    .hero-layout {
+      flex-direction: column;
+      gap: 32px;
+      min-height: auto;
+      text-align: center;
+    }
+    .hero-cup {
+      order: -1; /* Copa arriba en mobile */
+    }
+    .hero-cup img {
+      width: min(60vw, 220px) !important;
+    }
+    .hero-countdown {
+      grid-template-columns: repeat(4, 1fr) !important;
+      max-width: 100% !important;
+    }
+    .hero-btns {
+      justify-content: center !important;
+    }
+  }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .hero-layout { gap: 32px; min-height: 480px; }
+    .hero-cup img { width: min(38vw, 340px) !important; }
+  }
+
+  /* ── Landing sections — mobile padding ── */
+  @media (max-width: 640px) {
+    .landing-section-pad { padding: 64px 16px !important; }
+    .landing-h2 { font-size: clamp(32px, 8vw, 64px) !important; }
+    .faq-btn { padding: 18px 20px !important; }
+  }
 }

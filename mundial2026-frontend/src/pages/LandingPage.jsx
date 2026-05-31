@@ -224,7 +224,7 @@ export default function LandingPage() {
         </div>
 
         {/* Layout dos columnas */}
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 48, minHeight: 560 }}>
+        <div className="hero-layout" style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px', position: 'relative', zIndex: 1 }}>
 
           {/* Columna izquierda — texto */}
           <div style={{ flex: '1 1 0', minWidth: 0 }}>
@@ -262,7 +262,7 @@ export default function LandingPage() {
             </AnimationWrapper>
 
             <AnimationWrapper type="fadeUp" delay={0.3}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+              <div className="hero-btns" style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
                 <GlowEffect color="gold">
                   <HoverScale scale={1.05}>
                     <Link to="/register" style={{
@@ -298,7 +298,7 @@ export default function LandingPage() {
 
             {/* Countdown */}
             {time && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 480, marginTop: 52 }}>
+              <div className="hero-countdown" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, maxWidth: 480, marginTop: 52 }}>
                 {[{ v: time.d, l: 'Días' }, { v: time.h, l: 'Horas' }, { v: time.m, l: 'Min' }, { v: time.s, l: 'Seg' }].map((item, idx) => (
                   <motion.div
                     key={item.l}
@@ -330,7 +330,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, x: 60, scale: 0.95 }}
             animate={{ opacity: 1, x: 0, scale: 1 }}
             transition={{ duration: 1.2, delay: 0.4, ease: 'easeOut' }}
-            style={{ flex: '0 0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            className="hero-cup"
           >
             {/* Flotación continua */}
             <motion.div
@@ -369,7 +369,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CÓMO FUNCIONA ── */}
-      <section style={{ padding: '96px 24px' }}>
+      <section className="landing-section-pad" style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 900, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1d6eff', marginBottom: 12 }}>
@@ -474,7 +474,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CARACTERÍSTICAS ── */}
-      <section id="características" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
+      <section id="características" className="landing-section-pad" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ marginBottom: 64, paddingBottom: 24, borderBottom: '1px solid rgba(0,0,0,0.08)' }}>
             <p style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em', color: '#1d6eff', marginBottom: 12 }}>
@@ -512,7 +512,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── PLANES ── */}
-      <section id="planes" style={{ padding: '96px 24px' }}>
+      <section id="planes" className="landing-section-pad" style={{ padding: '96px 24px' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(48px, 8vw, 96px)', color: '#0f172a', lineHeight: 1, marginBottom: 8 }}>
@@ -602,7 +602,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <section id="faq" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
+      <section id="faq" className="landing-section-pad" style={{ padding: '96px 24px', background: 'rgba(0,0,0,0.025)' }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <h2 style={{ fontFamily: '"Bebas Neue", cursive', fontSize: 'clamp(40px, 7vw, 80px)', color: '#0f172a', margin: 0 }}>
@@ -619,7 +619,7 @@ export default function LandingPage() {
                   boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
                   transition: 'all 0.2s',
                 }}>
-                <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} style={{
+                <button onClick={() => setActiveFaq(activeFaq === i ? null : i)} className="faq-btn" style={{
                   width: '100%', padding: '24px 28px', display: 'flex', alignItems: 'center',
                   justifyContent: 'space-between', gap: 16, background: 'none', border: 'none',
                   cursor: 'pointer', textAlign: 'left',
