@@ -830,6 +830,15 @@ export default function SimulatorPage() {
     setPhase('bracket')
   }, [standings])
 
+  // Regenerar automáticamente el bracket cuando cambien los standings (si ya existe un bracket)
+  useEffect(() => {
+    if (bracket) {
+      const { matches, labels, descs, thirds } = buildR32(standings)
+      // Solo actualizar terceros y R32, mantener los scores actuales del bracket
+      setBracket(prev => ({ ...prev, r32: matches, r32labels: labels, r32descs: descs, thirds }))
+    }
+  }, [standings]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Ganador de un partido (empate → usar penaltyWinner si existe)
   const resolve = (tA, tB, sA, sB, pw) => {
     const a = parseInt(sA), b = parseInt(sB)
