@@ -2,11 +2,11 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Calendar, Trophy, BarChart3, Users, BookOpen, Settings, Shuffle } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-export default function BottomNav({ user, filteredNav }) {
+export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
   const currentGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
-  const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN'
+  const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
   if (!hasItems) return null
 
   const openAdminPanel = () => {
@@ -51,6 +51,32 @@ export default function BottomNav({ user, filteredNav }) {
             </NavLink>
           )
         })}
+
+        {/* Header Actions (Simular, Mensajes, Ajustes) — Mobile only */}
+        {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
+          <button
+            key={id}
+            onClick={onClick}
+            className={`relative flex flex-col items-center gap-1 p-2 transition-all ${
+              isActive ? 'text-mundial-gold' : 'text-zinc-500'
+            }`}
+          >
+            <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+            {badge > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-0.5 bg-mundial-red rounded-full text-[8px] font-black text-white flex items-center justify-center leading-none">
+                {badge > 9 ? '9+' : badge}
+              </span>
+            )}
+            {isActive && (
+              <motion.div
+                layoutId="bottomTab"
+                className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
+              />
+            )}
+          </button>
+        ))}
+
         {user?.role === 'SUPER_ADMIN' && (
           <button
             onClick={openAdminPanel}

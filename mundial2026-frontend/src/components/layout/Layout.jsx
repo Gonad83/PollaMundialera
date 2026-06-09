@@ -536,7 +536,7 @@ export default function Layout() {
       </AnimatePresence>
 
       {/* Mobile Navigation (Native-like) */}
-      <BottomNav user={user} filteredNav={filteredNav} />
+      <BottomNav user={user} filteredNav={filteredNav} headerActions={headerActions} />
     </div>
   )
 }
