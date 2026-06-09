@@ -29,9 +29,12 @@ api.interceptors.response.use(
         localStorage.setItem('refreshToken', data.refreshToken)
         original.headers.Authorization = `Bearer ${data.accessToken}`
         return api(original)
-      } catch {
-        localStorage.clear()
-        window.location.href = '/login'
+      } catch (err) {
+        // Solo limpiar si el refresh realmente falla (no por timeout)
+        if (err.response?.status === 401 || err.response?.status === 403 || !err.response) {
+          localStorage.clear()
+          window.location.href = '/login'
+        }
       }
     }
 

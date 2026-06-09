@@ -33,9 +33,13 @@ export const AuthProvider = ({ children }) => {
         setUser(data)
         writeCache(data)
       })
-      .catch(() => {
-        localStorage.clear()
-        setUser(null)
+      .catch((err) => {
+        // Solo borrar sesión si el error es autenticación (401/403)
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.clear()
+          setUser(null)
+        }
+        // Si es otro error (timeout, 500, etc), mantener el token y dejar que reintente
       })
       .finally(() => setLoading(false))
   }, [])
