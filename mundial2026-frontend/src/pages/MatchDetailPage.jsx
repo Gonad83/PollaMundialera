@@ -447,7 +447,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
 
       {/* Post-Match Summary */}
       {isFinished && myPred && (
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className={`card p-8 mb-6 border-2 ${myPred.pointsTotal > 0 ? 'border-mundial-gold/30 bg-mundial-gold/5' : 'border-white/5'}`}
@@ -456,8 +456,8 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
             <h2 className="font-display text-2xl text-white">TU RESULTADO</h2>
             {myPred.pointsTotal > 0 && <Star className="text-mundial-gold animate-pulse" />}
           </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-2 gap-4 mb-6">
              <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
                 <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Apostaste</p>
                 <p className="font-display text-3xl text-white">{myPred.predHome} – {myPred.predAway}</p>
@@ -469,11 +469,58 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
              </div>
           </div>
 
+          {/* Desglose detallado de puntos */}
           {myPred.pointsTotal > 0 && (
-            <div className="mt-6 flex flex-wrap gap-2">
-               {myPred.pointsExact > 0 && <span className="px-3 py-1 bg-mundial-gold text-mundial-navy rounded-full text-[10px] font-bold uppercase tracking-widest">🔥 Marcador Exacto</span>}
-               {myPred.pointsWinner > 0 && <span className="px-3 py-1 bg-white/10 text-white rounded-full text-[10px] font-bold uppercase tracking-widest">✓ Ganador Correcto</span>}
-               {myPred.pointsBonus > 0 && <span className="px-3 py-1 bg-mundial-red text-white rounded-full text-[10px] font-bold uppercase tracking-widest">⭐ Bonus +{myPred.pointsBonus}</span>}
+            <div className="mt-8 space-y-3 border-t border-white/5 pt-6">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-4">DESGLOSE DE PUNTOS</p>
+
+              {/* Resultado exacto */}
+              {myPred.pointsExact > 0 && (
+                <div className="flex items-center justify-between p-4 bg-mundial-gold/10 rounded-xl border border-mundial-gold/30">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🔥</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">Marcador Exacto</p>
+                      <p className="text-xs text-zinc-400">Adivinaste el resultado exacto</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-2xl text-mundial-gold font-bold">+{myPred.pointsExact}</span>
+                </div>
+              )}
+
+              {/* Ganador correcto */}
+              {myPred.pointsWinner > 0 && myPred.pointsExact === 0 && (
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">✓</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">Ganador Correcto</p>
+                      <p className="text-xs text-zinc-400">Adivinaste quién ganó</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-2xl text-white font-bold">+{myPred.pointsWinner}</span>
+                </div>
+              )}
+
+              {/* Bonus puntos */}
+              {myPred.pointsBonus > 0 && (
+                <div className="flex items-center justify-between p-4 bg-mundial-red/10 rounded-xl border border-mundial-red/30">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">⭐</span>
+                    <div>
+                      <p className="text-sm font-bold text-white">Bonus Opcionales</p>
+                      <p className="text-xs text-zinc-400">Goleador, ambos marcan, over/under, etc.</p>
+                    </div>
+                  </div>
+                  <span className="font-display text-2xl text-mundial-red font-bold">+{myPred.pointsBonus}</span>
+                </div>
+              )}
+
+              {/* Total */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-mundial-gold/20 to-white/5 rounded-xl border border-mundial-gold/40 mt-4">
+                <p className="font-display text-lg font-bold text-white">TOTAL</p>
+                <span className="font-display text-3xl text-mundial-gold font-black">+{myPred.pointsTotal}</span>
+              </div>
             </div>
           )}
         </motion.div>
