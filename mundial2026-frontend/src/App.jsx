@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
@@ -48,13 +49,17 @@ const Spinner = () => (
   <div className="w-8 h-8 border-2 border-field-600 border-t-transparent rounded-full animate-spin" />
 )
 
-export default function App() {
+function AppContent() {
+  useEffect(() => {
+    // Invalidar cache de matches al cargar la app
+    queryClient.invalidateQueries({ queryKey: ['matches-all'] })
+  }, [])
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <SocketProvider>
-          <HeaderActionsProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <SocketProvider>
+        <HeaderActionsProvider>
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
               {/* Públicas */}
@@ -87,6 +92,13 @@ export default function App() {
           </SocketProvider>
         </AuthProvider>
       </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
     </QueryClientProvider>
   )
 }
