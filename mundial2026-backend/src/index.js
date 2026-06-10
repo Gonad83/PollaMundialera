@@ -174,6 +174,10 @@ async function startServer() {
       CREATE UNIQUE INDEX IF NOT EXISTS "TournamentPicks_userId_groupId_key"
         ON "TournamentPicks"("userId", "groupId")
     `;
+    // Group payment link settings
+    await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentLink" TEXT`;
+    await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentButtonEnabled" BOOLEAN NOT NULL DEFAULT false`;
+    await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentAmount" INTEGER NOT NULL DEFAULT 8000`;
     console.log('✅ Schema migration OK');
   } catch (e) {
     console.error('⚠️  Schema migration warning (continuing):', e.message);

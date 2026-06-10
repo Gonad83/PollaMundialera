@@ -9,7 +9,7 @@ import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
   Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen, Share2, HelpCircle,
-  UserCheck, Zap, Globe
+  UserCheck, Zap, Globe, CreditCard, ExternalLink
 } from 'lucide-react'
 import MatchesPage from './MatchesPage'
 import TournamentPage from './TournamentPage'
@@ -27,6 +27,13 @@ const MEDAL_COLORS = {
   2: 'from-zinc-300 to-zinc-500',
   3: 'from-orange-400 to-orange-700',
 }
+
+const formatCLP = (amount = 0) =>
+  new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  }).format(Number(amount) || 0)
 
 // ── Confirmation Modal ──────────────────────────────────────────────
 function DeleteMemberModal({ member, groupName, onConfirm, onCancel, loading }) {
@@ -87,12 +94,16 @@ export default function GroupDetailPage() {
 
   const [copied, setCopied] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [copiedPaymentLink, setCopiedPaymentLink] = useState(false)
   const [showPricing, setShowPricing] = useState(false)
   const [selectedTier, setSelectedTier] = useState(null)
   const [preferenceId, setPreferenceId] = useState(null)
   const [memberToDelete, setMemberToDelete] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
   const [editName, setEditName] = useState('')
+  const [paymentLink, setPaymentLink] = useState('')
+  const [paymentEnabled, setPaymentEnabled] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState(8000)
   const [editingName, setEditingName] = useState(false)
   const [simMode, setSimMode] = useState(false) // "Ver como participante"
   const [startTour, setStartTour] = useState(false)
@@ -151,6 +162,14 @@ export default function GroupDetailPage() {
       try { localStorage.setItem(`grp_${id}`, JSON.stringify(group)) } catch {}
     }
   }, [group, id])
+
+  useEffect(() => {
+    if (!group) return
+    if (!editingName) setEditName(group.name || '')
+    setPaymentLink(group.paymentLink || '')
+    setPaymentEnabled(!!group.paymentButtonEnabled)
+    setPaymentAmount(group.paymentAmount ?? 8000)
+  }, [group?.id, group?.name, group?.paymentLink, group?.paymentButtonEnabled, group?.paymentAmount, editingName])
 
   const { data: rawLeaderboard = [] } = useQuery({
     queryKey: ['group-leaderboard', id],
@@ -278,6 +297,20 @@ export default function GroupDetailPage() {
     onError: () => toast.error('Error al cambiar estado del link'),
   })
 
+  const updatePaymentMut = useMutation({
+    mutationFn: () => groupApi.update(id, {
+      paymentLink: paymentLink.trim(),
+      paymentButtonEnabled: paymentEnabled,
+      paymentAmount: Number(paymentAmount) || 0,
+    }),
+    onSuccess: () => {
+      toast.success('Pago del grupo actualizado')
+      qc.invalidateQueries({ queryKey: ['group', id] })
+      qc.invalidateQueries({ queryKey: ['my-groups'] })
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Error al guardar el link de pago'),
+  })
+
   // ── Share helpers ──
   const shareGroup = async () => {
     const url = `${window.location.origin}/join/${group.inviteToken}`
@@ -312,6 +345,14 @@ export default function GroupDetailPage() {
     setCopiedLink(true)
     toast.success('Link copiado')
     setTimeout(() => setCopiedLink(false), 2000)
+  }
+
+  const copyPaymentLink = () => {
+    if (!group.paymentLink) return
+    navigator.clipboard.writeText(group.paymentLink)
+    setCopiedPaymentLink(true)
+    toast.success('Link de pago copiado')
+    setTimeout(() => setCopiedPaymentLink(false), 2000)
   }
 
   if (isLoading) return (
@@ -349,6 +390,7 @@ export default function GroupDetailPage() {
   const isAtLimit = isFree && memberCount >= group.maxMembers
   const planLabel = group.activePlan === 'TIER2' ? 'DT' : group.activePlan === 'TIER1' ? 'CAPITÁN' : group.isPremium ? 'ELITE' : 'AMATEUR'
   const planPrice = !group.isPremium ? 'Gratis' : group.activePlan === 'TIER1' ? '$2.990/mes' : group.activePlan === 'TIER2' ? '$4.990/mes' : '$9.990/mes'
+  const groupPaymentAmount = group.paymentAmount ?? 8000
   const podium = leaderboard.filter(e => e.rank <= 3)
   const rest = leaderboard.filter(e => e.rank > 3)
 
@@ -622,6 +664,48 @@ export default function GroupDetailPage() {
       )}
 
       {/* ── Tabs ── */}
+      {group.paymentButtonEnabled && group.paymentLink && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 rounded-2xl border border-green-400/20 bg-green-400/10 p-4 sm:p-5 shadow-[0_18px_50px_rgba(34,197,94,0.08)]"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="flex items-center gap-4 flex-1 min-w-0">
+              <div className="w-12 h-12 rounded-2xl bg-green-400/15 border border-green-400/25 flex items-center justify-center shrink-0">
+                <CreditCard size={20} className="text-green-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[9px] text-green-300 font-black uppercase tracking-[0.25em]">Cuota del grupo</p>
+                <h3 className="font-display text-2xl text-white uppercase leading-none mt-1">{formatCLP(groupPaymentAmount)}</h3>
+                <p className="text-xs text-green-100/60 font-bold mt-1">Paga o transfiere tu cuota usando el link configurado por el admin.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={copyPaymentLink}
+                className={`px-4 py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                  copiedPaymentLink
+                    ? 'bg-green-400/20 border-green-400/30 text-green-300'
+                    : 'bg-white/5 border-white/10 text-zinc-300 hover:text-green-300 hover:border-green-400/30'
+                }`}
+              >
+                {copiedPaymentLink ? 'Copiado' : 'Copiar'}
+              </button>
+              <a
+                href={group.paymentLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3 rounded-xl bg-green-400 text-mundial-navy text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:brightness-110 transition-all"
+              >
+                Pagar <ExternalLink size={13} />
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-6 overflow-x-auto no-scrollbar">
         {tabs.map(({ id: tabId, label, icon: Icon }) => (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
@@ -992,6 +1076,87 @@ export default function GroupDetailPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="card p-6 bg-white/5 border border-white/5">
+              <div className="flex items-start justify-between gap-4 mb-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-green-400/10 border border-green-400/20 flex items-center justify-center shrink-0">
+                    <CreditCard size={17} className="text-green-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h3 className="font-display text-lg text-white uppercase">Boton de pago</h3>
+                      <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${
+                        paymentEnabled ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-white/5 border-white/10 text-zinc-500'
+                      }`}>
+                        {paymentEnabled ? 'Activo' : 'Oculto'}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">
+                      Muestra un boton de pago o transferencia dentro del grupo.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentEnabled(v => !v)}
+                  className={`relative w-12 h-7 rounded-full transition-all shrink-0 ${
+                    paymentEnabled ? 'bg-green-400' : 'bg-white/10'
+                  }`}
+                  aria-label="Activar boton de pago"
+                >
+                  <span
+                    className="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-transform"
+                    style={{ transform: paymentEnabled ? 'translateX(20px)' : 'translateX(0)' }}
+                  />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr_auto] gap-3 items-end">
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Cuota</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="500"
+                    value={paymentAmount}
+                    onChange={e => setPaymentAmount(e.target.value)}
+                    className="input w-full py-3"
+                    placeholder="8000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">URL de pago</label>
+                  <input
+                    type="url"
+                    value={paymentLink}
+                    onChange={e => setPaymentLink(e.target.value)}
+                    className="input w-full py-3"
+                    placeholder="https://mpago.la/1Ng5FjY"
+                    disabled={!paymentEnabled}
+                    style={{ opacity: paymentEnabled ? 1 : 0.45 }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (paymentEnabled && !paymentLink.trim()) {
+                      toast.error('Agrega el link de pago')
+                      return
+                    }
+                    updatePaymentMut.mutate()
+                  }}
+                  disabled={updatePaymentMut.isPending}
+                  className="px-5 py-3 rounded-2xl bg-green-400 text-mundial-navy font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 transition-all disabled:opacity-60"
+                >
+                  {updatePaymentMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Guardar
+                </button>
+              </div>
+              <p className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest mt-3">
+                Se vera para todos los miembros como cuota del grupo por {formatCLP(Number(paymentAmount) || 0)}.
+              </p>
             </div>
 
             {/* Info del plan */}

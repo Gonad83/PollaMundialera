@@ -98,6 +98,9 @@ model Group {
   activePlan    String?
   paymentId     String?     @unique
   paymentStatus String?
+  paymentLink   String?
+  paymentButtonEnabled Boolean @default(false)
+  paymentAmount Int         @default(8000)
   ruleSet       RuleSetType @default(BASIC)
   customRules   Json?
   announcements Json?       @default("[]")

@@ -407,7 +407,7 @@ const removeMember = async (req, res) => {
 // PATCH /api/groups/:id — El admin actualiza nombre/estado del grupo
 const updateGroup = async (req, res) => {
   const { id } = req.params;
-  const { name, inviteActive } = req.body;
+  const { name, inviteActive, paymentLink, paymentButtonEnabled, paymentAmount } = req.body;
 
   const group = await prisma.group.findUnique({ where: { id } });
   if (!group) return res.status(404).json({ error: 'Grupo no encontrado' });
@@ -419,6 +419,21 @@ const updateGroup = async (req, res) => {
   const data = {};
   if (name && name.trim().length >= 3) data.name = name.trim();
   if (typeof inviteActive === 'boolean') data.inviteActive = inviteActive;
+  if (typeof paymentButtonEnabled === 'boolean') data.paymentButtonEnabled = paymentButtonEnabled;
+  if (typeof paymentLink === 'string') {
+    const cleanPaymentLink = paymentLink.trim();
+    if (cleanPaymentLink && !/^https?:\/\//i.test(cleanPaymentLink)) {
+      return res.status(400).json({ error: 'El link de pago debe comenzar con http:// o https://' });
+    }
+    data.paymentLink = cleanPaymentLink || null;
+  }
+  if (paymentAmount !== undefined) {
+    const amount = Number(paymentAmount);
+    if (!Number.isInteger(amount) || amount < 0) {
+      return res.status(400).json({ error: 'El monto de la cuota debe ser un numero valido' });
+    }
+    data.paymentAmount = amount;
+  }
 
   const updated = await prisma.group.update({ where: { id }, data });
   return res.json(updated);
