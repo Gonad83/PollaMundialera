@@ -9,13 +9,14 @@
 
 const prisma = require('../src/utils/prisma');
 
-const TARGET_START = new Date('2026-06-10T00:00:00Z');
-const TARGET_END = new Date('2026-06-11T00:00:00Z');
+const CHILE_OFFSET = '-04:00';
+const TARGET_START = new Date(`2026-06-10T00:00:00${CHILE_OFFSET}`);
+const TARGET_END = new Date(`2026-06-11T00:00:00${CHILE_OFFSET}`);
 
 const FRIENDLY_MATCHES = [
-  { home: 'Portugal', away: 'Nigeria', date: '2026-06-10T15:45:00Z', city: 'Lisboa', venue: 'Estadio da Luz' },
-  { home: 'Inglaterra', away: 'Costa Rica', date: '2026-06-10T16:00:00Z', city: 'Londres', venue: 'Wembley' },
-  { home: 'Bolivia', away: 'Argelia', date: '2026-06-10T20:00:00Z', city: 'La Paz', venue: 'Estadio Hernando Siles' },
+  { home: 'Portugal', away: 'Nigeria', dateChile: '2026-06-10', timeChile: '15:45', city: 'Lisboa', venue: 'Estadio da Luz' },
+  { home: 'Inglaterra', away: 'Costa Rica', dateChile: '2026-06-10', timeChile: '16:00', city: 'Londres', venue: 'Wembley' },
+  { home: 'Bolivia', away: 'Argelia', dateChile: '2026-06-10', timeChile: '20:00', city: 'La Paz', venue: 'Estadio Hernando Siles' },
 ];
 
 const flagUrl = (isoCode) => `https://flagcdn.com/w80/${isoCode}.png`;
@@ -28,6 +29,8 @@ const TEAM_META = {
   Bolivia: { code: 'BOL', confederation: 'CONMEBOL', flagUrl: flagUrl('bo') },
   Argelia: { code: 'ALG', confederation: 'CAF', flagUrl: flagUrl('dz') },
 };
+
+const chileDateTimeToUtc = (match) => new Date(`${match.dateChile}T${match.timeChile}:00${CHILE_OFFSET}`);
 
 async function ensureTeam(name, teamsByName, teamsByCode) {
   const meta = TEAM_META[name];
@@ -107,12 +110,15 @@ async function addFriendlies() {
     for (const match of FRIENDLY_MATCHES) {
       const homeId = await ensureTeam(match.home, teamsByName, teamsByCode);
       const awayId = await ensureTeam(match.away, teamsByName, teamsByCode);
+      const dateUtc = chileDateTimeToUtc(match);
 
       const existing = await prisma.match.findFirst({
         where: {
           teamHomeId: homeId,
           teamAwayId: awayId,
-          dateUtc: new Date(match.date),
+          phase: 'GROUP',
+          groupLetter: null,
+          city: { not: 'World' },
         },
       });
 
@@ -122,6 +128,7 @@ async function addFriendlies() {
           data: {
             phase: 'GROUP',
             groupLetter: null,
+            dateUtc,
             venue: match.venue,
             city: match.city,
             status: 'SCHEDULED',
@@ -138,7 +145,7 @@ async function addFriendlies() {
           groupLetter: null,
           teamHomeId: homeId,
           teamAwayId: awayId,
-          dateUtc: new Date(match.date),
+          dateUtc,
           venue: match.venue,
           city: match.city,
           status: 'SCHEDULED',

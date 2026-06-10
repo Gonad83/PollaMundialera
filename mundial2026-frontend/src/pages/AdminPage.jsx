@@ -3,14 +3,24 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { adminApi, matchApi, groupApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
-import { format } from 'date-fns'
-import { es } from 'date-fns/locale'
 import {
   ShieldCheck, Users, Trophy, BarChart3, RefreshCw, Zap,
   Trash2, Crown, Mail, Search, Settings,
   AlertTriangle, CheckCircle2, LayoutDashboard, Send,
   Database, FileDigit, Globe, Plus, Minus, Radio, X, ChevronLeft
 } from 'lucide-react'
+
+const TZ = 'America/Santiago'
+const fmtChileDateTime = (date, options = {}) =>
+  new Intl.DateTimeFormat('es-CL', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: TZ,
+    ...options,
+  }).format(new Date(date))
 
 const TABS = [
   { id: 'overview',  label: 'Resumen',     icon: LayoutDashboard },
@@ -654,7 +664,7 @@ function MatchesTab({
                     {m.phase === 'GROUP' ? `Grupo ${m.groupLetter}` : m.phase}
                   </p>
                   <p className="text-[10px] text-zinc-400 font-bold mt-0.5">
-                    {format(new Date(m.dateUtc), "d MMM · HH:mm", { locale: es })}
+                    {fmtChileDateTime(m.dateUtc)}
                   </p>
                   <span className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[7px] font-black uppercase
                     ${isLive ? 'bg-mundial-red text-white' : isDone ? 'bg-white/10 text-zinc-500' : 'bg-white/5 text-zinc-600'}`}>
@@ -741,7 +751,7 @@ function MatchesTab({
                 <div>
                   <p className="text-[8px] font-black text-mundial-gold uppercase tracking-widest">
                     {activeMatch.phase === 'GROUP' ? `Grupo ${activeMatch.groupLetter}` : activeMatch.phase}
-                    {' · '}{format(new Date(activeMatch.dateUtc), "d MMM yyyy · HH:mm", { locale: es })}
+                    {' · '}{fmtChileDateTime(activeMatch.dateUtc, { year: 'numeric' })}
                   </p>
                   <h3 className="font-display text-xl text-white uppercase mt-0.5">
                     {activeMatch.status === 'FINISHED' ? 'Editar Resultado' : 'Cargar Resultado Final'}
