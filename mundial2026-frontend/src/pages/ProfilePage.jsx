@@ -24,7 +24,6 @@ function pointsColor(pts) {
 
 function resultLabel(pred) {
   if (pred.pointsExact >= 5) return { icon: '🔥', text: 'Exacto', cls: 'text-mundial-gold' }
-  if (pred.pointsExact >= 3) return { icon: '🎯', text: 'Dif. exacta', cls: 'text-blue-400' }
   if (pred.pointsWinner > 0) return { icon: '✓', text: 'Ganador', cls: 'text-green-400' }
   return { icon: '—', text: 'Fallo', cls: 'text-zinc-600' }
 }

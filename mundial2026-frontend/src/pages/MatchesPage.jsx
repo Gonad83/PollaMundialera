@@ -11,7 +11,7 @@ const TZ = 'America/Santiago'
 const fmtChileTime = (d) => new Date(d).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false })
 const fmtChileDay  = (d) => new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short', timeZone: TZ }).format(new Date(d))
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Crosshair, Check, X } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Check, X } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -389,7 +389,6 @@ function predResult(pred) {
   if (!pred) return null
   const pts = pred.pointsTotal || 0
   if ((pred.pointsExact || 0) >= 5) return { icon: Flame,     label: 'Exacto',     cls: 'text-mundial-gold', pts }
-  if ((pred.pointsExact || 0) >= 3) return { icon: Crosshair, label: 'Dif. exacta', cls: 'text-blue-400',     pts }
   if ((pred.pointsWinner || 0) > 0) return { icon: Check,     label: 'Ganador',    cls: 'text-green-400',    pts }
   return                                    { icon: X,         label: 'Fallo',      cls: 'text-zinc-600',     pts }
 }

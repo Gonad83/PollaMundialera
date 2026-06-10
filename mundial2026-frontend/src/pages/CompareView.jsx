@@ -9,7 +9,6 @@ import { teamEsp } from '../lib/teams'
 function cellStyle(pred) {
   if (!pred) return { bg: 'bg-white/3', text: 'text-zinc-700', border: 'border-white/5' }
   if (pred.pointsExact >= 5) return { bg: 'bg-mundial-gold/15', text: 'text-mundial-gold', border: 'border-mundial-gold/30' }
-  if (pred.pointsExact >= 3) return { bg: 'bg-blue-500/15', text: 'text-blue-300', border: 'border-blue-500/30' }
   if (pred.pointsWinner > 0) return { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/25' }
   return { bg: 'bg-mundial-red/8', text: 'text-red-400/70', border: 'border-mundial-red/15' }
 }
@@ -96,7 +95,6 @@ export default function CompareView({ groupId, members = [] }) {
         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Leyenda:</span>
         {[
           { bg: 'bg-mundial-gold/15', border: 'border-mundial-gold/30', text: 'text-mundial-gold', label: 'Exacto' },
-          { bg: 'bg-blue-500/15',     border: 'border-blue-500/30',     text: 'text-blue-300',    label: 'Dif. exacta' },
           { bg: 'bg-green-500/10',    border: 'border-green-500/25',    text: 'text-green-400',   label: 'Ganador' },
           { bg: 'bg-mundial-red/8',   border: 'border-mundial-red/15',  text: 'text-red-400/70',  label: 'Fallo' },
         ].map(({ bg, border, text, label }) => (

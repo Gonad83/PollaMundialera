@@ -34,7 +34,7 @@ export default function AdminPage() {
   
   // States para Formularios
   const [activeMatch, setActiveMatch] = useState(null)
-  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false })
+  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false, winnerId: null })
   const [broadcastMsg, setBroadcastMsg] = useState('')
   const [userSearch, setUserSearch] = useState('')
 
@@ -581,6 +581,7 @@ function MatchesTab({
       scoreHome: m.scoreHome ?? 0,
       scoreAway: m.scoreAway ?? 0,
       wentToPenalties: m.wentToPenalties ?? false,
+      winnerId: m.winnerId ?? null,
     })
   }
 
@@ -807,13 +808,35 @@ function MatchesTab({
                     type="checkbox"
                     className="w-4 h-4 rounded accent-mundial-gold"
                     checked={resultForm.wentToPenalties}
-                    onChange={e => setResultForm(f => ({ ...f, wentToPenalties: e.target.checked }))}
+                    onChange={e => setResultForm(f => ({ ...f, wentToPenalties: e.target.checked, winnerId: e.target.checked ? f.winnerId : null }))}
                   />
                   <div>
                     <p className="text-xs font-black text-white uppercase tracking-widest">Definido por penales</p>
-                    <p className="text-[9px] text-zinc-600 font-bold">Solo para fases eliminatorias</p>
+                    <p className="text-[9px] text-zinc-600 font-bold">El marcador debe ser el empate del partido; la tanda no se suma al marcador.</p>
                   </div>
                 </label>
+
+                {resultForm.wentToPenalties && resultForm.scoreHome === resultForm.scoreAway && (
+                  <div className="p-3 rounded-xl bg-mundial-gold/5 border border-mundial-gold/15 space-y-3">
+                    <p className="text-[9px] text-mundial-gold font-black uppercase tracking-widest">Ganador de la tanda</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[activeMatch.teamHome, activeMatch.teamAway].map(team => (
+                        <button
+                          key={team?.id}
+                          type="button"
+                          onClick={() => setResultForm(f => ({ ...f, winnerId: team?.id }))}
+                          className={`py-2.5 px-3 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${
+                            resultForm.winnerId === team?.id
+                              ? 'bg-mundial-gold text-mundial-navy border-mundial-gold'
+                              : 'bg-white/5 border-white/10 text-zinc-500 hover:text-white'
+                          }`}
+                        >
+                          {team?.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Advertencia si ya tenía resultado */}
                 {activeMatch.status === 'FINISHED' && (
@@ -835,7 +858,13 @@ function MatchesTab({
                     Cancelar
                   </button>
                   <button
-                    onClick={() => resultMut.mutate({ matchId: activeMatch.id, data: resultForm })}
+                    onClick={() => {
+                      if (resultForm.wentToPenalties && resultForm.scoreHome === resultForm.scoreAway && !resultForm.winnerId) {
+                        showFeedback('Selecciona el ganador por penales', 'error')
+                        return
+                      }
+                      resultMut.mutate({ matchId: activeMatch.id, data: resultForm })
+                    }}
                     disabled={resultMut.isPending}
                     className="py-3 rounded-xl bg-mundial-gold text-mundial-navy text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
                   >

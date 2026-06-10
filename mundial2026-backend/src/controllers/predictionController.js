@@ -5,34 +5,19 @@ const prisma = require('../utils/prisma');
 
 const POINTS = {
   EXACT_RESULT: 5,       // Marcador exacto
-  CORRECT_DIFF: 3,       // Ganador + misma diferencia de goles
-  CORRECT_WINNER: 1,     // Solo ganador / empate
-  SCORER_BONUS: 5,       // Primer goleador correcto
+  CORRECT_WINNER: 2,     // Ganador / empate correcto
+  SCORER_BONUS: 2,       // Primer goleador correcto
   BTTS_BONUS: 1,         // Ambos anotan correcto
   OVER_UNDER_BONUS: 1,   // Over/Under correcto
-  PENALTIES_BONUS: 3,    // ¿Va a penales? correcto (eliminatoria)
-  SCORER_ELIMINATION: 7, // Goleador del partido en eliminatoria
-  CHAMPION_BONUS: 30,    // Acierto de campeón/clasificado en eliminatoria
-};
-
-// Multiplicadores por fase
-const PHASE_MULTIPLIERS = {
-  GROUP: 1,
-  R32: 1.5,
-  R16: 1.5,
-  QF: 1.5,
-  SF: 1.5,
-  THIRD: 1.5,
-  FINAL: 1.5,
+  PENALTIES_BONUS: 1,    // ¿Va a penales? correcto (eliminatoria)
 };
 
 /**
  * Calcula los puntos de una predicción dado el resultado real
  */
 const calculatePredictionPoints = (prediction, match) => {
-  const { predHome, predAway, predScorerId, predBtts, predOverUnder, predPenalties, predWinnerId } = prediction;
-  const { scoreHome, scoreAway, phase, wentToPenalties, winnerId } = match;
-  const multiplier = PHASE_MULTIPLIERS[phase] || 1;
+  const { predHome, predAway, predScorerId, predBtts, predOverUnder, predPenalties } = prediction;
+  const { scoreHome, scoreAway, wentToPenalties } = match;
 
   let pointsExact = 0;
   let pointsWinner = 0;
@@ -42,23 +27,18 @@ const calculatePredictionPoints = (prediction, match) => {
   if (predHome === scoreHome && predAway === scoreAway) {
     pointsExact = POINTS.EXACT_RESULT;
   } else {
-    // 2. Ganador + misma diferencia de goles
     const predDiff = predHome - predAway;
     const realDiff = scoreHome - scoreAway;
     const sameSign = Math.sign(predDiff) === Math.sign(realDiff);
 
-    if (sameSign && Math.abs(predDiff) === Math.abs(realDiff)) {
-      pointsExact = POINTS.CORRECT_DIFF;
-    } else if (sameSign) {
-      // 3. Solo acertó ganador / empate
+    if (sameSign) {
       pointsWinner = POINTS.CORRECT_WINNER;
     }
   }
 
   // 4. Bonus: primer goleador
   if (predScorerId && match.firstScorerId === predScorerId) {
-    const scorerPts = phase === 'GROUP' ? POINTS.SCORER_BONUS : POINTS.SCORER_ELIMINATION;
-    pointsBonus += scorerPts;
+    pointsBonus += POINTS.SCORER_BONUS;
   }
 
   // 5. Bonus: ambos anotan
@@ -79,14 +59,8 @@ const calculatePredictionPoints = (prediction, match) => {
     if (predPenalties === wentToPenalties) pointsBonus += POINTS.PENALTIES_BONUS;
   }
 
-  // 8. Bonus: ¿acertó el ganador de la eliminatoria / campeón?
-  const isElim = phase !== 'GROUP';
-  if (isElim && predWinnerId && winnerId === predWinnerId) {
-    pointsBonus += POINTS.CHAMPION_BONUS;
-  }
-
   const base = pointsExact + pointsWinner;
-  const total = Math.round(base * multiplier) + pointsBonus;
+  const total = base + pointsBonus;
 
   return { pointsExact, pointsWinner, pointsBonus, pointsTotal: total };
 };

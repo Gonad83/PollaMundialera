@@ -20,9 +20,7 @@ function buildPointBreakdown(pred, match) {
   if (!pred || !match) return []
 
   const rows = []
-  const multiplier = match.phase === 'GROUP' ? 1 : 1.5
   const baseBeforeMultiplier = (pred.pointsExact || 0) + (pred.pointsWinner || 0)
-  const baseAfterMultiplier = Math.round(baseBeforeMultiplier * multiplier)
 
   if ((pred.pointsExact || 0) >= 5) {
     rows.push({
@@ -30,13 +28,6 @@ function buildPointBreakdown(pred, match) {
       detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway} y el resultado real fue el mismo.`,
       points: pred.pointsExact,
       tone: 'gold',
-    })
-  } else if ((pred.pointsExact || 0) >= 3) {
-    rows.push({
-      title: 'Diferencia exacta',
-      detail: `No fue el marcador exacto, pero acertaste el ganador y la diferencia de goles.`,
-      points: pred.pointsExact,
-      tone: 'blue',
     })
   } else if ((pred.pointsWinner || 0) > 0) {
     rows.push({
@@ -51,15 +42,6 @@ function buildPointBreakdown(pred, match) {
       detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway}; el resultado real fue ${match.scoreHome}-${match.scoreAway}.`,
       points: 0,
       tone: 'muted',
-    })
-  }
-
-  if (multiplier > 1 && baseBeforeMultiplier > 0) {
-    rows.push({
-      title: 'Multiplicador de eliminatoria',
-      detail: `Los puntos base (${baseBeforeMultiplier}) se multiplican por ${multiplier}.`,
-      points: baseAfterMultiplier - baseBeforeMultiplier,
-      tone: 'gold',
     })
   }
 
@@ -78,11 +60,6 @@ function buildPointBreakdown(pred, match) {
     const correct = pred.predPenalties === !!match.wentToPenalties
     bonusDetails.push(`${correct ? '+3' : '0'} penales: elegiste ${pred.predPenalties ? 'si' : 'no'}, real ${match.wentToPenalties ? 'si' : 'no'}`)
   }
-  if (pred.predWinnerId && match.winnerId) {
-    const correct = pred.predWinnerId === match.winnerId
-    bonusDetails.push(`${correct ? '+30' : '0'} clasificado/campeon correcto`)
-  }
-
   if ((pred.pointsBonus || 0) > 0 || bonusDetails.length > 0) {
     rows.push({
       title: 'Bonus opcionales',
@@ -94,7 +71,7 @@ function buildPointBreakdown(pred, match) {
 
   rows.push({
     title: 'Total',
-    detail: `Base ${baseAfterMultiplier} + bonus ${pred.pointsBonus || 0}.`,
+    detail: `Base ${baseBeforeMultiplier} + bonus ${pred.pointsBonus || 0}.`,
     points: pred.pointsTotal || 0,
     tone: 'total',
   })
@@ -452,7 +429,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                     {isElim && (
                       <ToggleBet 
                         label="¿Habrá Penales?"
-                        bonus="+3 pts"
+                        bonus="+1 pt"
                         value={form.predPenalties}
                         onChange={v => setForm(f => ({ ...f, predPenalties: v }))}
                         options={[{v:true, l:'Sí'}, {v:false, l:'No'}]}
@@ -462,8 +439,8 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                     {isElim && form.predHome === form.predAway && (
                       <div className="flex flex-col p-4 rounded-2xl bg-white/5 border border-white/5 hover:border-white/10 transition-all space-y-3">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">¿Quién clasifica / es Campeón?</span>
-                          <span className="text-[10px] text-mundial-gold font-mono uppercase tracking-widest leading-none mt-0.5">+30 pts de bonus</span>
+                          <span className="text-sm font-bold text-white">¿Quién clasifica por penales?</span>
+                          <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest leading-none mt-0.5">Define el avance; no suma al marcador</span>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <button
@@ -567,7 +544,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
             <div className="mb-4">
               <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">DESGLOSE DE PUNTOS</p>
               <p className="text-xs text-zinc-500 mt-1">
-                Marcador: 5 exacto, 3 por diferencia exacta, 1 por ganador/empate correcto. Los bonus se suman aparte.
+                Marcador: 5 exacto o 2 por ganador/empate correcto. Los bonus se suman aparte.
               </p>
             </div>
 

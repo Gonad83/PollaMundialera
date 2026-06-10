@@ -15,6 +15,26 @@ const matchResultSchema = z.object({
 const STREAK_BONUS = 5;  // Puntos por racha de 3 exactos seguidos
 const PERFECT_DAY_BONUS = 10; // Todos los partidos de una jornada
 
+const recalculateUserTotals = async (tx, userIds) => {
+  for (const userId of userIds) {
+    const predictions = await tx.prediction.aggregate({
+      where: { userId },
+      _sum: { pointsTotal: true },
+    });
+    const tournamentPicks = await tx.tournamentPicks.aggregate({
+      where: { userId },
+      _sum: { pointsTotal: true },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        totalPoints: (predictions._sum.pointsTotal || 0) + (tournamentPicks._sum.pointsTotal || 0),
+      },
+    });
+  }
+};
+
 // ─── Motor de puntos principal ────────────────────────────────────────────────
 
 /**
@@ -35,38 +55,42 @@ const setMatchResult = async (req, res) => {
   });
 
   if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
-  if (match.status === 'FINISHED') {
-    return res.status(409).json({ error: 'Este partido ya tiene resultado cargado' });
-  }
 
   const { scoreHome, scoreAway, firstScorerId, wentToPenalties, winnerId } = parsed.data;
+  const isDraw = scoreHome === scoreAway;
+  const resolvedWinnerId = isDraw
+    ? (wentToPenalties ? winnerId : null)
+    : (scoreHome > scoreAway ? match.teamHomeId : match.teamAwayId);
+
+  if (wentToPenalties && isDraw && !resolvedWinnerId) {
+    return res.status(400).json({ error: 'Selecciona el ganador por penales' });
+  }
 
   // Enriquecer el match con el primer goleador para el cálculo
-  const matchWithScorer = { ...match, firstScorerId, scoreHome, scoreAway, wentToPenalties, winnerId };
+  const matchWithScorer = { ...match, firstScorerId, scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId };
 
   // ─── Transacción: actualizar partido + calcular todos los puntos ──────────
   await prisma.$transaction(async (tx) => {
     // 1. Actualizar el partido
     await tx.match.update({
       where: { id: matchId },
-      data: { scoreHome, scoreAway, wentToPenalties, winnerId, status: 'FINISHED' },
+      data: { scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId, status: 'FINISHED' },
     });
 
     // 2. Calcular puntos para cada predicción
+    const affectedUserIds = new Set();
     for (const pred of match.predictions) {
       const pts = calculatePredictionPoints(pred, matchWithScorer);
+      affectedUserIds.add(pred.userId);
 
       await tx.prediction.update({
         where: { id: pred.id },
         data: pts,
       });
-
-      // 3. Actualizar puntos totales del usuario
-      await tx.user.update({
-        where: { id: pred.userId },
-        data: { totalPoints: { increment: pts.pointsTotal } },
-      });
     }
+
+    // 3. Recalcular totales para evitar duplicar puntos al editar resultados
+    await recalculateUserTotals(tx, [...affectedUserIds]);
   });
 
   // 4. Verificar rachas y bonos (fuera de la transacción principal)
