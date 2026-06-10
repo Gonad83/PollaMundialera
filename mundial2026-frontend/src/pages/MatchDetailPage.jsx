@@ -140,6 +140,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['prediction', id] })
       qc.invalidateQueries({ queryKey: ['my-predictions'] })
+      qc.invalidateQueries({ queryKey: ['my-predictions-all'] })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
