@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, ChevronRight, RotateCcw, Zap, Save, CheckCircle2 } from 'lucide-react'
+import { Trophy, ChevronRight, RotateCcw, Zap, Save, CheckCircle2, MousePointerClick } from 'lucide-react'
 import { matchApi } from '../lib/api'
 import { THIRDS_TABLE } from '../data/annexC'
 import { CODE_TO_ESP } from '../lib/teams'
@@ -163,6 +163,7 @@ DEFAULT_GROUPS.L = ['Paraguay',  'Suecia',          'RD Congo',         'Cabo Ve
 
 // Pares de partidos para un grupo de 4: (0v1),(0v2),(0v3),(1v2),(1v3),(2v3)
 const MATCH_PAIRS = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]]
+const BRACKET_ROUNDS = ['r32', 'r16', 'qf', 'sf', 'final']
 
 const initScores = () =>
   Object.fromEntries(
@@ -572,6 +573,46 @@ function VBCard({ tA, tB, sA, sB, pw }) {
   )
 }
 
+function InteractiveVBCard({ tA, tB, sA, sB, pw, onPickWinner }) {
+  const a = parseInt(sA), b = parseInt(sB)
+  const ok = !isNaN(a) && !isNaN(b) && tA && tB
+  const draw = ok && a === b
+  const wA = ok && (a > b || (draw && pw === tA))
+  const wB = ok && (b > a || (draw && pw === tB))
+  const row = (name, selected) => (
+    <button
+      type="button"
+      disabled={!name}
+      onClick={() => name && onPickWinner?.(name)}
+      className={`w-full flex items-center gap-1.5 px-2 h-6 text-left transition-all ${
+        selected
+          ? 'bg-mundial-gold text-mundial-navy'
+          : name
+            ? 'text-zinc-200 hover:bg-mundial-gold/12 cursor-pointer'
+            : 'text-zinc-700 cursor-not-allowed'
+      }`}
+      title={name ? `Elegir a ${name}` : 'Por definir'}
+    >
+      {name
+        ? <Flag name={name} size="sm" />
+        : <span className="w-4 h-4 border border-white/10 rounded flex items-center justify-center shrink-0">
+            <span className="text-[5px] text-zinc-700">?</span>
+          </span>
+      }
+      <span className="flex-1 text-[8px] font-bold truncate">{name || 'Por definir'}</span>
+      {selected && <span className="text-[7px] font-black uppercase tracking-widest">Avanza</span>}
+    </button>
+  )
+
+  return (
+    <div className={`border rounded overflow-hidden bg-zinc-950 ${ok ? 'border-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.08)]' : tA && tB ? 'border-white/18' : 'border-white/8'}`} style={{ width: VB_MW }}>
+      {row(tA, wA)}
+      <div className="h-px bg-white/8" />
+      {row(tB, wB)}
+    </div>
+  )
+}
+
 function VBConnector({ fromCount, toCount, totalH, dir = 'ltr' }) {
   const fH = totalH / fromCount
   const tH = totalH / toCount
@@ -609,7 +650,7 @@ function VBRoundCol({ data, count, totalH }) {
         <div key={i} className="absolute flex items-center justify-center"
           style={{ top: i * slotH, height: slotH, width: VB_MW }}>
           {data[i]
-            ? <VBCard {...data[i]} />
+            ? <InteractiveVBCard {...data[i]} />
             : <div className="border border-white/5 rounded opacity-20 bg-zinc-950" style={{ width: VB_MW }}>
                 <div className="h-6 flex items-center px-2"><span className="text-[7px] text-zinc-700">TBD</span></div>
                 <div className="h-px bg-white/5" />
@@ -622,7 +663,7 @@ function VBRoundCol({ data, count, totalH }) {
   )
 }
 
-function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket }) {
+function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, onPickWinner }) {
   if (!bracketTeams || !bracketScores || !bracket) return null
   const bm = (pairs, scores, round) =>
     (pairs || []).map(([tA, tB], i) => ({
@@ -630,6 +671,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
       sA: scores?.[i]?.[0] ?? '',
       sB: scores?.[i]?.[1] ?? '',
       pw: penaltyWinners[`${round}-${i}`],
+      onPickWinner: (winner) => onPickWinner?.(round, i, winner),
     }))
   const r32d = bm(bracketTeams.r32, bracketScores.r32, 'r32')
   const r16d = bm(bracketTeams.r16, bracketScores.r16, 'r16')
@@ -639,6 +681,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
     tA: bracketTeams.finalTeams?.[0], tB: bracketTeams.finalTeams?.[1],
     sA: bracketScores.final?.[0] ?? '', sB: bracketScores.final?.[1] ?? '',
     pw: penaltyWinners['final-0'],
+    onPickWinner: (winner) => onPickWinner?.('final', 0, winner),
   }
   const L32 = r32d.slice(0, 8); const R32 = [...r32d.slice(8)].reverse()
   const L16 = r16d.slice(0, 4); const R16 = [...r16d.slice(4)].reverse()
@@ -674,7 +717,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket })
         <div className="flex flex-col items-center justify-center gap-3 shrink-0" style={{ height: H, width: W }}>
           <div className="w-full">
             <p className="text-[7px] font-black text-mundial-gold text-center mb-1.5 uppercase tracking-widest">🏆 Gran Final</p>
-            <VBCard {...fin} />
+            <InteractiveVBCard {...fin} />
           </div>
           {(bracketTeams.sfLosers[0] || bracketTeams.sfLosers[1]) && (
             <div className="w-full">
@@ -718,7 +761,7 @@ export default function SimulatorPage() {
   const [bracket, setBracket]     = useState(null)
   const [bracketScores, setBracketScores] = useState(null)
   const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
-  const [bracketView, setBracketView] = useState('list')   // 'list' | 'bracket'
+  const [bracketView, setBracketView] = useState('bracket')   // 'list' | 'bracket'
   const [groupsFromApi, setGroupsFromApi] = useState(false)
   const [groupPairOrders, setGroupPairOrders] = useState({}) // { A: [[i,j],...], ... } orden real de partidos
   const [savedAt, setSavedAt] = useState(null)              // timestamp último guardado
@@ -827,6 +870,8 @@ export default function SimulatorPage() {
       sf:    Array(2).fill(null).map(() => ['', '']),
       final: ['', ''],
     })
+    setPenaltyWinners({})
+    setBracketView('bracket')
     setPhase('bracket')
   }, [standings])
 
@@ -935,6 +980,46 @@ export default function SimulatorPage() {
     setBracketScores(newScores)
     setPenaltyWinners(newPW)
   }, [bracketTeams, bracketScores, penaltyWinners])
+
+  // Seleccion manual del ganador en la vista de bracket
+  const pickBracketWinner = useCallback((round, index, winner) => {
+    if (!bracketTeams || !bracketScores || !winner) return
+    const pairs = round === 'final' ? [bracketTeams.finalTeams] : bracketTeams[round]
+    const pair = pairs?.[index]
+    if (!pair?.[0] || !pair?.[1]) return
+
+    setBracketScores(prev => {
+      if (!prev) return prev
+      const next = {
+        ...prev,
+        r32: prev.r32.map(s => [...s]),
+        r16: prev.r16.map(s => [...s]),
+        qf: prev.qf.map(s => [...s]),
+        sf: prev.sf.map(s => [...s]),
+        final: [...prev.final],
+      }
+      const score = winner === pair[0] ? ['1', '0'] : ['0', '1']
+      if (round === 'final') next.final = score
+      else next[round][index] = score
+
+      const roundIdx = BRACKET_ROUNDS.indexOf(round)
+      BRACKET_ROUNDS.slice(roundIdx + 1).forEach(r => {
+        if (r === 'final') next.final = ['', '']
+        else next[r] = next[r].map(() => ['', ''])
+      })
+      return next
+    })
+
+    setPenaltyWinners(prev => {
+      const next = { ...prev }
+      const roundIdx = BRACKET_ROUNDS.indexOf(round)
+      BRACKET_ROUNDS.slice(roundIdx).forEach(r => {
+        if (r === 'final') delete next['final-0']
+        else Object.keys(next).forEach(k => { if (k.startsWith(`${r}-`)) delete next[k] })
+      })
+      return next
+    })
+  }, [bracketTeams, bracketScores])
 
   // Guardar simulación en localStorage
   const handleSave = useCallback(() => {
@@ -1063,12 +1148,26 @@ export default function SimulatorPage() {
 
           {/* ── Vista Bracket Gráfico ── */}
           {bracketView === 'bracket' && (
-            <VisualBracket
-              bracketTeams={bracketTeams}
-              bracketScores={bracketScores}
-              penaltyWinners={penaltyWinners}
-              bracket={bracket}
-            />
+            <div className="rounded-2xl border border-green-400/15 bg-green-400/5 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3 px-1">
+                <div className="flex items-center gap-2">
+                  <MousePointerClick size={14} className="text-green-400" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-green-300">
+                    Clic en un equipo para hacerlo avanzar
+                  </span>
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                  Solo simulacion
+                </span>
+              </div>
+              <VisualBracket
+                bracketTeams={bracketTeams}
+                bracketScores={bracketScores}
+                penaltyWinners={penaltyWinners}
+                bracket={bracket}
+                onPickWinner={pickBracketWinner}
+              />
+            </div>
           )}
 
           {/* ── Vista Lista ── */}
