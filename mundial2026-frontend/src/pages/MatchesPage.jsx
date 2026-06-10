@@ -570,4 +570,3 @@ function buildStandings(matches) {
     })
   }))
 }
-
