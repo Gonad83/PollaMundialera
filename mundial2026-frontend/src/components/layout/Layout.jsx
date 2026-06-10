@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download, Star, AlertTriangle } from 'lucide-react'
+import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download, Star, AlertTriangle, BarChart3, MessageSquare } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
 import { useServerStatus } from '../../hooks/useServerStatus'
 import { useMatchReminders } from '../../hooks/useMatchReminders'
@@ -83,7 +83,23 @@ export default function Layout() {
   // En la página de lista de grupos, ocultar el nav completo (PARTIDOS, TORNEO, etc.)
   const isGroupsListing = pathname === '/groups' || pathname === '/groups/'
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
-  const currentGroupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
+  const routeGroupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
+  const isProfileRoute = pathname.startsWith('/profile')
+  const storedGroupId = typeof window !== 'undefined' ? sessionStorage.getItem('lastGroupId') : null
+  const storedCanManageGroup = typeof window !== 'undefined' && sessionStorage.getItem('lastGroupCanManage') === 'true'
+  const currentGroupId = routeGroupId || (isProfileRoute ? storedGroupId : null)
+  const fallbackHeaderActions = !isGroupDetail && isProfileRoute && currentGroupId
+    ? [
+        { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => navigate(`/groups/${currentGroupId}?tab=simulador`), isActive: false },
+        { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => navigate(`/groups/${currentGroupId}?tab=messages`), isActive: false },
+        ...(storedCanManageGroup ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
+      ]
+    : []
+  const effectiveHeaderActions = headerActions.length > 0 ? headerActions : fallbackHeaderActions
+
+  useEffect(() => {
+    if (routeGroupId) sessionStorage.setItem('lastGroupId', routeGroupId)
+  }, [routeGroupId])
 
   const openAdminPanel = () => {
     if (currentGroupId) {
@@ -130,7 +146,7 @@ export default function Layout() {
   // - Loading or no groups → RESTRICTED_NAV
   // - Has groups on /groups listing → no nav
   // - Has groups elsewhere → MAIN_NAV
-  const filteredNav = isGroupDetail
+  const filteredNav = currentGroupId
     ? MAIN_NAV
     : loadingProfile
       ? []
@@ -220,7 +236,7 @@ export default function Layout() {
                         let active = isActive
                         if (currentGroupId) {
                           const tabParam = new URLSearchParams(search).get('tab')
-                          const anyGroupActionActive = headerActions.some(a => a.isActive)
+                          const anyGroupActionActive = effectiveHeaderActions.some(a => a.isActive)
                           if (to === '/matches') {
                             // PARTIDOS activo solo si no hay acción de grupo activa y tab es resultados o sin tab
                             active = !anyGroupActionActive && (!tabParam || tabParam === 'resultados')
@@ -241,7 +257,7 @@ export default function Layout() {
                   )
                 })}
                 {/* Botones de grupo (Mensajes, Ajustes) pegados al mismo pill */}
-                {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
+                {effectiveHeaderActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
                   <button
                     key={id}
                     onClick={onClick}
@@ -536,7 +552,7 @@ export default function Layout() {
       </AnimatePresence>
 
       {/* Mobile Navigation (Native-like) */}
-      <BottomNav user={user} filteredNav={filteredNav} headerActions={headerActions} />
+      <BottomNav user={user} filteredNav={filteredNav} headerActions={effectiveHeaderActions} />
     </div>
   )
 }

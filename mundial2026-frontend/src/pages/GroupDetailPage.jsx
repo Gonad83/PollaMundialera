@@ -176,11 +176,16 @@ export default function GroupDetailPage() {
   // En modo simulación, el admin ve la app como un participante normal
   const actingAsAdmin = isAdmin && !simMode
 
+  useEffect(() => {
+    sessionStorage.setItem('lastGroupId', id)
+    sessionStorage.setItem('lastGroupCanManage', actingAsAdmin ? 'true' : 'false')
+  }, [id, actingAsAdmin])
+
   // Sincronizar activeTab con ?tab= de la URL.
   // Sin activeTab en deps para evitar loop; cuando no hay tabParam siempre vuelve a resultados.
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config', 'reglas'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config', 'reglas', 'simulador'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group) {
       setActiveTab('resultados')
