@@ -19,6 +19,9 @@ export default function JoinPage() {
     queryFn: () => groupApi.getByToken(token).then(r => r.data),
   })
 
+  const [isJoining, setIsJoining] = useState(false)
+  const [joinError, setJoinError] = useState(null)
+
   // Unirse automáticamente si ya está logueado
   const joinMut = useMutation({
     mutationFn: () => groupApi.joinByToken(token),
@@ -31,16 +34,24 @@ export default function JoinPage() {
       setTimeout(() => navigate(`/groups/${res.data.group.id}`), 2000)
     },
     onError: (err) => {
-      toast.error(err.response?.data?.error || 'Error al unirse al grupo')
+      const errorMsg = err.response?.data?.error || 'Error al unirse al grupo'
+      setJoinError(errorMsg)
+      // Si el grupo está lleno, reintentar en 3 segundos (por si se libera un lugar)
+      if (err.response?.status === 409) {
+        toast.error(errorMsg, { duration: 4000 })
+      } else {
+        toast.error(errorMsg)
+      }
     },
   })
 
   useEffect(() => {
     // Si ya está logueado, intentar unirse directo
-    if (user && group && !joined) {
+    if (user && group && !joined && !isJoining) {
+      setIsJoining(true)
       joinMut.mutate()
     }
-  }, [user, group])
+  }, [user, group, joined, isJoining]) // Agregar joinMut y isJoining a dependencias
 
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-mundial-navy">
@@ -115,7 +126,26 @@ export default function JoinPage() {
                 </div>
               </div>
 
-              {isFull ? (
+              {joinError ? (
+                <div className="text-center py-4">
+                  <AlertCircle size={32} className="mx-auto text-mundial-red mb-3" />
+                  <p className="text-mundial-red font-black uppercase tracking-widest text-xs mb-2">{joinError}</p>
+                  <p className="text-zinc-600 text-xs mb-4">
+                    {joinError.includes('lleno')
+                      ? 'No hay espacios disponibles en este grupo'
+                      : 'Intenta nuevamente en unos momentos'}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setJoinError(null)
+                      setIsJoining(false)
+                    }}
+                    className="px-4 py-2 bg-mundial-gold/10 hover:bg-mundial-gold/20 border border-mundial-gold/30 rounded-xl text-mundial-gold text-xs font-black uppercase tracking-widest transition-all"
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              ) : isFull ? (
                 <div className="text-center py-4">
                   <AlertCircle size={32} className="mx-auto text-mundial-red mb-3" />
                   <p className="text-mundial-red font-black uppercase tracking-widest text-xs">Grupo lleno</p>
