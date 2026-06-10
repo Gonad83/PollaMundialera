@@ -7,7 +7,6 @@ const { calculatePredictionPoints } = require('./predictionController');
 const matchResultSchema = z.object({
   scoreHome: z.number().int().min(0).max(20),
   scoreAway: z.number().int().min(0).max(20),
-  firstScorerId: z.string().optional().nullable(),
   wentToPenalties: z.boolean().default(false),
   winnerId: z.string().optional().nullable(),
 });
@@ -56,7 +55,7 @@ const setMatchResult = async (req, res) => {
 
   if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
 
-  const { scoreHome, scoreAway, firstScorerId, wentToPenalties, winnerId } = parsed.data;
+  const { scoreHome, scoreAway, wentToPenalties, winnerId } = parsed.data;
   const isDraw = scoreHome === scoreAway;
   const resolvedWinnerId = isDraw
     ? (wentToPenalties ? winnerId : null)
@@ -66,8 +65,7 @@ const setMatchResult = async (req, res) => {
     return res.status(400).json({ error: 'Selecciona el ganador por penales' });
   }
 
-  // Enriquecer el match con el primer goleador para el cálculo
-  const matchWithScorer = { ...match, firstScorerId, scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId };
+  const matchForScoring = { ...match, scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId };
 
   // ─── Transacción: actualizar partido + calcular todos los puntos ──────────
   await prisma.$transaction(async (tx) => {
@@ -80,7 +78,7 @@ const setMatchResult = async (req, res) => {
     // 2. Calcular puntos para cada predicción
     const affectedUserIds = new Set();
     for (const pred of match.predictions) {
-      const pts = calculatePredictionPoints(pred, matchWithScorer);
+      const pts = calculatePredictionPoints(pred, matchForScoring);
       affectedUserIds.add(pred.userId);
 
       await tx.prediction.update({
@@ -436,11 +434,11 @@ const syncMatches = async (req, res) => {
 
     // 4. Procesar resultados y puntos para cada uno
     for (const match of newlyFinishedMatches) {
-      const matchWithScorer = { ...match, firstScorerId: null };
+      const matchForScoring = { ...match };
 
       await prisma.$transaction(async (tx) => {
         for (const pred of match.predictions) {
-          const pts = calculatePredictionPoints(pred, matchWithScorer);
+          const pts = calculatePredictionPoints(pred, matchForScoring);
 
           await tx.prediction.update({
             where: { id: pred.id },

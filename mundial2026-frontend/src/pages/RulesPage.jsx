@@ -34,12 +34,6 @@ export default function RulesPage() {
             desc="Aciertas quién gana o si termina en empate, pero no el marcador exacto"
           />
           <ScoreRow
-            pts={2}
-            color="blue"
-            title="Primer Goleador"
-            desc="Aciertas quién abre el marcador en el partido (bonus adicional)"
-          />
-          <ScoreRow
             pts={1}
             color="blue"
             title="Ambos Equipos Anotan (BTTS)"

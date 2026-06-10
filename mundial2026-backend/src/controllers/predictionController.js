@@ -6,7 +6,6 @@ const prisma = require('../utils/prisma');
 const POINTS = {
   EXACT_RESULT: 5,       // Marcador exacto
   CORRECT_WINNER: 2,     // Ganador / empate correcto
-  SCORER_BONUS: 2,       // Primer goleador correcto
   BTTS_BONUS: 1,         // Ambos anotan correcto
   OVER_UNDER_BONUS: 1,   // Over/Under correcto
   PENALTIES_BONUS: 1,    // ¿Va a penales? correcto (eliminatoria)
@@ -16,7 +15,7 @@ const POINTS = {
  * Calcula los puntos de una predicción dado el resultado real
  */
 const calculatePredictionPoints = (prediction, match) => {
-  const { predHome, predAway, predScorerId, predBtts, predOverUnder, predPenalties } = prediction;
+  const { predHome, predAway, predBtts, predOverUnder, predPenalties } = prediction;
   const { scoreHome, scoreAway, wentToPenalties } = match;
 
   let pointsExact = 0;
@@ -34,11 +33,6 @@ const calculatePredictionPoints = (prediction, match) => {
     if (sameSign) {
       pointsWinner = POINTS.CORRECT_WINNER;
     }
-  }
-
-  // 4. Bonus: primer goleador
-  if (predScorerId && match.firstScorerId === predScorerId) {
-    pointsBonus += POINTS.SCORER_BONUS;
   }
 
   // 5. Bonus: ambos anotan
