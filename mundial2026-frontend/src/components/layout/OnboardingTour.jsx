@@ -18,11 +18,12 @@ export default function OnboardingTour({
 
   const tourKey = useMemo(() => {
     return `has_seen_onboarding_tour_${user?.id || 'guest'}`
-  }, [user])
+  }, [user?.id])
 
   // Iniciar tour si no se ha visto nunca — esperar a que user.id esté cargado
   useEffect(() => {
     if (!group || !user?.id) return
+
     const hasSeenTour = localStorage.getItem(tourKey)
     if (!hasSeenTour) {
       const t = setTimeout(() => setStep(1), 1200)
