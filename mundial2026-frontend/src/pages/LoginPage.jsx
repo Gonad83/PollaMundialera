@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { groupApi } from '../lib/api'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -36,15 +35,10 @@ export default function LoginPage() {
         localStorage.removeItem('rememberedEmail')
       }
 
-      // Si venía de un link de invitación, unirse al grupo
+      // Si venia de un link de invitacion, volver al link autenticado.
       if (joinToken) {
-        try {
-          const res = await groupApi.joinByToken(joinToken)
-          navigate(`/groups/${res.data.group.id}`)
-          return
-        } catch {
-          // Si falla el join igual redirige
-        }
+        navigate(`/join/${joinToken}`)
+        return
       }
 
       const redirect = searchParams.get('redirect')

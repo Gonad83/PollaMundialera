@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { AuthLayout } from './LoginPage'
-import { groupApi } from '../lib/api'
 import { Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react'
 
 function validateUsername(val) {
@@ -67,11 +66,8 @@ export default function RegisterPage() {
     try {
       await register(form.username, form.email, form.password)
       if (joinToken) {
-        try {
-          const res = await groupApi.joinByToken(joinToken)
-          navigate(`/groups/${res.data.group.id}`)
-          return
-        } catch {}
+        navigate(`/join/${joinToken}`)
+        return
       }
       const redirect = searchParams.get('redirect')
       if (redirect) {

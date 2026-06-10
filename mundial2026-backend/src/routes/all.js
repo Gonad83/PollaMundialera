@@ -40,12 +40,12 @@ module.exports.tournRouter = tournRouter;
 const groupRouter = require('express').Router();
 const gc = require('../controllers/groupController');
 
+groupRouter.get('/token/:token',            gc.getGroupByToken);
 groupRouter.use(authenticate);
 groupRouter.get('/',                        gc.listAllGroups);
 groupRouter.post('/',                       gc.createGroup);
 groupRouter.post('/join',                   gc.joinGroup);
 groupRouter.get('/my',                      gc.getMyGroups);
-groupRouter.get('/token/:token',            gc.getGroupByToken);
 groupRouter.post('/join/:token',            gc.joinByToken);
 groupRouter.patch('/:id/invite',            gc.toggleInviteLink);
 groupRouter.patch('/:id',                   gc.updateGroup);          // admin: renombrar/config

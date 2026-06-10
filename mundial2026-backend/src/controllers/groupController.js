@@ -142,9 +142,6 @@ const joinByToken = async (req, res) => {
 
   if (!group) return res.status(404).json({ error: 'Link de invitación inválido' });
   if (!group.inviteActive) return res.status(403).json({ error: 'Este link de invitación fue desactivado' });
-  if (group._count.members >= group.maxMembers) {
-    return res.status(409).json({ error: `El grupo "${group.name}" ya está lleno` });
-  }
 
   const alreadyMember = await prisma.groupMember.findUnique({
     where: { userId_groupId: { userId: req.user.id, groupId: group.id } },
@@ -152,6 +149,10 @@ const joinByToken = async (req, res) => {
 
   if (alreadyMember) {
     return res.json({ message: 'Ya eres miembro', group, alreadyMember: true });
+  }
+
+  if (group._count.members >= group.maxMembers) {
+    return res.status(409).json({ error: `El grupo "${group.name}" ya está lleno` });
   }
 
   await prisma.groupMember.create({
