@@ -47,6 +47,12 @@ export default function LoginPage() {
         }
       }
 
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        navigate(redirect)
+        return
+      }
+
       // Si ya tiene grupos → ir a grupos, si no → onboarding
       if (loggedUser?.groupCount > 0) {
         navigate('/groups')

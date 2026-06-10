@@ -73,6 +73,11 @@ export default function RegisterPage() {
           return
         } catch {}
       }
+      const redirect = searchParams.get('redirect')
+      if (redirect) {
+        navigate(redirect)
+        return
+      }
       navigate('/welcome')
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrarse')

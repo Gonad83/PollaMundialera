@@ -117,7 +117,7 @@ export default function GroupDetailPage() {
     })
   }, [qc, id])
 
-  const { data: group, isLoading, isError } = useQuery({
+  const { data: group, isLoading, isError, error } = useQuery({
     queryKey: ['group', id],
     queryFn: () => groupApi.get(id).then(r => r.data),
     placeholderData: () => {
@@ -135,6 +135,15 @@ export default function GroupDetailPage() {
     staleTime: 30_000,
     retry: 1,
   })
+
+  const isUnauthorized = error?.response?.status === 401
+  const isForbidden = error?.response?.status === 403
+
+  useEffect(() => {
+    if (isUnauthorized) {
+      navigate(`/login?redirect=/groups/${id}`)
+    }
+  }, [isUnauthorized, navigate, id])
 
   // Persistir el grupo en cache local para carga instantánea en siguiente visita
   useEffect(() => {
@@ -311,15 +320,22 @@ export default function GroupDetailPage() {
     <div className="text-center py-20 px-4">
       <AlertCircle size={48} className="mx-auto text-zinc-700 mb-4" />
       <h2 className="text-white font-display text-2xl uppercase">
-        {isError ? 'Error de conexión' : 'Grupo no encontrado'}
+        {isForbidden ? 'Acceso Privado' : isError ? 'Error de conexión' : 'Grupo no encontrado'}
       </h2>
       <p className="text-zinc-500 text-sm mt-2 mb-4">
-        {isError ? 'El servidor no responde. Espera unos segundos y recarga la página.' : ''}
+        {isForbidden 
+          ? 'No eres miembro de esta liga. Para ingresar, necesitas unirte a través del link de invitación o código.' 
+          : isError ? 'El servidor no responde. Espera unos segundos y recarga la página.' : ''}
       </p>
-      {isError
-        ? <button onClick={() => window.location.reload()} className="text-mundial-gold text-xs font-black uppercase mt-2 border border-mundial-gold/30 px-4 py-2 rounded-xl hover:bg-mundial-gold/10 transition-all">Reintentar</button>
-        : <Link to="/groups" className="text-mundial-gold text-xs font-black uppercase mt-4 block">Volver a mis grupos</Link>
-      }
+      {isForbidden ? (
+        <div className="flex flex-col gap-3 max-w-xs mx-auto">
+          <Link to="/groups" className="btn-gold py-3 text-xs">Ir a mis grupos</Link>
+        </div>
+      ) : isError ? (
+        <button onClick={() => window.location.reload()} className="text-mundial-gold text-xs font-black uppercase mt-2 border border-mundial-gold/30 px-4 py-2 rounded-xl hover:bg-mundial-gold/10 transition-all">Reintentar</button>
+      ) : (
+        <Link to="/groups" className="text-mundial-gold text-xs font-black uppercase mt-4 block">Volver a mis grupos</Link>
+      )}
     </div>
   )
 
@@ -436,10 +452,10 @@ export default function GroupDetailPage() {
             </div>
           </div>
           {isAdmin && group.inviteToken && (
-            <button onClick={copyLink} className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all
+            <button onClick={copyLink} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all
               ${copiedLink ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}>
               {copiedLink ? <Check size={11} /> : <Link2 size={11} />}
-              {copiedLink ? 'Copiado' : 'Link'}
+              <span className="hidden sm:inline">{copiedLink ? 'Copiado' : 'Link'}</span>
             </button>
           )}
 
@@ -935,8 +951,13 @@ export default function GroupDetailPage() {
             <div className="card p-6 bg-white/5 border border-white/5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-display text-lg text-white uppercase mb-1">Link de Invitación</h3>
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-display text-lg text-white uppercase">Link de Invitación</h3>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${group.inviteActive ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-mundial-red/10 border-mundial-red/20 text-mundial-red'}`}>
+                      {group.inviteActive ? 'Activo' : 'Desactivado'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">
                     {group.inviteActive ? 'Cualquiera con el link puede unirse' : 'El link está desactivado'}
                   </p>
                 </div>
@@ -945,11 +966,11 @@ export default function GroupDetailPage() {
                   disabled={toggleInviteMut.isPending}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest border transition-all
                     ${group.inviteActive
-                      ? 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'
-                      : 'bg-white/5 border-white/10 text-zinc-500 hover:text-white hover:border-white/20'}`}
+                      ? 'bg-mundial-red/10 border-mundial-red/20 text-mundial-red hover:bg-mundial-red/20'
+                      : 'bg-green-500/10 border-green-500/30 text-green-400 hover:bg-green-500/20'}`}
                 >
                   {toggleInviteMut.isPending ? <Loader2 size={14} className="animate-spin" /> :
-                    group.inviteActive ? <><Link2 size={14} /> Activo</> : <><Link2Off size={14} /> Cerrado</>}
+                    group.inviteActive ? <><Link2Off size={14} /> Desactivar</> : <><Link2 size={14} /> Activar</>}
                 </button>
               </div>
 
