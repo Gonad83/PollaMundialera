@@ -441,19 +441,19 @@ export default function GroupDetailPage() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex items-center justify-between gap-3 -mx-4 px-6 py-3 mb-6 bg-mundial-navy/80 backdrop-blur-xl border-b border-white/5"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 -mx-4 px-4 sm:px-6 py-3 mb-6 bg-mundial-navy/80 backdrop-blur-xl border-b border-white/5"
       >
         {/* Left: back arrow + icon + info */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
           <Link to="/groups" className="shrink-0 text-zinc-500 hover:text-mundial-gold transition-colors">
             <ChevronLeft size={18} />
           </Link>
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${group.isPremium ? 'bg-mundial-gold text-mundial-navy' : 'bg-white/10 border border-white/10 text-white/30'}`}>
+          <div className={`w-10 h-10 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 ${group.isPremium ? 'bg-mundial-gold text-mundial-navy' : 'bg-white/10 border border-white/10 text-white/30'}`}>
             {group.isPremium ? <Crown size={16} /> : <Users size={16} />}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 sm:flex-none">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-lg text-white uppercase tracking-tight truncate leading-none">{group.name}</h1>
+              <h1 className="font-display text-base sm:text-lg text-white uppercase tracking-tight truncate leading-none max-w-[170px] sm:max-w-[220px]">{group.name}</h1>
               {group.isPremium && <span className="bg-mundial-gold text-mundial-navy text-[7px] font-black px-1.5 py-0.5 rounded uppercase shrink-0">ELITE</span>}
               {isAdmin && <span className="bg-mundial-gold/10 text-mundial-gold text-[7px] font-black px-1.5 py-0.5 rounded border border-mundial-gold/20 uppercase shrink-0">Admin</span>}
               {isAdmin && (
@@ -467,11 +467,11 @@ export default function GroupDetailPage() {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-[9px] text-zinc-500 flex items-center gap-1">
+            <div className="flex items-center gap-3 mt-1 sm:mt-0.5">
+              <span className="text-[10px] sm:text-[9px] text-zinc-500 flex items-center gap-1">
                 <ShieldCheck size={9} className="text-mundial-gold" /> {group.creator?.username}
               </span>
-              <span className={`text-[9px] flex items-center gap-1 font-bold ${isAtLimit ? 'text-mundial-red' : 'text-zinc-500'}`}>
+              <span className={`text-[10px] sm:text-[9px] flex items-center gap-1 font-bold ${isAtLimit ? 'text-mundial-red' : 'text-zinc-500'}`}>
                 <Users size={9} /> {memberCount} / {group.maxMembers}
               </span>
             </div>
@@ -479,8 +479,8 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Right: invite code + header actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div id="tour-invite-code" className="flex items-center gap-2">
+        <div className="w-full sm:w-auto flex items-center gap-2 shrink-0 overflow-x-auto sm:overflow-visible no-scrollbar pb-0.5 sm:pb-0">
+          <div id="tour-invite-code" className="flex items-center gap-2 shrink-0">
             <div className="hidden sm:flex items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 hover:border-mundial-gold/30 transition-all">
               <div>
                 <p className="text-[7px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-0.5">CÓDIGO</p>
@@ -491,15 +491,18 @@ export default function GroupDetailPage() {
               </button>
             </div>
             {/* Mobile: compact code */}
-            <div className="flex sm:hidden items-center gap-1 bg-white/5 px-2 py-1.5 rounded-lg border border-white/10">
-              <span className="font-mono text-xs text-mundial-gold font-bold">{group.inviteCode}</span>
-              <button onClick={copyCode} className={`p-1 rounded transition-all ${copied ? 'text-green-400' : 'text-zinc-500'}`}>
-                <Copy size={11} />
+            <div className="flex sm:hidden items-center gap-2 bg-white/5 px-3 py-2 rounded-xl border border-white/10 min-w-[166px]">
+              <div className="min-w-0 flex-1">
+                <p className="text-[7px] text-zinc-600 font-black uppercase tracking-widest leading-none mb-0.5">CODIGO</p>
+                <span className="block font-mono text-sm text-mundial-gold font-bold tracking-widest truncate">{group.inviteCode}</span>
+              </div>
+              <button onClick={copyCode} className={`p-1.5 rounded-lg transition-all shrink-0 ${copied ? 'bg-green-500/20 text-green-400' : 'hover:bg-mundial-gold hover:text-mundial-navy text-zinc-500'}`}>
+                <Copy size={12} />
               </button>
             </div>
           </div>
           {isAdmin && group.inviteToken && (
-            <button onClick={copyLink} className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all
+            <button onClick={copyLink} className={`h-11 sm:h-auto min-w-11 sm:min-w-0 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all shrink-0
               ${copiedLink ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30'}`}>
               {copiedLink ? <Check size={11} /> : <Link2 size={11} />}
               <span className="hidden sm:inline">{copiedLink ? 'Copiado' : 'Link'}</span>
@@ -509,7 +512,7 @@ export default function GroupDetailPage() {
           {group.inviteToken && (
             <button
               onClick={shareGroup}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest"
+              className="h-11 sm:h-auto min-w-11 sm:min-w-0 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest shrink-0"
               title="Compartir invitación"
             >
               <Share2 size={12} />
@@ -518,14 +521,14 @@ export default function GroupDetailPage() {
           )}
           <button
             onClick={() => setStartTour(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest"
+            className="h-11 sm:h-auto min-w-11 sm:min-w-0 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-white/10 bg-white/5 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest shrink-0"
             title="Ver tutorial de la liga"
           >
             <HelpCircle size={12} />
             <span className="hidden sm:inline">Guía</span>
           </button>
           {isAdmin && isFree && !showPricing && (
-            <button onClick={() => setShowPricing(true)} className="btn-gold px-3 py-2 text-[9px] whitespace-nowrap">
+            <button onClick={() => setShowPricing(true)} className="btn-gold h-11 sm:h-auto px-3 py-2 text-[9px] whitespace-nowrap shrink-0">
               MEJORAR
             </button>
           )}
