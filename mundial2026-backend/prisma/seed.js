@@ -1,6 +1,23 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const CODE_TO_FLAG_ISO = {
+  ARG: 'ar', BRA: 'br', URU: 'uy', COL: 'co', ECU: 'ec', CHI: 'cl',
+  FRA: 'fr', ENG: 'gb-eng', ESP: 'es', POR: 'pt', BEL: 'be', GER: 'de',
+  NED: 'nl', ITA: 'it', CRO: 'hr', DEN: 'dk', SUI: 'ch', AUT: 'at',
+  SRB: 'rs', POL: 'pl', UKR: 'ua', TUR: 'tr',
+  USA: 'us', MEX: 'mx', CAN: 'ca', CRC: 'cr', JAM: 'jm', HON: 'hn',
+  MAR: 'ma', SEN: 'sn', EGY: 'eg', NGA: 'ng', CMR: 'cm', ALG: 'dz',
+  RSA: 'za', CIV: 'ci', GHA: 'gh', BOL: 'bo',
+  JPN: 'jp', KOR: 'kr', KSA: 'sa', IRN: 'ir', AUS: 'au', QAT: 'qa',
+  CHN: 'cn', IRQ: 'iq', NZL: 'nz',
+};
+
+const withFlag = (team) => {
+  const iso = CODE_TO_FLAG_ISO[team.code];
+  return iso ? { ...team, flagUrl: `https://flagcdn.com/w80/${iso}.png` } : team;
+};
+
 // ─── 48 equipos clasificados al Mundial 2026 (proyección) ─────────────────────
 const teams = [
   // CONMEBOL (6)
@@ -80,10 +97,11 @@ async function main() {
   // Insertar equipos
   console.log(`🏴 Insertando ${teams.length} equipos...`);
   for (const t of teams) {
+    const data = withFlag(t);
     await prisma.team.upsert({
-      where: { code: t.code },
-      update: t,
-      create: t,
+      where: { code: data.code },
+      update: data,
+      create: data,
     });
   }
 

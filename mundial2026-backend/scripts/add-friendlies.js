@@ -18,13 +18,15 @@ const FRIENDLY_MATCHES = [
   { home: 'Bolivia', away: 'Argelia', date: '2026-06-10T20:00:00Z', city: 'La Paz', venue: 'Estadio Hernando Siles' },
 ];
 
+const flagUrl = (isoCode) => `https://flagcdn.com/w80/${isoCode}.png`;
+
 const TEAM_META = {
-  Portugal: { code: 'POR', confederation: 'UEFA' },
-  Nigeria: { code: 'NGA', confederation: 'CAF' },
-  Inglaterra: { code: 'ENG', confederation: 'UEFA' },
-  'Costa Rica': { code: 'CRC', confederation: 'CONCACAF' },
-  Bolivia: { code: 'BOL', confederation: 'CONMEBOL' },
-  Argelia: { code: 'ALG', confederation: 'CAF' },
+  Portugal: { code: 'POR', confederation: 'UEFA', flagUrl: flagUrl('pt') },
+  Nigeria: { code: 'NGA', confederation: 'CAF', flagUrl: flagUrl('ng') },
+  Inglaterra: { code: 'ENG', confederation: 'UEFA', flagUrl: flagUrl('gb-eng') },
+  'Costa Rica': { code: 'CRC', confederation: 'CONCACAF', flagUrl: flagUrl('cr') },
+  Bolivia: { code: 'BOL', confederation: 'CONMEBOL', flagUrl: flagUrl('bo') },
+  Argelia: { code: 'ALG', confederation: 'CAF', flagUrl: flagUrl('dz') },
 };
 
 async function ensureTeam(name, teamsByName, teamsByCode) {
@@ -33,9 +35,27 @@ async function ensureTeam(name, teamsByName, teamsByCode) {
 
   const existing = teamsByName.get(name) || teamsByCode.get(meta.code);
   if (existing) {
-    teamsByName.set(name, existing);
-    teamsByCode.set(existing.code, existing);
-    return existing.id;
+    const needsUpdate =
+      existing.name !== name ||
+      existing.code !== meta.code ||
+      existing.confederation !== meta.confederation ||
+      existing.flagUrl !== meta.flagUrl;
+
+    const team = needsUpdate
+      ? await prisma.team.update({
+          where: { id: existing.id },
+          data: {
+            name,
+            code: meta.code,
+            confederation: meta.confederation,
+            flagUrl: meta.flagUrl,
+          },
+        })
+      : existing;
+
+    teamsByName.set(name, team);
+    teamsByCode.set(team.code, team);
+    return team.id;
   }
 
   const created = await prisma.team.create({
@@ -43,6 +63,7 @@ async function ensureTeam(name, teamsByName, teamsByCode) {
       name,
       code: meta.code,
       confederation: meta.confederation,
+      flagUrl: meta.flagUrl,
     },
   });
 

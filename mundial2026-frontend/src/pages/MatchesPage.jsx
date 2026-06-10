@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
-import { teamEsp } from '../lib/teams'
+import { teamEsp, teamFlagUrl } from '../lib/teams'
 import { useQuery } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
@@ -17,6 +17,7 @@ import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Cros
 
 const PHASES = [
   { value: '', label: 'TODOS' },
+  { value: 'FRIENDLY', label: 'AMISTOSOS' },
   { value: 'GROUP', label: 'GRUPOS' },
   { value: 'R32', label: '16vos' },
   { value: 'R16', label: '8vos' },
@@ -24,6 +25,9 @@ const PHASES = [
   { value: 'SF', label: 'Semis' },
   { value: 'FINAL', label: 'Final' },
 ]
+
+const isFriendlyMatch = (match) =>
+  match?.phase === 'GROUP' && !match?.groupLetter && match?.city !== 'World'
 
 const STATUS_COLORS = {
   SCHEDULED: 'text-zinc-500 bg-white/5 border-white/5',
@@ -79,7 +83,11 @@ export default function MatchesPage({ groupId }) {
   }, {}), [allMyPreds])
 
   // List view always uses raw match data; predictions shown via pred prop in MatchRow
-  const listMatches = phase ? allMatches.filter(m => m.phase === phase) : allMatches
+  const listMatches = phase === 'FRIENDLY'
+    ? allMatches.filter(isFriendlyMatch)
+    : phase
+      ? allMatches.filter(m => m.phase === phase && !isFriendlyMatch(m))
+      : allMatches
 
   const grouped = listMatches.reduce((acc, m) => {
     const day = fmtChileDay(m.dateUtc)
@@ -90,13 +98,13 @@ export default function MatchesPage({ groupId }) {
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
-    buildStandings(allMatches.filter(m => m.phase === 'GROUP')),
+    buildStandings(allMatches.filter(m => m.phase === 'GROUP' && !isFriendlyMatch(m))),
     [allMatches])
 
   // Apostado standings: overlays user predictions on group matches
   const predStandings = useMemo(() =>
     buildStandings(
-      allMatches.filter(m => m.phase === 'GROUP').map(m => {
+      allMatches.filter(m => m.phase === 'GROUP' && !isFriendlyMatch(m)).map(m => {
         const pred = allPredMap[m.id]
         if (!pred) return m
         return { ...m, scoreHome: pred.predHome, scoreAway: pred.predAway, status: 'FINISHED' }
@@ -390,6 +398,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
   const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
+  const isFriendly = isFriendlyMatch(match)
   const hasPred    = !!pred
   // Bonus chips y score verde solo en APOSTADO mode
   const showPred   = apostado && hasPred && !isFinished && !isLive
@@ -405,7 +414,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   return (
     <Wrapper>
       <div className={`${apostado ? 'card-hover' : 'card'} flex flex-col relative overflow-hidden
-        ${isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' :
+        ${isFriendly ? 'border-sky-400/25' : isLive ? 'border-mundial-red/30' : showPred ? 'border-green-500/20' :
           showResult && result ? (
             result.pts >= 5 ? 'border-mundial-gold/20' :
             result.pts >= 3 ? 'border-blue-500/20' :
@@ -425,6 +434,11 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
               <p className={`text-lg font-display tracking-tight mt-1 ${isLive ? 'text-mundial-red' : 'text-white'}`}>
                 {fmtChileTime(dateUtc)}
               </p>
+            )}
+            {isFriendly && (
+              <span className="px-2 py-0.5 rounded-full bg-sky-400/10 border border-sky-400/20 text-[8px] font-black uppercase tracking-widest text-sky-300">
+                Amistoso
+              </span>
             )}
           </div>
 
@@ -516,9 +530,9 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
 }
 
 function TeamFlag({ team, size = 'md' }) {
-  const flag = team?.flagUrl
+  const flag = teamFlagUrl(team)
   const cls = size === 'sm' ? 'w-6 h-5' : 'w-10 h-8'
-  if (flag && (flag.startsWith('http') || flag.startsWith('/'))) {
+  if (flag) {
     return (
       <img
         src={flag}

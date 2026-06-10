@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi, groupApi } from '../lib/api'
+import { teamFlagUrl } from '../lib/teams'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -11,6 +12,95 @@ const fmtChileDate = (d) => new Date(d).toLocaleDateString('es-CL', { day: 'nume
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, Plus, Minus, Lock, CheckCircle2, Trophy, Star, Clock, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+const isFriendlyMatch = (match) =>
+  match?.phase === 'GROUP' && !match?.groupLetter && match?.city !== 'World'
+
+function buildPointBreakdown(pred, match) {
+  if (!pred || !match) return []
+
+  const rows = []
+  const multiplier = match.phase === 'GROUP' ? 1 : 1.5
+  const baseBeforeMultiplier = (pred.pointsExact || 0) + (pred.pointsWinner || 0)
+  const baseAfterMultiplier = Math.round(baseBeforeMultiplier * multiplier)
+
+  if ((pred.pointsExact || 0) >= 5) {
+    rows.push({
+      title: 'Marcador exacto',
+      detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway} y el resultado real fue el mismo.`,
+      points: pred.pointsExact,
+      tone: 'gold',
+    })
+  } else if ((pred.pointsExact || 0) >= 3) {
+    rows.push({
+      title: 'Diferencia exacta',
+      detail: `No fue el marcador exacto, pero acertaste el ganador y la diferencia de goles.`,
+      points: pred.pointsExact,
+      tone: 'blue',
+    })
+  } else if ((pred.pointsWinner || 0) > 0) {
+    rows.push({
+      title: 'Ganador correcto',
+      detail: `Acertaste quien ganaba o que el partido terminaba empatado.`,
+      points: pred.pointsWinner,
+      tone: 'green',
+    })
+  } else {
+    rows.push({
+      title: 'Marcador y ganador',
+      detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway}; el resultado real fue ${match.scoreHome}-${match.scoreAway}.`,
+      points: 0,
+      tone: 'muted',
+    })
+  }
+
+  if (multiplier > 1 && baseBeforeMultiplier > 0) {
+    rows.push({
+      title: 'Multiplicador de eliminatoria',
+      detail: `Los puntos base (${baseBeforeMultiplier}) se multiplican por ${multiplier}.`,
+      points: baseAfterMultiplier - baseBeforeMultiplier,
+      tone: 'gold',
+    })
+  }
+
+  const bonusDetails = []
+  if (pred.predBtts !== null && pred.predBtts !== undefined) {
+    const realBtts = match.scoreHome > 0 && match.scoreAway > 0
+    const correct = pred.predBtts === realBtts
+    bonusDetails.push(`${correct ? '+1' : '0'} ambos marcan: elegiste ${pred.predBtts ? 'si' : 'no'}, real ${realBtts ? 'si' : 'no'}`)
+  }
+  if (pred.predOverUnder) {
+    const realOverUnder = (match.scoreHome + match.scoreAway) > 2.5 ? 'over' : 'under'
+    const correct = pred.predOverUnder === realOverUnder
+    bonusDetails.push(`${correct ? '+1' : '0'} total +2.5: elegiste ${pred.predOverUnder === 'over' ? 'mas' : 'menos'}, real ${realOverUnder === 'over' ? 'mas' : 'menos'}`)
+  }
+  if (pred.predPenalties !== null && pred.predPenalties !== undefined) {
+    const correct = pred.predPenalties === !!match.wentToPenalties
+    bonusDetails.push(`${correct ? '+3' : '0'} penales: elegiste ${pred.predPenalties ? 'si' : 'no'}, real ${match.wentToPenalties ? 'si' : 'no'}`)
+  }
+  if (pred.predWinnerId && match.winnerId) {
+    const correct = pred.predWinnerId === match.winnerId
+    bonusDetails.push(`${correct ? '+30' : '0'} clasificado/campeon correcto`)
+  }
+
+  if ((pred.pointsBonus || 0) > 0 || bonusDetails.length > 0) {
+    rows.push({
+      title: 'Bonus opcionales',
+      detail: bonusDetails.length ? bonusDetails.join(' | ') : 'Bonus acumulados por opciones especiales.',
+      points: pred.pointsBonus || 0,
+      tone: (pred.pointsBonus || 0) > 0 ? 'red' : 'muted',
+    })
+  }
+
+  rows.push({
+    title: 'Total',
+    detail: `Base ${baseAfterMultiplier} + bonus ${pred.pointsBonus || 0}.`,
+    points: pred.pointsTotal || 0,
+    tone: 'total',
+  })
+
+  return rows
+}
 
 export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupIdProp } = {}) {
   const { id: routeId } = useParams()
@@ -131,6 +221,8 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
 
   const { dateUtc, status, scoreHome, scoreAway, phase } = match
+  const isFriendly = isFriendlyMatch(match)
+  const pointBreakdown = buildPointBreakdown(myPred, match)
 
   const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
   const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
@@ -184,10 +276,10 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                 : 'bg-mundial-gold/10 text-mundial-gold border-mundial-gold/20'
           }`}>
             {status === 'LIVE' && <span className="w-2 h-2 bg-mundial-red rounded-full inline-block animate-pulse mr-2" />}
-            {status === 'LIVE' ? 'En Vivo' : status === 'FINISHED' ? 'Finalizado' : 'Próximo'}
+            {status === 'LIVE' ? 'En Vivo' : status === 'FINISHED' ? 'Finalizado' : 'Proximo'}
           </span>
           <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
-            {phase === 'GROUP' ? `Fase de Grupos • ${match.groupLetter}` : phase}
+            {isFriendly ? 'Amistoso internacional' : phase === 'GROUP' ? `Fase de Grupos - ${match.groupLetter}` : phase}
           </span>
         </div>
 
@@ -470,59 +562,37 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
           </div>
 
           {/* Desglose detallado de puntos */}
-          {myPred.pointsTotal > 0 && (
-            <div className="mt-8 space-y-3 border-t border-white/5 pt-6">
-              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mb-4">DESGLOSE DE PUNTOS</p>
-
-              {/* Resultado exacto */}
-              {myPred.pointsExact > 0 && (
-                <div className="flex items-center justify-between p-4 bg-mundial-gold/10 rounded-xl border border-mundial-gold/30">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🔥</span>
-                    <div>
-                      <p className="text-sm font-bold text-white">Marcador Exacto</p>
-                      <p className="text-xs text-zinc-400">Adivinaste el resultado exacto</p>
-                    </div>
-                  </div>
-                  <span className="font-display text-2xl text-mundial-gold font-bold">+{myPred.pointsExact}</span>
-                </div>
-              )}
-
-              {/* Ganador correcto */}
-              {myPred.pointsWinner > 0 && myPred.pointsExact === 0 && (
-                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">✓</span>
-                    <div>
-                      <p className="text-sm font-bold text-white">Ganador Correcto</p>
-                      <p className="text-xs text-zinc-400">Adivinaste quién ganó</p>
-                    </div>
-                  </div>
-                  <span className="font-display text-2xl text-white font-bold">+{myPred.pointsWinner}</span>
-                </div>
-              )}
-
-              {/* Bonus puntos */}
-              {myPred.pointsBonus > 0 && (
-                <div className="flex items-center justify-between p-4 bg-mundial-red/10 rounded-xl border border-mundial-red/30">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">⭐</span>
-                    <div>
-                      <p className="text-sm font-bold text-white">Bonus Opcionales</p>
-                      <p className="text-xs text-zinc-400">Goleador, ambos marcan, over/under, etc.</p>
-                    </div>
-                  </div>
-                  <span className="font-display text-2xl text-mundial-red font-bold">+{myPred.pointsBonus}</span>
-                </div>
-              )}
-
-              {/* Total */}
-              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-mundial-gold/20 to-white/5 rounded-xl border border-mundial-gold/40 mt-4">
-                <p className="font-display text-lg font-bold text-white">TOTAL</p>
-                <span className="font-display text-3xl text-mundial-gold font-black">+{myPred.pointsTotal}</span>
-              </div>
+          <div className="mt-8 space-y-3 border-t border-white/5 pt-6">
+            <div className="mb-4">
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">DESGLOSE DE PUNTOS</p>
+              <p className="text-xs text-zinc-500 mt-1">
+                Marcador: 5 exacto, 3 por diferencia exacta, 1 por ganador/empate correcto. Los bonus se suman aparte.
+              </p>
             </div>
-          )}
+
+            {pointBreakdown.map((row) => {
+              const tones = {
+                gold: 'bg-mundial-gold/10 border-mundial-gold/30 text-mundial-gold',
+                blue: 'bg-blue-500/10 border-blue-500/30 text-blue-300',
+                green: 'bg-green-500/10 border-green-500/25 text-green-400',
+                red: 'bg-mundial-red/10 border-mundial-red/30 text-mundial-red',
+                muted: 'bg-white/5 border-white/10 text-zinc-500',
+                total: 'bg-gradient-to-r from-mundial-gold/20 to-white/5 border-mundial-gold/40 text-mundial-gold',
+              }
+              const cls = tones[row.tone] || tones.muted
+              return (
+                <div key={row.title} className={`flex items-start justify-between gap-4 p-4 rounded-xl border ${cls}`}>
+                  <div>
+                    <p className="text-sm font-bold text-white">{row.title}</p>
+                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{row.detail}</p>
+                  </div>
+                  <span className={`font-display ${row.tone === 'total' ? 'text-3xl' : 'text-2xl'} font-bold shrink-0`}>
+                    {row.points > 0 ? `+${row.points}` : row.points}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </motion.div>
       )}
 
@@ -623,9 +693,9 @@ function Skeleton() {
 }
 
 function TeamFlag({ team, size = 'md' }) {
-  const flag = team?.flagUrl
+  const flag = teamFlagUrl(team)
   const cls = size === 'lg' ? 'w-20 h-16' : size === 'sm' ? 'w-6 h-5' : 'w-10 h-8'
-  if (flag && (flag.startsWith('http') || flag.startsWith('/'))) {
+  if (flag) {
     return (
       <img
         src={flag}
