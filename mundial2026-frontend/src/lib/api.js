@@ -1,9 +1,19 @@
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://localhost:3001/api'
+
+const clearSession = () => {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('cachedUser')
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://localhost:3001/api',
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 })
+
+let refreshPromise = null
 
 // Inyectar token en cada request
 api.interceptors.request.use((config) => {
@@ -24,17 +34,26 @@ api.interceptors.response.use(
       original._retry = true
       try {
         const refreshToken = localStorage.getItem('refreshToken')
-        const { data } = await axios.post('/api/auth/refresh', { refreshToken })
+        if (!refreshToken) {
+          clearSession()
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
+        refreshPromise = refreshPromise || axios
+          .post(`${API_BASE_URL}/auth/refresh`, { refreshToken }, { headers: { 'Content-Type': 'application/json' } })
+          .finally(() => { refreshPromise = null })
+        const { data } = await refreshPromise
         localStorage.setItem('accessToken', data.accessToken)
         localStorage.setItem('refreshToken', data.refreshToken)
         original.headers.Authorization = `Bearer ${data.accessToken}`
         return api(original)
       } catch (err) {
         // Solo limpiar si el refresh realmente falla (no por timeout)
-        if (err.response?.status === 401 || err.response?.status === 403 || !err.response) {
-          localStorage.clear()
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          clearSession()
           window.location.href = '/login'
         }
+        return Promise.reject(err)
       }
     }
 

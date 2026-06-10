@@ -14,6 +14,12 @@ const writeCache = (user) => {
   try { localStorage.setItem('cachedUser', JSON.stringify(user)) } catch {}
 }
 
+const clearSession = () => {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('cachedUser')
+}
+
 export const AuthProvider = ({ children }) => {
   const hasToken = !!localStorage.getItem('accessToken')
   const cached = hasToken ? readCache() : null
@@ -36,7 +42,7 @@ export const AuthProvider = ({ children }) => {
       .catch((err) => {
         // Solo borrar sesión si el error es autenticación (401/403)
         if (err.response?.status === 401 || err.response?.status === 403) {
-          localStorage.clear()
+          clearSession()
           setUser(null)
         }
         // Si es otro error (timeout, 500, etc), mantener el token y dejar que reintente
@@ -64,7 +70,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await authApi.logout().catch(() => {})
-    localStorage.clear()
+    clearSession()
     setUser(null)
     window.location.replace('/')
   }

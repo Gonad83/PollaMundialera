@@ -3,6 +3,13 @@ const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 
+const refreshTokenExpiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN || '90d';
+
+const refreshTokenDays = () => {
+  const match = String(refreshTokenExpiresIn).match(/^(\d+)d$/);
+  return match ? Number(match[1]) : 90;
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const generateTokens = (userId) => {
@@ -18,14 +25,14 @@ const generateTokens = (userId) => {
   const refreshToken = jwt.sign(
     { userId, jti },
     process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '7d' }
+    { expiresIn: refreshTokenExpiresIn }
   );
 
   return { accessToken, refreshToken };
 };
 
 const saveRefreshToken = async (userId, token) => {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 días
+  const expiresAt = new Date(Date.now() + refreshTokenDays() * 24 * 60 * 60 * 1000);
   await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
 };
 
