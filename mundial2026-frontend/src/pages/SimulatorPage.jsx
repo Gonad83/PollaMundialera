@@ -533,8 +533,8 @@ function ThirdsTable({ thirds }) {
 
 // ── VISTA BRACKET GRÁFICO ────────────────────────────────────────────────────
 const VB_H  = 512   // alto total del bracket
-const VB_MW = 150   // ancho de cada tarjeta de partido
-const VB_CW = 20    // ancho de los conectores SVG
+const VB_MW = 132   // ancho de cada tarjeta de partido
+const VB_CW = 16    // ancho de los conectores SVG
 
 function VBTeam({ name, score, win, penWin }) {
   return (
@@ -573,7 +573,7 @@ function VBCard({ tA, tB, sA, sB, pw }) {
   )
 }
 
-function InteractiveVBCard({ tA, tB, sA, sB, pw, onPickWinner }) {
+function InteractiveVBCard({ tA, tB, sA, sB, pw, matchCode, onPickWinner }) {
   const a = parseInt(sA), b = parseInt(sB)
   const ok = !isNaN(a) && !isNaN(b) && tA && tB
   const draw = ok && a === b
@@ -584,7 +584,7 @@ function InteractiveVBCard({ tA, tB, sA, sB, pw, onPickWinner }) {
       type="button"
       disabled={!name}
       onClick={() => name && onPickWinner?.(name)}
-      className={`w-full flex items-center gap-1.5 px-2 h-6 text-left transition-all ${
+      className={`w-full flex items-center gap-1.5 pl-2 pr-9 h-6 text-left transition-all ${
         selected
           ? 'bg-mundial-gold text-mundial-navy'
           : name
@@ -605,7 +605,12 @@ function InteractiveVBCard({ tA, tB, sA, sB, pw, onPickWinner }) {
   )
 
   return (
-    <div className={`border rounded overflow-hidden bg-zinc-950 ${ok ? 'border-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.08)]' : tA && tB ? 'border-white/18' : 'border-white/8'}`} style={{ width: VB_MW }}>
+    <div className={`relative border rounded overflow-hidden bg-zinc-950 ${ok ? 'border-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.08)]' : tA && tB ? 'border-white/18' : 'border-white/8'}`} style={{ width: VB_MW }}>
+      {matchCode && (
+        <span className="absolute top-1 right-1 z-10 rounded bg-green-400/10 px-1.5 py-0.5 text-[6px] font-black uppercase tracking-widest text-green-300/90">
+          {matchCode}
+        </span>
+      )}
       {row(tA, wA)}
       <div className="h-px bg-white/8" />
       {row(tB, wB)}
@@ -665,12 +670,22 @@ function VBRoundCol({ data, count, totalH }) {
 
 function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, onPickWinner }) {
   if (!bracketTeams || !bracketScores || !bracket) return null
+  const gm = (num) => `GM${num}`
+  const r32Code = (i) => (bracket.r32labels?.[i] || gm(73 + i)).replace(/^P/, 'GM')
+  const roundCode = (round, i) => {
+    if (round === 'r32') return r32Code(i)
+    if (round === 'r16') return gm(89 + i)
+    if (round === 'qf') return gm(97 + i)
+    if (round === 'sf') return gm(101 + i)
+    return ''
+  }
   const bm = (pairs, scores, round) =>
     (pairs || []).map(([tA, tB], i) => ({
       tA, tB,
       sA: scores?.[i]?.[0] ?? '',
       sB: scores?.[i]?.[1] ?? '',
       pw: penaltyWinners[`${round}-${i}`],
+      matchCode: roundCode(round, i),
       onPickWinner: (winner) => onPickWinner?.(round, i, winner),
     }))
   const r32d = bm(bracketTeams.r32, bracketScores.r32, 'r32')
@@ -681,6 +696,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
     tA: bracketTeams.finalTeams?.[0], tB: bracketTeams.finalTeams?.[1],
     sA: bracketScores.final?.[0] ?? '', sB: bracketScores.final?.[1] ?? '',
     pw: penaltyWinners['final-0'],
+    matchCode: gm(104),
     onPickWinner: (winner) => onPickWinner?.('final', 0, winner),
   }
   const L32 = r32d.slice(0, 8); const R32 = [...r32d.slice(8)].reverse()
@@ -699,7 +715,15 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
     <div className="overflow-x-auto pb-4 pt-1 -mx-2">
       <div className="flex items-center mb-2 px-2">
         {COLS.map(({ w, t }, i) => (
-          <div key={i} className={`text-center shrink-0 text-[7px] font-black uppercase tracking-widest ${t ? 'text-zinc-500' : ''}`} style={{ width: w }}>{t}</div>
+          <div
+            key={i}
+            className={`text-center shrink-0 text-[10px] font-black uppercase tracking-[0.22em] ${
+              t ? (String(t).toLowerCase().includes('final') ? 'text-mundial-gold' : 'text-green-300') : ''
+            }`}
+            style={{ width: w }}
+          >
+            {String(t).toLowerCase().includes('final') ? 'Final' : t}
+          </div>
         ))}
       </div>
       <div className="flex items-stretch">
@@ -722,13 +746,16 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
           {(bracketTeams.sfLosers[0] || bracketTeams.sfLosers[1]) && (
             <div className="w-full">
               <p className="text-[7px] font-black text-zinc-600 text-center mb-1.5 uppercase tracking-widest">3° Puesto</p>
-              <div className="border border-white/8 rounded overflow-hidden bg-zinc-950" style={{ width: W }}>
-                <div className="flex items-center gap-1.5 h-6 px-2">
+              <div className="relative border border-white/8 rounded overflow-hidden bg-zinc-950" style={{ width: W }}>
+                <span className="absolute top-1 right-1 z-10 rounded bg-green-400/10 px-1.5 py-0.5 text-[6px] font-black uppercase tracking-widest text-green-300/90">
+                  GM103
+                </span>
+                <div className="flex items-center gap-1.5 h-6 pl-2 pr-9">
                   {bracketTeams.sfLosers[0] && <Flag name={bracketTeams.sfLosers[0]} size="sm" />}
                   <span className="text-[8px] text-zinc-400 font-bold truncate">{bracketTeams.sfLosers[0] || 'TBD'}</span>
                 </div>
                 <div className="h-px bg-white/8" />
-                <div className="flex items-center gap-1.5 h-6 px-2">
+                <div className="flex items-center gap-1.5 h-6 pl-2 pr-9">
                   {bracketTeams.sfLosers[1] && <Flag name={bracketTeams.sfLosers[1]} size="sm" />}
                   <span className="text-[8px] text-zinc-400 font-bold truncate">{bracketTeams.sfLosers[1] || 'TBD'}</span>
                 </div>
@@ -1148,7 +1175,7 @@ export default function SimulatorPage() {
 
           {/* ── Vista Bracket Gráfico ── */}
           {bracketView === 'bracket' && (
-            <div className="rounded-2xl border border-green-400/15 bg-green-400/5 p-3">
+            <div className="relative left-1/2 w-[calc(100vw-1rem)] max-w-[1500px] -translate-x-1/2 rounded-2xl border border-green-400/15 bg-green-400/5 p-3">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3 px-1">
                 <div className="flex items-center gap-2">
                   <MousePointerClick size={14} className="text-green-400" />
