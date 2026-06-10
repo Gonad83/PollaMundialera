@@ -18,6 +18,40 @@ const FRIENDLY_MATCHES = [
   { home: 'Bolivia', away: 'Argelia', date: '2026-06-10T20:00:00Z', city: 'La Paz', venue: 'Estadio Hernando Siles' },
 ];
 
+const TEAM_META = {
+  Portugal: { code: 'POR', confederation: 'UEFA' },
+  Nigeria: { code: 'NGA', confederation: 'CAF' },
+  Inglaterra: { code: 'ENG', confederation: 'UEFA' },
+  'Costa Rica': { code: 'CRC', confederation: 'CONCACAF' },
+  Bolivia: { code: 'BOL', confederation: 'CONMEBOL' },
+  Argelia: { code: 'ALG', confederation: 'CAF' },
+};
+
+async function ensureTeam(name, teamsByName, teamsByCode) {
+  const meta = TEAM_META[name];
+  if (!meta) throw new Error(`Faltan metadatos del equipo: ${name}`);
+
+  const existing = teamsByName.get(name) || teamsByCode.get(meta.code);
+  if (existing) {
+    teamsByName.set(name, existing);
+    teamsByCode.set(existing.code, existing);
+    return existing.id;
+  }
+
+  const created = await prisma.team.create({
+    data: {
+      name,
+      code: meta.code,
+      confederation: meta.confederation,
+    },
+  });
+
+  teamsByName.set(created.name, created);
+  teamsByCode.set(created.code, created);
+  console.log(`Equipo creado: ${created.name} (${created.code})`);
+  return created.id;
+}
+
 async function addFriendlies() {
   try {
     console.log('Agregando amistosos del 10 de junio de 2026...\n');
@@ -42,21 +76,16 @@ async function addFriendlies() {
     });
 
     const teams = await prisma.team.findMany();
-    const teamMap = Object.fromEntries(teams.map(t => [t.name, t.id]));
+    const teamsByName = new Map(teams.map(t => [t.name, t]));
+    const teamsByCode = new Map(teams.map(t => [t.code, t]));
 
     let added = 0;
     let updated = 0;
     let skipped = 0;
 
     for (const match of FRIENDLY_MATCHES) {
-      const homeId = teamMap[match.home];
-      const awayId = teamMap[match.away];
-
-      if (!homeId || !awayId) {
-        console.log(`Saltando: ${match.home} vs ${match.away} (equipos no encontrados)`);
-        skipped++;
-        continue;
-      }
+      const homeId = await ensureTeam(match.home, teamsByName, teamsByCode);
+      const awayId = await ensureTeam(match.away, teamsByName, teamsByCode);
 
       const existing = await prisma.match.findFirst({
         where: {
