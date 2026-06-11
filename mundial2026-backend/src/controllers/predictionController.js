@@ -176,8 +176,23 @@ const getGroupCompare = async (req, res) => {
   });
   if (!membership) return res.status(403).json({ error: 'No eres miembro de este grupo' });
 
+  // La apuesta se cierra 5 min antes del partido. Mostrar pronósticos de:
+  //   - Partidos FINISHED (resultado final + puntos ya calculados)
+  //   - Partidos LIVE (en juego, apuesta ya cerrada)
+  //   - Partidos SCHEDULED cuya fecha ya pasó (apuesta cerrada, resultado pendiente)
+  const lockCutoff = new Date(Date.now() - 5 * 60 * 1000); // hace 5 min
+
   const predictions = await prisma.prediction.findMany({
-    where: { groupId, match: { status: 'FINISHED' } },
+    where: {
+      groupId,
+      match: {
+        OR: [
+          { status: 'FINISHED' },
+          { status: 'LIVE' },
+          { status: 'SCHEDULED', dateUtc: { lte: lockCutoff } },
+        ],
+      },
+    },
     select: {
       id: true,
       predHome: true,
@@ -185,14 +200,18 @@ const getGroupCompare = async (req, res) => {
       pointsTotal: true,
       pointsExact: true,
       pointsWinner: true,
+      pointsBonus: true,
       userId: true,
       matchId: true,
+      predBtts: true,
+      predOverUnder: true,
       predWinnerId: true,
       user: { select: { id: true, username: true } },
       match: {
         select: {
           id: true,
           dateUtc: true,
+          status: true,
           scoreHome: true,
           scoreAway: true,
           groupLetter: true,
