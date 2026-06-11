@@ -38,7 +38,14 @@ function fetchFromApi(path) {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        try { resolve(JSON.parse(data)); }
+        try {
+          const parsed = JSON.parse(data);
+          if (res.statusCode >= 400) {
+            reject(new Error(parsed.message || parsed.error || `football-data.org HTTP ${res.statusCode}`));
+            return;
+          }
+          resolve(parsed);
+        }
         catch (e) { reject(new Error('Error parsing API response: ' + data)); }
       });
     });
@@ -54,11 +61,13 @@ async function syncMatches(options = {}) {
 
   console.log('🔄 Descargando partidos del Mundial 2026 desde football-data.org...');
   let wcMatches = [];
+  const warnings = [];
   try {
-    const wcData = await fetchFromApi('/v4/competitions/WC/matches');
+    const wcData = await fetchFromApi('/v4/competitions/WC/matches?season=2026');
     wcMatches = wcData.matches || [];
   } catch (e) {
     console.error('Error fetching WC matches:', e.message);
+    warnings.push(`Mundial 2026: ${e.message}`);
   }
 
   console.log('🔄 Descargando partidos de la Champions League desde football-data.org...');
@@ -68,6 +77,7 @@ async function syncMatches(options = {}) {
     clMatches = (clData.matches || []).filter(m => m.stage === 'FINAL');
   } catch (e) {
     console.error('Error fetching CL matches:', e.message);
+    warnings.push(`Champions League: ${e.message}`);
   }
 
   const matches = [...wcMatches, ...clMatches];
@@ -98,6 +108,8 @@ async function syncMatches(options = {}) {
   let created = 0;
   let updated = 0;
   let skipped = 0;
+  let finished = 0;
+  let scoredPredictions = 0;
 
   for (const m of matches) {
     // Helper: nombre del equipo con fallbacks (la API a veces devuelve null en shortName)
@@ -181,10 +193,11 @@ async function syncMatches(options = {}) {
       // Si el partido acaba de terminar (o ya estaba terminado con resultado),
       // recalcular puntos de todas las predicciones de este partido
       if (nowFinished && scoreHome !== null && scoreAway !== null) {
+        finished++;
         if (!wasFinished) {
           console.log(`⚽ Partido finalizado: ${homeTeam.name} ${scoreHome}-${scoreAway} ${awayTeam.name} — calculando puntos...`);
         }
-        await scorePredictionsForMatch(updatedMatch);
+        scoredPredictions += await scorePredictionsForMatch(updatedMatch);
       }
     } else {
       await prisma.match.create({ data });
@@ -194,7 +207,7 @@ async function syncMatches(options = {}) {
 
   const summary = `✅ Sincronización completa: ${created} creados, ${updated} actualizados, ${skipped} omitidos`;
   console.log(summary);
-  return { created, updated, skipped, total: matches.length };
+  return { created, updated, skipped, finished, scoredPredictions, warnings, total: matches.length };
 }
 
 /**
@@ -206,7 +219,7 @@ async function scorePredictionsForMatch(match) {
       where: { matchId: match.id },
     });
 
-    if (predictions.length === 0) return;
+    if (predictions.length === 0) return 0;
 
     for (const pred of predictions) {
       const points = calculatePredictionPoints(pred, match);
@@ -228,15 +241,21 @@ async function scorePredictionsForMatch(match) {
         where: { userId },
         _sum: { pointsTotal: true },
       });
+      const tournamentAgg = await prisma.tournamentPicks.aggregate({
+        where: { userId },
+        _sum: { pointsTotal: true },
+      });
       await prisma.user.update({
         where: { id: userId },
-        data: { totalPoints: agg._sum.pointsTotal || 0 },
+        data: { totalPoints: (agg._sum.pointsTotal || 0) + (tournamentAgg._sum.pointsTotal || 0) },
       });
     }
 
     console.log(`✅ Puntos calculados para ${predictions.length} predicciones del partido ${match.id}`);
+    return predictions.length;
   } catch (err) {
     console.error(`⚠️  Error calculando puntos para partido ${match.id}:`, err.message);
+    return 0;
   }
 }
 

@@ -432,28 +432,9 @@ const syncMatches = async (req, res) => {
       },
     });
 
-    // 4. Procesar resultados y puntos para cada uno
+    // 4. Los puntos base ya los calcula syncFootballData.
+    // Aqui solo se procesan bonos que dependen de rachas al finalizar.
     for (const match of newlyFinishedMatches) {
-      const matchForScoring = { ...match };
-
-      await prisma.$transaction(async (tx) => {
-        for (const pred of match.predictions) {
-          const pts = calculatePredictionPoints(pred, matchForScoring);
-
-          await tx.prediction.update({
-            where: { id: pred.id },
-            data: pts,
-          });
-
-          // Actualizar puntos totales del usuario
-          await tx.user.update({
-            where: { id: pred.userId },
-            data: { totalPoints: { increment: pts.pointsTotal } },
-          });
-        }
-      });
-
-      // Procesar bonos/rachas
       await processBonuses(match.id);
     }
 

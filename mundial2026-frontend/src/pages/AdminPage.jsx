@@ -138,7 +138,8 @@ export default function AdminPage() {
   const syncMut = useMutation({
     mutationFn: () => adminApi.syncMatches(),
     onSuccess: (res) => {
-      showFeedback(`Sincronización exitosa: ${res.data.updated} partidos actualizados`)
+      const warnings = res.data.warnings?.length ? ` - Avisos: ${res.data.warnings.length}` : ''
+      showFeedback(`Sync OK: ${res.data.updated} actualizados, ${res.data.newlyFinished || 0} finalizados, ${res.data.scoredPredictions || 0} pronosticos puntuados${warnings}`)
       qc.invalidateQueries({ queryKey: ['matches-all'] })
       qc.invalidateQueries({ queryKey: ['admin-dashboard'] })
     }
@@ -147,7 +148,7 @@ export default function AdminPage() {
   const syncSimulatedMut = useMutation({
     mutationFn: () => adminApi.syncMatches({ simulateFinished: 'true' }),
     onSuccess: (res) => {
-      showFeedback('Sincronización simulada exitosa: Final de Champions finalizada')
+      showFeedback(`Sync simulado OK: ${res.data.newlyFinished || 0} finalizados, ${res.data.scoredPredictions || 0} pronosticos puntuados`)
       qc.invalidateQueries({ queryKey: ['matches-all'] })
       qc.invalidateQueries({ queryKey: ['admin-dashboard'] })
     }
