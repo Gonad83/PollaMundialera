@@ -47,6 +47,27 @@ export default function TournamentPage({ groupId }) {
     gcTime: 24 * 60 * 60 * 1000,
   })
 
+  const tournamentTeams = useMemo(() => {
+    const preferredCodes = { curazao: 'CUW' }
+    const byName = new Map()
+
+    for (const team of teams) {
+      const displayName = teamEsp(team).trim().toLowerCase()
+      if (!displayName) continue
+
+      const current = byName.get(displayName)
+      const preferredCode = preferredCodes[displayName]
+      const isPreferred = preferredCode && team.code?.toUpperCase() === preferredCode
+      const currentIsPreferred = preferredCode && current?.code?.toUpperCase() === preferredCode
+
+      if (!current || (isPreferred && !currentIsPreferred)) {
+        byName.set(displayName, team)
+      }
+    }
+
+    return Array.from(byName.values())
+  }, [teams])
+
   useEffect(() => {
     if (myPicks && Object.keys(myPicks).length > 0) {
       setForm(f => ({ ...f, ...myPicks }))
@@ -75,7 +96,7 @@ export default function TournamentPage({ groupId }) {
     })
   }
 
-  const hosts = teams.filter(t => ['USA', 'MEX', 'CAN'].includes(t.code))
+  const hosts = tournamentTeams.filter(t => ['USA', 'MEX', 'CAN'].includes(t.code))
 
   const { completedCount, totalCount, completionPct } = useMemo(() => {
     const checks = [
@@ -200,7 +221,7 @@ export default function TournamentPage({ groupId }) {
             <div className="space-y-12">
               <PickSection title="Copa del Mundo" subtitle="Acertar el campeón suma 30 puntos vitales" pts="30 PTS" icon={Crown}>
                 <TeamGrid
-                  teams={teams}
+                  teams={tournamentTeams}
                   selected={form.champion ? [form.champion] : []}
                   onToggle={(id) => set('champion')(form.champion === id ? null : id)}
                 />
@@ -208,7 +229,7 @@ export default function TournamentPage({ groupId }) {
 
               <PickSection title="Final Mundialista" subtitle="Pronostica los 2 finalistas (15 pts c/u)" pts="30 PTS MÁX" icon={Shield}>
                 <TeamGrid
-                  teams={teams}
+                  teams={tournamentTeams}
                   selected={[form.finalist1, form.finalist2].filter(Boolean)}
                   max={2}
                   onToggle={(id) => {
@@ -230,7 +251,7 @@ export default function TournamentPage({ groupId }) {
                     selectedCount={form.semifinalists?.length || 0}
                     max={4}
                   >
-                    <TeamGrid teams={teams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -239,7 +260,7 @@ export default function TournamentPage({ groupId }) {
                     selectedCount={form.quarterfinalists?.length || 0}
                     max={8}
                   >
-                    <TeamGrid teams={teams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -248,7 +269,7 @@ export default function TournamentPage({ groupId }) {
                     selectedCount={form.round16Teams?.length || 0}
                     max={16}
                   >
-                    <TeamGrid teams={teams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -257,7 +278,7 @@ export default function TournamentPage({ groupId }) {
                     selectedCount={form.round32Teams?.length || 0}
                     max={32}
                   >
-                    <TeamGrid teams={teams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
                   </KnockoutStage>
                 </div>
               </PickSection>
@@ -287,10 +308,10 @@ export default function TournamentPage({ groupId }) {
 
           {section === 'premios' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AwardPick title="Bota de Oro" subtitle="Máximo Goleador" pts="20 PTS" teams={teams} value={form.topScorerId} onChange={set('topScorerId')} icon={Target} />
-              <AwardPick title="Balón de Oro" subtitle="Mejor Jugador" pts="15 PTS" teams={teams} value={form.bestPlayerId} onChange={set('bestPlayerId')} icon={Star} />
-              <AwardPick title="Guante de Oro" subtitle="Mejor Portero" pts="12 PTS" teams={teams} value={form.bestKeeperId} onChange={set('bestKeeperId')} icon={Shield} />
-              <AwardPick title="Mejor Joven" subtitle="Talento Emergente" pts="10 PTS" teams={teams} value={form.bestYoungId} onChange={set('bestYoungId')} icon={Zap} />
+              <AwardPick title="Bota de Oro" subtitle="Máximo Goleador" pts="20 PTS" teams={tournamentTeams} value={form.topScorerId} onChange={set('topScorerId')} icon={Target} />
+              <AwardPick title="Balón de Oro" subtitle="Mejor Jugador" pts="15 PTS" teams={tournamentTeams} value={form.bestPlayerId} onChange={set('bestPlayerId')} icon={Star} />
+              <AwardPick title="Guante de Oro" subtitle="Mejor Portero" pts="12 PTS" teams={tournamentTeams} value={form.bestKeeperId} onChange={set('bestKeeperId')} icon={Shield} />
+              <AwardPick title="Mejor Joven" subtitle="Talento Emergente" pts="10 PTS" teams={tournamentTeams} value={form.bestYoungId} onChange={set('bestYoungId')} icon={Zap} />
             </div>
           )}
 
@@ -330,7 +351,7 @@ export default function TournamentPage({ groupId }) {
                    title="Más Goleadora"
                    subtitle="Mejor ataque del torneo"
                    pts="6 PTS"
-                   teams={teams}
+                   teams={tournamentTeams}
                    value={form.mostGoalsTeamId}
                    onChange={set('mostGoalsTeamId')}
                    icon={Target}
@@ -339,7 +360,7 @@ export default function TournamentPage({ groupId }) {
                    title="Valla Invicta"
                    subtitle="Más partidos sin recibir gol · penales no cuentan"
                    pts="6 PTS"
-                   teams={teams}
+                   teams={tournamentTeams}
                    value={form.leastGoalsTeamId}
                    onChange={set('leastGoalsTeamId')}
                    icon={Shield}
