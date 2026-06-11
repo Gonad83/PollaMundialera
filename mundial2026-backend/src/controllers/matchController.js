@@ -2,7 +2,7 @@ const prisma = require('../utils/prisma');
 
 // In-memory cache — teams never change during the tournament
 let _teamsCache = null;
-const EXCLUDED_TEAM_CODES = ['PSG', 'ARS'];
+const EXCLUDED_TEAM_CODES = ['PSG', 'ARS', 'NGA', 'CRC', 'BOL'];
 
 const worldCupOnlyWhere = () => ({
   NOT: [

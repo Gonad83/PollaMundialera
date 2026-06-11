@@ -21,6 +21,7 @@ const SECTIONS = [
 
 const TOURNAMENT_DEADLINE = new Date('2026-06-13T19:00:00.000Z')
 const TOURNAMENT_DEADLINE_LABEL = 'SÁBADO 13 JUN 2026 · 15:00 HRS CHILE'
+const EXCLUDED_TOURNAMENT_TEAM_CODES = new Set(['NGA', 'CRC', 'BOL'])
 
 export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
@@ -56,6 +57,8 @@ export default function TournamentPage({ groupId }) {
     const byName = new Map()
 
     for (const team of teams) {
+      if (EXCLUDED_TOURNAMENT_TEAM_CODES.has(team.code?.toUpperCase())) continue
+
       const displayName = teamEsp(team).trim().toLowerCase()
       if (!displayName) continue
 
@@ -78,6 +81,33 @@ export default function TournamentPage({ groupId }) {
       try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(myPicks)) } catch {}
     }
   }, [myPicks, groupId])
+
+  useEffect(() => {
+    if (!tournamentTeams.length) return
+
+    const validIds = new Set(tournamentTeams.map(t => t.id))
+    const keepId = (id) => validIds.has(id) ? id : null
+    const keepList = (items = []) => items.filter(id => validIds.has(id))
+
+    setForm(f => ({
+      ...f,
+      champion: keepId(f.champion),
+      finalist1: keepId(f.finalist1),
+      finalist2: keepId(f.finalist2),
+      round32Teams: keepList(f.round32Teams),
+      round16Teams: keepList(f.round16Teams),
+      semifinalists: keepList(f.semifinalists),
+      quarterfinalists: keepList(f.quarterfinalists),
+      groupQualifiers: keepList(f.groupQualifiers),
+      hostFurthest: keepId(f.hostFurthest),
+      topScorerId: keepId(f.topScorerId),
+      bestPlayerId: keepId(f.bestPlayerId),
+      bestKeeperId: keepId(f.bestKeeperId),
+      bestYoungId: keepId(f.bestYoungId),
+      mostGoalsTeamId: keepId(f.mostGoalsTeamId),
+      leastGoalsTeamId: keepId(f.leastGoalsTeamId),
+    }))
+  }, [tournamentTeams, myPicks])
 
   const mutation = useMutation({
     mutationFn: (data) => tournamentApi.savePicks({ ...data, groupId }),
