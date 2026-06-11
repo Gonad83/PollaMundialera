@@ -76,6 +76,8 @@ async function main() {
       data: {
         ptsChampion: 0,
         ptsFinalists: 0,
+        ptsRound32: 0,
+        ptsRound16: 0,
         ptsSemifinals: 0,
         ptsQuarters: 0,
         ptsGroups: 0,

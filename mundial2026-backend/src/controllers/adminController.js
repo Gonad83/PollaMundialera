@@ -323,6 +323,8 @@ const setTournamentAwards = async (req, res) => {
     championId,
     finalist1Id,
     finalist2Id,
+    round32TeamIds,
+    round16TeamIds,
     semifinalistIds,
     quarterfinalistIds,
     groupQualifierIds,
@@ -346,6 +348,14 @@ const setTournamentAwards = async (req, res) => {
     pts.ptsFinalists    = [pick.finalist1, pick.finalist2].filter(
       (id) => [finalist1Id, finalist2Id].includes(id)
     ).length * 15;
+
+    pts.ptsRound32      = (pick.round32Teams || []).filter(
+      (id) => (round32TeamIds || []).includes(id)
+    ).length * 1;
+
+    pts.ptsRound16      = (pick.round16Teams || []).filter(
+      (id) => (round16TeamIds || []).includes(id)
+    ).length * 2;
 
     pts.ptsSemifinals   = (pick.semifinalists || []).filter(
       (id) => (semifinalistIds || []).includes(id)

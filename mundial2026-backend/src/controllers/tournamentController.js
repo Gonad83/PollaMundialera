@@ -12,6 +12,8 @@ const picksSchema = z.object({
   champion:           z.string().optional().nullable(),
   finalist1:          z.string().optional().nullable(),
   finalist2:          z.string().optional().nullable(),
+  round32Teams:       z.array(z.string()).max(32).optional(),
+  round16Teams:       z.array(z.string()).max(16).optional(),
   semifinalists:      z.array(z.string()).max(4).optional(),
   quarterfinalists:   z.array(z.string()).max(8).optional(),
   groupQualifiers:    z.array(z.string()).max(32).optional(),

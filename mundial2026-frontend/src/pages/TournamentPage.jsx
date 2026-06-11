@@ -25,7 +25,7 @@ export default function TournamentPage({ groupId }) {
   const [saved, setSaved] = useState(false)
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
-    semifinalists: [], quarterfinalists: [], groupQualifiers: [],
+    round32Teams: [], round16Teams: [], semifinalists: [], quarterfinalists: [], groupQualifiers: [],
     topScorerId: null, bestPlayerId: null, bestKeeperId: null, bestYoungId: null,
     totalGoals: '', mostGoalsTeamId: null, leastGoalsTeamId: null, hostFurthest: null,
   })
@@ -82,6 +82,8 @@ export default function TournamentPage({ groupId }) {
       !!form.champion,
       !!form.finalist1,
       !!form.finalist2,
+      (form.round32Teams?.length || 0) > 0,
+      (form.round16Teams?.length || 0) > 0,
       (form.semifinalists?.length || 0) > 0,
       (form.quarterfinalists?.length || 0) > 0,
       !!form.hostFurthest,
@@ -220,19 +222,31 @@ export default function TournamentPage({ groupId }) {
                 />
               </PickSection>
 
-              <PickSection title="Cuadro Final" subtitle="Semifinalistas y su camino a la gloria" pts="32 PTS MÁX" icon={Trophy}>
+              <PickSection title="Camino al Título" subtitle="Pronostica 16avos, 8vos, 4tos y semifinalistas" pts="128 PTS MÁX" icon={Trophy}>
                 <div className="space-y-8">
                   <div>
                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> Semifinalistas (8 pts c/u)
+                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> 16avos de Final (1 pt c/u)
                     </p>
-                    <TeamGrid teams={teams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
+                    <TeamGrid teams={teams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
+                  </div>
+                  <div className="pt-8 border-t border-white/5">
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> 8vos de Final (2 pts c/u)
+                    </p>
+                    <TeamGrid teams={teams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
                   </div>
                   <div className="pt-8 border-t border-white/5">
                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
                        <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> Cuartos de Final (4 pts c/u)
                     </p>
                     <TeamGrid teams={teams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
+                  </div>
+                  <div className="pt-8 border-t border-white/5">
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> Semifinalistas (8 pts c/u)
+                    </p>
+                    <TeamGrid teams={teams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
                   </div>
                 </div>
               </PickSection>
@@ -509,4 +523,3 @@ function LoadingSkeleton() {
     </div>
   )
 }
-

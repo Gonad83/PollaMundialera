@@ -225,6 +225,8 @@ model TournamentPicks {
   champion        String?
   finalist1       String?
   finalist2       String?
+  round32Teams    String[] @default([])
+  round16Teams    String[] @default([])
   semifinalists   String[]
   quarterfinalists String[]
   groupQualifiers  String[]
@@ -241,6 +243,8 @@ model TournamentPicks {
 
   ptsChampion       Int @default(0)
   ptsFinalists      Int @default(0)
+  ptsRound32        Int @default(0)
+  ptsRound16        Int @default(0)
   ptsSemifinals     Int @default(0)
   ptsQuarters       Int @default(0)
   ptsGroups         Int @default(0)
