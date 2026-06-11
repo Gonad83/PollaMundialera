@@ -8,7 +8,8 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const routeGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
   const storedGroupId = sessionStorage.getItem('lastGroupId') || localStorage.getItem('lastGroupId')
   const currentGroupId = routeGroupId || (pathname.startsWith('/profile') ? storedGroupId : null)
-  const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
+  const showTournamentPick = !!currentGroupId
+  const hasItems = filteredNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
   if (!hasItems) return null
   const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !headerActions.some(a => a.id === 'config')
   const tabParam = new URLSearchParams(search).get('tab')
@@ -62,6 +63,24 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
         })}
 
         {/* Header Actions (Simular, Mensajes, Ajustes) — Mobile only */}
+        {showTournamentPick && (
+          <button
+            onClick={() => navigate(`/groups/${currentGroupId}?tab=premios`)}
+            className={`relative min-w-[72px] flex flex-col items-center gap-1 px-2 py-2 transition-all shrink-0 ${
+              tabParam === 'premios' ? 'text-mundial-gold' : 'text-zinc-500'
+            }`}
+          >
+            <Trophy size={20} strokeWidth={tabParam === 'premios' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold uppercase tracking-tighter">Torneo</span>
+            {tabParam === 'premios' && (
+              <motion.div
+                layoutId="bottomTab"
+                className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
+              />
+            )}
+          </button>
+        )}
+
         {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
           <button
             key={id}
