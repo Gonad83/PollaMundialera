@@ -4,17 +4,37 @@ const prisma = require('../utils/prisma');
 let _teamsCache = null;
 const EXCLUDED_TEAM_CODES = ['PSG', 'ARS'];
 
+const worldCupOnlyWhere = () => ({
+  NOT: [
+    { teamHome: { code: { in: EXCLUDED_TEAM_CODES } } },
+    { teamAway: { code: { in: EXCLUDED_TEAM_CODES } } },
+    { phase: 'GROUP', groupLetter: null, city: { not: 'World' } },
+  ],
+});
+
+const isWorldCupMatch = (match) => {
+  const codes = [match.teamHome?.code, match.teamAway?.code];
+  if (codes.some((code) => EXCLUDED_TEAM_CODES.includes(code))) return false;
+  if (match.phase === 'GROUP' && !match.groupLetter && match.city !== 'World') return false;
+  return true;
+};
+
 // GET /api/matches — Lista de partidos con filtros opcionales
 const getMatches = async (req, res) => {
   const { phase, status, teamId } = req.query;
 
   const matches = await prisma.match.findMany({
     where: {
-      ...(phase && { phase }),
-      ...(status && { status }),
-      ...(teamId && {
-        OR: [{ teamHomeId: teamId }, { teamAwayId: teamId }],
-      }),
+      AND: [
+        worldCupOnlyWhere(),
+        {
+          ...(phase && { phase }),
+          ...(status && { status }),
+          ...(teamId && {
+            OR: [{ teamHomeId: teamId }, { teamAwayId: teamId }],
+          }),
+        },
+      ],
     },
     include: {
       teamHome: { select: { id: true, name: true, code: true, flagUrl: true } },
@@ -37,7 +57,7 @@ const getMatch = async (req, res) => {
     },
   });
 
-  if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (!match || !isWorldCupMatch(match)) return res.status(404).json({ error: 'Partido no encontrado' });
   return res.json(match);
 };
 
@@ -48,8 +68,13 @@ const getUpcoming = async (req, res) => {
 
   const matches = await prisma.match.findMany({
     where: {
-      status: 'SCHEDULED',
-      dateUtc: { gte: now, lte: in48h },
+      AND: [
+        worldCupOnlyWhere(),
+        {
+          status: 'SCHEDULED',
+          dateUtc: { gte: now, lte: in48h },
+        },
+      ],
     },
     include: {
       teamHome: { select: { id: true, name: true, code: true, flagUrl: true } },

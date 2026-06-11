@@ -28,6 +28,13 @@ const PHASES = [
 const isFriendlyMatch = (match) =>
   match?.phase === 'GROUP' && !match?.groupLetter && match?.city !== 'World'
 
+const isClubTestMatch = (match) => {
+  const codes = [match?.teamHome?.code, match?.teamAway?.code]
+  return codes.some(code => ['PSG', 'ARS'].includes(code))
+}
+
+const isNonWorldCupMatch = (match) => isFriendlyMatch(match) || isClubTestMatch(match)
+
 const STATUS_COLORS = {
   SCHEDULED: 'text-zinc-500 bg-white/5 border-white/5',
   LIVE: 'text-mundial-red bg-mundial-red/10 border-mundial-red/20',
@@ -64,7 +71,9 @@ export default function MatchesPage({ groupId }) {
       query.state.data?.some(m => m.status === 'LIVE') ? 30_000 : false,
   })
 
-  const hasLive = allMatches.some(m => m.status === 'LIVE')
+  const worldCupMatches = useMemo(() => allMatches.filter(m => !isNonWorldCupMatch(m)), [allMatches])
+  const worldCupMatchIds = useMemo(() => new Set(worldCupMatches.map(m => m.id)), [worldCupMatches])
+  const hasLive = worldCupMatches.some(m => m.status === 'LIVE')
 
   // All user predictions (always fetched — needed for list display and standings)
   const { data: allMyPreds = [] } = useQuery({
@@ -78,11 +87,9 @@ export default function MatchesPage({ groupId }) {
   }, {}), [allMyPreds])
 
   // List view always uses raw match data; predictions shown via pred prop in MatchRow
-  const listMatches = phase === 'FRIENDLY'
-    ? allMatches.filter(isFriendlyMatch)
-    : phase
-      ? allMatches.filter(m => m.phase === phase && !isFriendlyMatch(m))
-      : allMatches
+  const listMatches = phase
+    ? worldCupMatches.filter(m => m.phase === phase)
+    : worldCupMatches
 
   const grouped = listMatches.reduce((acc, m) => {
     const day = fmtChileDay(m.dateUtc)
@@ -93,18 +100,18 @@ export default function MatchesPage({ groupId }) {
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
-    buildStandings(allMatches.filter(m => m.phase === 'GROUP' && !isFriendlyMatch(m))),
-    [allMatches])
+    buildStandings(worldCupMatches.filter(m => m.phase === 'GROUP')),
+    [worldCupMatches])
 
   // Apostado standings: overlays user predictions on group matches
   const predStandings = useMemo(() =>
     buildStandings(
-      allMatches.filter(m => m.phase === 'GROUP' && !isFriendlyMatch(m)).map(m => {
+      worldCupMatches.filter(m => m.phase === 'GROUP').map(m => {
         const pred = allPredMap[m.id]
         if (!pred) return m
         return { ...m, scoreHome: pred.predHome, scoreAway: pred.predAway, status: 'FINISHED' }
       })
-    ), [allMatches, allPredMap])
+    ), [worldCupMatches, allPredMap])
 
   // All unique group letters from either source, sorted
   const groupLetters = useMemo(() => {
@@ -115,7 +122,7 @@ export default function MatchesPage({ groupId }) {
     return [...set].sort()
   }, [realStandings, predStandings])
 
-  const apostadoCount = Object.keys(allPredMap).length
+  const apostadoCount = Object.values(allPredMap).filter(p => worldCupMatchIds.has(p.matchId)).length
 
   // Detalle de partido inline (mantiene GroupDetailPage montado → MENSAJES/AJUSTES visibles)
   if (matchParam && groupId) {
@@ -148,7 +155,7 @@ export default function MatchesPage({ groupId }) {
           )}
           <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-3">
             <Calendar size={14} className="text-mundial-gold" />
-            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{allMatches.length} PARTIDOS</span>
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{worldCupMatches.length} PARTIDOS</span>
           </div>
         </div>
       </motion.div>

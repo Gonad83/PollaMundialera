@@ -13,10 +13,6 @@
 const { Prisma } = require('@prisma/client');
 const prisma = require('../src/utils/prisma');
 
-const CHILE_OFFSET = '-04:00';
-const FRIENDLIES_START = new Date(`2026-06-10T00:00:00${CHILE_OFFSET}`);
-const FRIENDLIES_END = new Date(`2026-06-11T00:00:00${CHILE_OFFSET}`);
-
 async function findMatchesToDelete() {
   return prisma.$queryRaw`
     SELECT DISTINCT m."id"
@@ -37,8 +33,6 @@ async function findMatchesToDelete() {
         m."phase"::text = 'GROUP'
         AND m."groupLetter" IS NULL
         AND COALESCE(m."city", '') <> 'World'
-        AND m."dateUtc" >= ${FRIENDLIES_START}
-        AND m."dateUtc" < ${FRIENDLIES_END}
       )
   `;
 }
