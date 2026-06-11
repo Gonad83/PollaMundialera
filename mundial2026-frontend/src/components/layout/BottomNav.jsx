@@ -107,6 +107,8 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
 function getIcon(label) {
   switch (label.toLowerCase()) {
     case 'partidos':  return Calendar
+    case 'pronósticos':
+    case 'pronosticos': return Calendar
     case 'torneo':    return Trophy
     case 'ranking':   return BarChart3
     case 'grupos':    return Users

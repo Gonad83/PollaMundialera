@@ -55,7 +55,7 @@ function PlanBadge({ plan, size = 'sm' }) {
 }
 
 const MAIN_NAV = [
-  { to: '/matches', label: 'Partidos', icon: Calendar },
+  { to: '/matches', label: 'Pronósticos', icon: Calendar },
   { to: '/rules',   label: 'Reglas',   icon: BookOpen },
 ]
 

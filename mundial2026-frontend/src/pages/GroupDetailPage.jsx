@@ -429,8 +429,8 @@ export default function GroupDetailPage() {
 
   // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
   const tabs = [
-    { id: 'resultados', label: 'Resultados',  icon: Calendar },
-    { id: 'premios',    label: 'Torneo',       icon: Trophy },
+    { id: 'resultados', label: 'Pronóstico resultados',  icon: Calendar },
+    { id: 'premios',    label: 'Pronóstico torneo',       icon: Trophy },
     { id: 'ranking',    label: 'Ranking',      icon: BarChart3 },
     { id: 'comparar',   label: 'Comparativa',  icon: Star },
     { id: 'liga',       label: 'Participantes', icon: Users },
@@ -767,7 +767,7 @@ export default function GroupDetailPage() {
           <motion.div key="simulador" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <div className="mb-6 flex">
                <button onClick={() => setActiveTab('resultados')} className="text-zinc-400 hover:text-white flex items-center gap-2 text-xs font-black uppercase">
-                 <ChevronLeft size={16} /> Volver a Partidos
+                 <ChevronLeft size={16} /> Volver a Pronósticos
                </button>
             </div>
             <SimulatorPage groupId={id} />
