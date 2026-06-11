@@ -786,12 +786,12 @@ function MatchesTab({
                       </button>
                       <input
                         type="number" min="0" max="20"
-                        className="w-14 bg-white/8 border border-white/15 rounded-xl text-center text-3xl font-display text-white outline-none focus:border-mundial-gold py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-14 bg-mundial-navy border border-mundial-gold/30 rounded-xl text-center text-3xl font-display text-mundial-gold outline-none focus:border-mundial-gold focus:ring-2 focus:ring-mundial-gold/20 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                         value={resultForm.scoreHome}
                         onChange={e => setResultForm(f => ({ ...f, scoreHome: Math.max(0, parseInt(e.target.value) || 0) }))}
                       />
                       <button onClick={() => setResultForm(f => ({ ...f, scoreHome: f.scoreHome + 1 }))}
-                        className="w-8 h-8 rounded-lg bg-white/8 flex items-center justify-center text-zinc-400 hover:text-world hover:text-white hover:bg-white/15 transition-all">
+                        className="w-8 h-8 rounded-lg bg-white/8 flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/15 transition-all">
                         <Plus size={14} />
                       </button>
                     </div>
@@ -810,7 +810,7 @@ function MatchesTab({
                       </button>
                       <input
                         type="number" min="0" max="20"
-                        className="w-14 bg-white/8 border border-white/15 rounded-xl text-center text-3xl font-display text-white outline-none focus:border-mundial-gold py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-14 bg-mundial-navy border border-mundial-gold/30 rounded-xl text-center text-3xl font-display text-mundial-gold outline-none focus:border-mundial-gold focus:ring-2 focus:ring-mundial-gold/20 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
                         value={resultForm.scoreAway}
                         onChange={e => setResultForm(f => ({ ...f, scoreAway: Math.max(0, parseInt(e.target.value) || 0) }))}
                       />
