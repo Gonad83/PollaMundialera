@@ -222,32 +222,43 @@ export default function TournamentPage({ groupId }) {
                 />
               </PickSection>
 
-              <PickSection title="Camino al Título" subtitle="Pronostica 16avos, 8vos, 4tos y semifinalistas" pts="128 PTS MÁX" icon={Trophy}>
-                <div className="space-y-8">
-                  <div>
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> 16avos de Final (1 pt c/u)
-                    </p>
-                    <TeamGrid teams={teams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
-                  </div>
-                  <div className="pt-8 border-t border-white/5">
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> 8vos de Final (2 pts c/u)
-                    </p>
-                    <TeamGrid teams={teams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
-                  </div>
-                  <div className="pt-8 border-t border-white/5">
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> Cuartos de Final (4 pts c/u)
-                    </p>
-                    <TeamGrid teams={teams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
-                  </div>
-                  <div className="pt-8 border-t border-white/5">
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 bg-mundial-gold rounded-full" /> Semifinalistas (8 pts c/u)
-                    </p>
+              <PickSection title="Camino al Título" subtitle="Pronostica semifinalistas, 4tos, 8vos y 16avos por etapa" pts="128 PTS MÁX" icon={Trophy}>
+                <div className="grid grid-cols-1 gap-5">
+                  <KnockoutStage
+                    title="Semifinalistas"
+                    detail="4 selecciones · 8 pts c/u"
+                    selectedCount={form.semifinalists?.length || 0}
+                    max={4}
+                  >
                     <TeamGrid teams={teams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
-                  </div>
+                  </KnockoutStage>
+
+                  <KnockoutStage
+                    title="Cuartos de final"
+                    detail="8 selecciones · 4 pts c/u"
+                    selectedCount={form.quarterfinalists?.length || 0}
+                    max={8}
+                  >
+                    <TeamGrid teams={teams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
+                  </KnockoutStage>
+
+                  <KnockoutStage
+                    title="8vos de final"
+                    detail="16 selecciones · 2 pts c/u"
+                    selectedCount={form.round16Teams?.length || 0}
+                    max={16}
+                  >
+                    <TeamGrid teams={teams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
+                  </KnockoutStage>
+
+                  <KnockoutStage
+                    title="16avos de final"
+                    detail="32 selecciones · 1 pt c/u"
+                    selectedCount={form.round32Teams?.length || 0}
+                    max={32}
+                  >
+                    <TeamGrid teams={teams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
+                  </KnockoutStage>
                 </div>
               </PickSection>
 
@@ -377,6 +388,38 @@ function PickSection({ title, subtitle, pts, icon: Icon, children }) {
       </div>
       {children}
     </div>
+  )
+}
+
+function KnockoutStage({ title, detail, selectedCount, max, children }) {
+  const complete = selectedCount === max
+
+  return (
+    <section className={`rounded-[1.75rem] border p-5 sm:p-6 transition-all ${
+      complete
+        ? 'border-mundial-gold/40 bg-mundial-gold/[0.07]'
+        : 'border-white/10 bg-mundial-navy/35'
+    }`}>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className={`h-2 w-2 rounded-full ${complete ? 'bg-green-400' : 'bg-mundial-gold'}`} />
+            <h4 className="font-display text-xl sm:text-2xl uppercase text-white tracking-tight">{title}</h4>
+          </div>
+          <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">{detail}</p>
+        </div>
+
+        <div className={`w-fit rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest ${
+          complete
+            ? 'border-green-400/30 bg-green-400/10 text-green-300'
+            : 'border-white/10 bg-white/5 text-zinc-400'
+        }`}>
+          {selectedCount}/{max} elegidos
+        </div>
+      </div>
+
+      {children}
+    </section>
   )
 }
 
