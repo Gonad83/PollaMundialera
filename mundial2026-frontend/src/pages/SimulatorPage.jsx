@@ -282,6 +282,16 @@ function buildR32(standings) {
 
 // ── SUBCOMPONENTES ────────────────────────────────────────────────────────────
 
+function createEmptyBracketScores(r32Matches) {
+  return {
+    r32:   r32Matches.map(() => ['', '']),
+    r16:   Array(8).fill(null).map(() => ['', '']),
+    qf:    Array(4).fill(null).map(() => ['', '']),
+    sf:    Array(2).fill(null).map(() => ['', '']),
+    final: ['', ''],
+  }
+}
+
 function Flag({ name, size = 'sm' }) {
   const cls = size === 'lg' ? 'w-10 h-7' : size === 'md' ? 'w-7 h-5' : 'w-5 h-4'
 
@@ -890,13 +900,7 @@ export default function SimulatorPage() {
   const buildBracket = useCallback(() => {
     const { matches, labels, descs, thirds } = buildR32(standings)
     setBracket({ r32: matches, r32labels: labels, r32descs: descs, thirds })
-    setBracketScores({
-      r32:   matches.map(() => ['', '']),
-      r16:   Array(8).fill(null).map(() => ['', '']),
-      qf:    Array(4).fill(null).map(() => ['', '']),
-      sf:    Array(2).fill(null).map(() => ['', '']),
-      final: ['', ''],
-    })
+    setBracketScores(createEmptyBracketScores(matches))
     setPenaltyWinners({})
     setBracketView('bracket')
     setPhase('bracket')
@@ -904,10 +908,17 @@ export default function SimulatorPage() {
 
   // Regenerar automáticamente el bracket cuando cambien los standings (si ya existe un bracket)
   useEffect(() => {
-    if (bracket) {
-      const { matches, labels, descs, thirds } = buildR32(standings)
-      // Solo actualizar terceros y R32, mantener los scores actuales del bracket
-      setBracket(prev => ({ ...prev, r32: matches, r32labels: labels, r32descs: descs, thirds }))
+    if (!bracket) return
+
+    const { matches, labels, descs, thirds } = buildR32(standings)
+    const currentR32 = JSON.stringify(bracket.r32 || [])
+    const nextR32 = JSON.stringify(matches)
+
+    setBracket(prev => ({ ...prev, r32: matches, r32labels: labels, r32descs: descs, thirds }))
+
+    if (currentR32 !== nextR32) {
+      setBracketScores(createEmptyBracketScores(matches))
+      setPenaltyWinners({})
     }
   }, [standings]) // eslint-disable-line react-hooks/exhaustive-deps
 
