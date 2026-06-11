@@ -1,10 +1,12 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 
-const TOURNAMENT_DEADLINE_ENV = process.env.TOURNAMENT_DEADLINE;
+// Sabado 13 de junio de 2026, 15:00 hora chilena (CLT, UTC-4).
+// Puede sobreescribirse con TOURNAMENT_DEADLINE si hiciera falta.
+const DEFAULT_TOURNAMENT_DEADLINE = '2026-06-13T19:00:00.000Z';
+const TOURNAMENT_DEADLINE_ENV = process.env.TOURNAMENT_DEADLINE || DEFAULT_TOURNAMENT_DEADLINE;
 
 const isTournamentLocked = () => {
-  if (!TOURNAMENT_DEADLINE_ENV) return false;
   return new Date() > new Date(TOURNAMENT_DEADLINE_ENV);
 };
 
@@ -46,6 +48,7 @@ const savePicks = async (req, res) => {
   if (isTournamentLocked()) {
     return res.status(403).json({
       error: 'El plazo para los pronósticos del torneo ha cerrado',
+      deadline: TOURNAMENT_DEADLINE_ENV,
     });
   }
 

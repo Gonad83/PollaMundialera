@@ -19,10 +19,14 @@ const SECTIONS = [
   { key: 'estadisticas',  label: 'DATOS MAESTROS',   icon: BarChart3 },
 ]
 
+const TOURNAMENT_DEADLINE = new Date('2026-06-13T19:00:00.000Z')
+const TOURNAMENT_DEADLINE_LABEL = 'SÁBADO 13 JUN 2026 · 15:00 HRS CHILE'
+
 export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
+  const isTournamentLocked = Date.now() > TOURNAMENT_DEADLINE.getTime()
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
     round32Teams: [], round16Teams: [], semifinalists: [], quarterfinalists: [], groupQualifiers: [],
@@ -130,7 +134,7 @@ export default function TournamentPage({ groupId }) {
           <h1 className="font-display text-4xl text-white tracking-tight uppercase">Predicción Maestra</h1>
           <div className="flex items-center gap-2 mt-1 mb-4">
             <span className="w-2 h-2 bg-mundial-red rounded-full animate-pulse" />
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Cierre de Pronósticos: 11 JUN 2026</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Cierre: {TOURNAMENT_DEADLINE_LABEL}</p>
           </div>
 
           {/* Barra de progreso */}
@@ -155,14 +159,14 @@ export default function TournamentPage({ groupId }) {
         </div>
 
         <div className="hidden md:block">
-           <button
-            onClick={() => mutation.mutate(form)}
-            disabled={mutation.isPending}
-            className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
-          >
-            {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-            <span className="font-black tracking-widest text-xs">{saved ? '¡PRONÓSTICOS GUARDADOS!' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
-          </button>
+            <button
+              onClick={() => mutation.mutate(form)}
+              disabled={mutation.isPending || isTournamentLocked}
+              className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${isTournamentLocked ? 'opacity-60 cursor-not-allowed grayscale' : saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
+            >
+              {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
+              <span className="font-black tracking-widest text-xs">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : saved ? '¡PRONÓSTICOS GUARDADOS!' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
+            </button>
         </div>
       </div>
 
@@ -379,12 +383,12 @@ export default function TournamentPage({ groupId }) {
          >
             <button
               onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || isTournamentLocked}
               className={`w-full py-5 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-3 transition-all
-                ${saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
+                ${isTournamentLocked ? 'bg-zinc-700 text-zinc-300 border-zinc-600 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
             >
               {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-              <span className="uppercase tracking-[0.2em] text-[10px]">{saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
+              <span className="uppercase tracking-[0.2em] text-[10px]">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
             </button>
          </motion.div>
       </div>
