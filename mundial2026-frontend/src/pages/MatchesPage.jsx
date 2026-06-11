@@ -420,17 +420,20 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
             {/* Center: marcador real / pronóstico verde (solo apostado) / VS */}
             <div className="shrink-0 flex flex-col items-center gap-1">
               {isFinished || isLive ? (
-                /* Partido terminado o en vivo: marcador real */
-                <div>
+                /* Partido terminado o en vivo: marcador real + apuesta */
+                <div className="flex flex-col items-center gap-1.5">
+                  {/* Resultado real */}
                   <div className="flex items-center gap-1.5">
                     <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreHome ?? 0}</div>
                     <span className="text-zinc-600 font-bold text-sm">:</span>
                     <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
                   </div>
-                  {showResult && (
-                    <p className="text-center text-[9px] text-zinc-600 font-bold mt-1.5 tracking-widest">
-                      tú: <span className="text-zinc-400">{pred.predHome}–{pred.predAway}</span>
-                    </p>
+                  {/* Apuesta del usuario */}
+                  {showResult && pred && (
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[8px] text-zinc-600 font-black uppercase tracking-widest">apostaste:</span>
+                      <span className="text-[10px] font-display text-zinc-300 font-bold">{pred.predHome}–{pred.predAway}</span>
+                    </div>
                   )}
                 </div>
               ) : showPred ? (
