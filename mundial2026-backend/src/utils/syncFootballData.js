@@ -54,7 +54,7 @@ function fetchFromApi(path) {
   });
 }
 
-async function syncMatches(options = {}) {
+async function syncMatches() {
   if (!process.env.FOOTBALL_DATA_API_KEY) {
     throw new Error('FOOTBALL_DATA_API_KEY no configurada en .env');
   }
@@ -70,31 +70,7 @@ async function syncMatches(options = {}) {
     warnings.push(`Mundial 2026: ${e.message}`);
   }
 
-  console.log('🔄 Descargando partidos de la Champions League desde football-data.org...');
-  let clMatches = [];
-  try {
-    const clData = await fetchFromApi('/v4/competitions/CL/matches');
-    clMatches = (clData.matches || []).filter(m => m.stage === 'FINAL');
-  } catch (e) {
-    console.error('Error fetching CL matches:', e.message);
-    warnings.push(`Champions League: ${e.message}`);
-  }
-
-  const matches = [...wcMatches, ...clMatches];
-
-  if (options.simulateFinished) {
-    for (const m of matches) {
-      if (m.competition?.code === 'CL' && m.stage === 'FINAL') {
-        m.status = 'FINISHED';
-        m.score = {
-          winner: 'HOME_TEAM',
-          duration: 'REGULAR',
-          fullTime: { home: 3, away: 2 }
-        };
-        console.log('ℹ️ Simulación activa: Forzando estado FINISHED (PSG 3 - 2 ARS) para la final de CL.');
-      }
-    }
-  }
+  const matches = wcMatches;
 
   if (matches.length === 0) {
     throw new Error('No se recibieron partidos de la API');

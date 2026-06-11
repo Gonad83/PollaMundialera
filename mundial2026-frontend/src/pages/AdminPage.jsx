@@ -145,15 +145,6 @@ export default function AdminPage() {
     }
   })
 
-  const syncSimulatedMut = useMutation({
-    mutationFn: () => adminApi.syncMatches({ simulateFinished: 'true' }),
-    onSuccess: (res) => {
-      showFeedback(`Sync simulado OK: ${res.data.newlyFinished || 0} finalizados, ${res.data.scoredPredictions || 0} pronosticos puntuados`)
-      qc.invalidateQueries({ queryKey: ['matches-all'] })
-      qc.invalidateQueries({ queryKey: ['admin-dashboard'] })
-    }
-  })
-
   const setPlanMut = useMutation({
     mutationFn: ({ id, plan }) => adminApi.setUserPlan(id, plan),
     onSuccess: () => {
@@ -528,22 +519,15 @@ export default function AdminPage() {
                <PickSection title="Sincronización de Datos" subtitle="Actualiza los fixtures desde la API oficial" icon={RefreshCw}>
                   <div className="flex flex-col gap-6">
                      <p className="text-sm text-zinc-500 leading-relaxed font-bold uppercase tracking-widest bg-white/5 p-6 rounded-3xl border border-white/5">
-                        Esta acción descargará los partidos del Mundial 2026 y la Final de la Champions League desde <span className="text-mundial-gold">football-data.org</span>.
+                         Esta acción descargará solo los partidos del Mundial 2026 desde <span className="text-mundial-gold">football-data.org</span>.
                      </p>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 gap-4">
                        <button 
                          onClick={() => { if(confirm('¿Iniciar sincronización externa?')) syncMut.mutate() }}
-                         disabled={syncMut.isPending || syncSimulatedMut.isPending}
+                          disabled={syncMut.isPending}
                          className="py-5 rounded-[2rem] bg-white/10 border border-white/10 text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-mundial-gold hover:text-mundial-navy hover:border-mundial-gold transition-all"
                        >
                           {syncMut.isPending ? 'Sincronizando...' : 'Iniciar Sincronización API'}
-                       </button>
-                       <button 
-                         onClick={() => { if(confirm('¿Sincronizar y simular la Final de Champions finalizada (PSG 3 - ARS 2)?')) syncSimulatedMut.mutate() }}
-                         disabled={syncMut.isPending || syncSimulatedMut.isPending}
-                         className="py-5 rounded-[2rem] bg-mundial-gold text-mundial-navy font-black text-[10px] uppercase tracking-[0.2em] hover:bg-mundial-gold/80 transition-all shadow-xl shadow-mundial-gold/10"
-                       >
-                          {syncSimulatedMut.isPending ? 'Simulando...' : 'Simular Final (PSG 3 - ARS 2)'}
                        </button>
                      </div>
                   </div>

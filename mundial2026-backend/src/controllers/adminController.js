@@ -409,8 +409,6 @@ const { syncMatches: syncMatchesUtil } = require('../utils/syncFootballData');
 // POST /api/admin/sync — Sincronizar partidos desde football-data.org
 const syncMatches = async (req, res) => {
   try {
-    const { simulateFinished } = req.query;
-
     // 1. Obtener partidos no finalizados antes del sync
     const unfinishedMatches = await prisma.match.findMany({
       where: { status: { not: 'FINISHED' } },
@@ -419,7 +417,7 @@ const syncMatches = async (req, res) => {
     const unfinishedIds = unfinishedMatches.map((m) => m.id);
 
     // 2. Ejecutar la sincronización
-    const result = await syncMatchesUtil({ simulateFinished: simulateFinished === 'true' });
+    const result = await syncMatchesUtil();
 
     // 3. Obtener los que ahora pasaron a FINISHED
     const newlyFinishedMatches = await prisma.match.findMany({

@@ -17,7 +17,6 @@ import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Chec
 
 const PHASES = [
   { value: '', label: 'TODOS' },
-  { value: 'FRIENDLY', label: 'AMISTOSOS' },
   { value: 'GROUP', label: 'GRUPOS' },
   { value: 'R32', label: '16vos' },
   { value: 'R16', label: '8vos' },
@@ -66,10 +65,6 @@ export default function MatchesPage({ groupId }) {
   })
 
   const hasLive = allMatches.some(m => m.status === 'LIVE')
-
-  const clFinalMatch = useMemo(() => {
-    return allMatches.find(m => m.phase === 'FINAL' && (m.teamHome?.code === 'PSG' || m.teamAway?.code === 'ARS'))
-  }, [allMatches])
 
   // All user predictions (always fetched — needed for list display and standings)
   const { data: allMyPreds = [] } = useQuery({
@@ -189,39 +184,6 @@ export default function MatchesPage({ groupId }) {
           </p>
         )}
       </motion.div>
-
-      {/* Champions League Final Banner */}
-      {clFinalMatch && clFinalMatch.status !== 'FINISHED' && (
-        <motion.div
-          variants={itemVariants}
-          id="tour-champions-banner"
-          className="mb-8 p-6 rounded-[2rem] bg-gradient-to-r from-blue-950/40 via-indigo-950/40 to-blue-950/40 border border-blue-500/30 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group"
-        >
-          {/* Background glowing sphere */}
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full pointer-events-none group-hover:bg-blue-500/20 transition-all duration-700" />
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 border border-blue-400/25 shrink-0 group-hover:scale-105 transition-transform duration-500">
-              <Trophy size={26} className="animate-pulse" />
-            </div>
-            <div>
-              <h3 className="font-display text-xl text-white uppercase tracking-tight flex items-center gap-2">
-                Final de Champions <span className="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full font-sans font-bold">UCL</span>
-              </h3>
-              <p className="text-xs text-zinc-400 mt-1 font-bold uppercase tracking-wider">
-                {clFinalMatch.teamHome?.name} vs {clFinalMatch.teamAway?.name}
-              </p>
-            </div>
-          </div>
-
-          <Link
-            to={groupId ? `/groups/${groupId}?tab=resultados&match=${clFinalMatch.id}` : `/matches/${clFinalMatch.id}`}
-            className="w-full md:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white text-[10px] font-black uppercase tracking-widest text-center shadow-xl shadow-blue-500/10 hover:shadow-blue-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all relative z-10 shrink-0 border border-blue-400/20"
-          >
-            Pronosticar Resultado
-          </Link>
-        </motion.div>
-      )}
 
       {/* Phase filters */}
       <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-8 border-b border-white/5">

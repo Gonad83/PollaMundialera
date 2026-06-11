@@ -13,7 +13,7 @@ export default function OnboardingTour({
   startTour,
   setStartTour
 }) {
-  const [step, setStep] = useState(0) // 0: inactive, 1: welcome, 2: resultados tab, 3: UCL banner, 4: score inputs, 5: ranking tab, 6: invite code
+  const [step, setStep] = useState(0) // 0: inactive, 1: welcome, 2: resultados tab, 3: ranking tab, 4: invite code
   const [coords, setCoords] = useState(null)
 
   const tourKey = useMemo(() => {
@@ -55,19 +55,11 @@ export default function OnboardingTour({
       action: () => setActiveTab('resultados'),
     },
     {
-      target: "#tour-champions-banner",
-      title: "⚡ ¡Pronostica tu primer partido!",
-      content: "Vamos a probar el sistema. Haz clic en el botón 'Pronosticar Resultado' de la gran Final de la Champions League para ingresar tu apuesta interactiva.",
-      btnText: "Haz clic en el botón...",
-      action: () => setActiveTab('resultados'),
-      requireAction: true, // Bloquea avance manual; requiere clic real del usuario
-    },
-    {
-      target: "#tour-score-inputs",
-      title: "⚽ Ingresa tu Marcador",
-      content: "Ingresa los goles para cada equipo y selecciona las opciones bonus (como si marcan ambos o el total de goles) para ganar puntos adicionales. ¡Luego confirma tu pronóstico!",
-      btnText: "Confirma tu pronóstico...",
-      requireAction: true,
+      target: "#tour-tab-ranking",
+      title: "📊 Sigue tu avance",
+      content: "Cuando los partidos tengan resultado, tus puntos aparecerán en el ranking del grupo. Ahí podrás ver quién lidera y cómo se mueve la tabla.",
+      btnText: "Siguiente",
+      action: () => setActiveTab('ranking'),
     },
     {
       target: "#tour-tab-ranking",
