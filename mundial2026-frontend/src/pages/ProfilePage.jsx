@@ -120,7 +120,7 @@ export default function ProfilePage() {
             </div>
             {isMe && (
               <Link to="/settings" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 text-zinc-500 hover:text-mundial-gold hover:border-mundial-gold/30 transition-all text-[9px] font-black uppercase tracking-widest">
-                <Settings size={11} /> Ajustes
+                <Settings size={11} /> Editar perfil
               </Link>
             )}
           </div>

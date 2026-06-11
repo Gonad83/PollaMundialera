@@ -95,10 +95,11 @@ export default function Layout() {
     ? [
         { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => navigate(`/groups/${currentGroupId}?tab=simulador`), isActive: false },
         { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => navigate(`/groups/${currentGroupId}?tab=messages`), isActive: false },
-        ...(storedCanManageGroup || isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
+        ...(storedCanManageGroup && !isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
       ]
     : []
   const effectiveHeaderActions = headerActions.length > 0 ? headerActions : fallbackHeaderActions
+  const isAdminPanelActive = pathname.startsWith('/admin') || (currentGroupId && new URLSearchParams(search).get('tab') === 'config')
 
   useEffect(() => {
     if (routeGroupId) {
@@ -330,8 +331,8 @@ export default function Layout() {
               <button
                 onClick={openAdminPanel}
                 className={`hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
-                  ${pathname.startsWith('/admin') ? 'bg-mundial-gold text-mundial-navy border-mundial-gold' : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`}
-                title={currentGroupId ? 'Ajustes del grupo' : 'Panel Admin'}
+                  ${isAdminPanelActive ? 'bg-mundial-gold text-mundial-navy border-mundial-gold' : 'text-zinc-500 hover:text-mundial-gold hover:bg-mundial-gold/10 border-transparent hover:border-mundial-gold/20'}`}
+                title={currentGroupId ? 'Ajustes y centro de mando' : 'Centro de mando'}
               >
                 <Settings size={20} />
               </button>

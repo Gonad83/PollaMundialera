@@ -10,7 +10,7 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const currentGroupId = routeGroupId || (pathname.startsWith('/profile') ? storedGroupId : null)
   const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
   if (!hasItems) return null
-  const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !currentGroupId && !headerActions.some(a => a.id === 'config')
+  const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !headerActions.some(a => a.id === 'config')
   const tabParam = new URLSearchParams(search).get('tab')
   const anyGroupActionActive = headerActions.some(a => a.isActive)
 

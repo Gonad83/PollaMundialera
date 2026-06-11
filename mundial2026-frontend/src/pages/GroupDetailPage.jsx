@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { groupApi, leaderboardApi, paymentApi, matchApi, tournamentApi, predictionApi } from '../lib/api'
+import { groupApi, leaderboardApi, paymentApi, matchApi, tournamentApi, predictionApi, adminApi } from '../lib/api'
 import { useAuth } from '../context/AuthContext'
 import { useHeaderActions } from '../context/HeaderActionsContext'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -9,7 +9,7 @@ import {
   Trophy, Star, Users, Copy, ChevronLeft, Crown, Sparkles,
   AlertCircle, ShieldCheck, Check, Trash2, Settings, BarChart3,
   Link2, Link2Off, X, Loader2, Save, Send, MessageSquare, Eye, EyeOff, Calendar, BookOpen, Share2, HelpCircle,
-  UserCheck, Zap, Globe, CreditCard, ExternalLink
+  UserCheck, Zap, Globe, CreditCard, ExternalLink, LayoutDashboard, Database
 } from 'lucide-react'
 import MatchesPage from './MatchesPage'
 import TournamentPage from './TournamentPage'
@@ -192,8 +192,15 @@ export default function GroupDetailPage() {
   })
 
   const isAdmin = group?.creatorId === user?.id || user?.role === 'SUPER_ADMIN'
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN'
   // En modo simulación, el admin ve la app como un participante normal
   const actingAsAdmin = isAdmin && !simMode
+
+  const { data: adminDashboard } = useQuery({
+    queryKey: ['admin-dashboard'],
+    queryFn: () => adminApi.dashboard().then(r => r.data),
+    enabled: activeTab === 'config' && isSuperAdmin,
+  })
 
   useEffect(() => {
     sessionStorage.setItem('lastGroupId', id)
@@ -233,7 +240,7 @@ export default function GroupDetailPage() {
     const actions = [
       { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => setActiveTab('simulador'), isActive: activeTab === 'simulador' },
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', badge: unreadCount || null, onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
-      ...(actingAsAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
+      ...(actingAsAdmin && !isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
   }, [activeTab, actingAsAdmin, setActions, group, unreadCount])
@@ -355,6 +362,30 @@ export default function GroupDetailPage() {
     setCopiedPaymentLink(true)
     toast.success('Link de pago copiado')
     setTimeout(() => setCopiedPaymentLink(false), 2000)
+  }
+
+  const commandStats = [
+    { label: 'Usuarios', value: adminDashboard?.stats?.users ?? '-', icon: Users },
+    { label: 'Predicciones', value: adminDashboard?.stats?.predictions ?? '-', icon: BarChart3 },
+    { label: 'Ligas privadas', value: adminDashboard?.stats?.groups ?? '-', icon: Crown },
+    {
+      label: 'Partidos jugados',
+      value: adminDashboard?.stats ? `${adminDashboard.stats.finishedMatches}/${adminDashboard.stats.matches}` : '-',
+      icon: Trophy,
+    },
+  ]
+
+  const commandLinks = [
+    { tab: 'overview', label: 'Resumen', icon: LayoutDashboard },
+    { tab: 'saas', label: 'Ligas', icon: Crown },
+    { tab: 'users', label: 'Usuarios', icon: Users },
+    { tab: 'matches', label: 'Partidos', icon: Trophy },
+    { tab: 'broadcast', label: 'Anuncios', icon: Send },
+    { tab: 'system', label: 'Sistema', icon: Database },
+  ]
+
+  const openCommandCenter = (tab = 'overview') => {
+    navigate(`/admin?tab=${tab}`, { state: { from: `/groups/${id}?tab=config` } })
   }
 
   if (isLoading) return (
@@ -1014,6 +1045,68 @@ export default function GroupDetailPage() {
         {/* ── TAB: CONFIG (admin only) ── */}
         {activeTab === 'config' && actingAsAdmin && (
           <motion.div key="config" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+
+            {isSuperAdmin && (
+              <div className="card p-6 bg-gradient-to-br from-mundial-gold/[0.08] via-white/[0.04] to-white/[0.02] border border-mundial-gold/20">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-mundial-gold/20 border border-mundial-gold/30 text-mundial-gold flex items-center justify-center shrink-0">
+                      <ShieldCheck size={22} />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-mundial-gold">Tuerca principal</p>
+                      <h2 className="font-display text-2xl text-white uppercase leading-none mt-1">Centro de mando</h2>
+                      <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-2">
+                        Control global y ajustes de este grupo en el mismo lugar.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openCommandCenter('overview')}
+                    className="px-4 py-3 rounded-2xl bg-mundial-gold text-mundial-navy font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-mundial-gold/20 hover:brightness-110 transition-all"
+                  >
+                    Abrir completo <ExternalLink size={13} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                  {commandStats.map(({ label, value, icon: Icon }) => (
+                    <div key={label} className="rounded-2xl border border-white/10 bg-mundial-navy/35 px-4 py-3">
+                      <Icon size={15} className="text-mundial-gold/80 mb-3" />
+                      <p className="font-display text-2xl text-white leading-none">{value}</p>
+                      <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mt-2">{label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                  {commandLinks.map(({ tab, label, icon: Icon }) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => openCommandCenter(tab)}
+                      className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-zinc-400 hover:text-mundial-gold hover:border-mundial-gold/30 hover:bg-mundial-gold/10 transition-all flex flex-col items-center gap-2"
+                    >
+                      <Icon size={16} />
+                      <span className="text-[9px] font-black uppercase tracking-widest">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3 px-1 pt-2">
+              <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 text-mundial-gold flex items-center justify-center">
+                <Settings size={18} />
+              </div>
+              <div>
+                <h2 className="font-display text-2xl text-white uppercase leading-none">Ajustes del grupo</h2>
+                <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-2">
+                  Nombre, invitacion, boton de pago y plan de la liga.
+                </p>
+              </div>
+            </div>
 
             {/* Rename */}
             <div className="card p-6 bg-white/5 border border-white/5">

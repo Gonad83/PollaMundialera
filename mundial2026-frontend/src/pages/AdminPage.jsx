@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { adminApi, matchApi, groupApi } from '../lib/api'
@@ -39,8 +39,17 @@ export default function AdminPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const fromPath = location.state?.from || null
-  const [activeTab, setActiveTab] = useState('overview')
+  const queryTab = new URLSearchParams(location.search).get('tab')
+  const initialTab = TABS.some(tab => tab.id === queryTab) ? queryTab : 'overview'
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [feedback, setFeedback] = useState(null)
+
+  useEffect(() => {
+    const nextTab = new URLSearchParams(location.search).get('tab')
+    if (TABS.some(tab => tab.id === nextTab)) {
+      setActiveTab(nextTab)
+    }
+  }, [location.search])
   
   // States para Formularios
   const [activeMatch, setActiveMatch] = useState(null)

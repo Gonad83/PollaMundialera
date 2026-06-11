@@ -50,7 +50,7 @@ export default function SettingsPage() {
       className="max-w-lg mx-auto space-y-6 pb-20 px-4"
     >
       <div className="pt-4">
-        <h1 className="font-display text-4xl text-white uppercase tracking-tight">Ajustes</h1>
+        <h1 className="font-display text-4xl text-white uppercase tracking-tight">Editar perfil</h1>
         <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mt-1">Personaliza tu cuenta</p>
       </div>
 
