@@ -21,7 +21,9 @@ const SECTIONS = [
 
 const TOURNAMENT_DEADLINE = new Date('2026-06-13T19:00:00.000Z')
 const TOURNAMENT_DEADLINE_LABEL = 'SÁBADO 13 JUN 2026 · 15:00 HRS CHILE'
-const EXCLUDED_TOURNAMENT_TEAM_CODES = new Set(['NGA', 'CRC', 'BOL'])
+// CUR es alias duplicado de Curazao (CUW) — excluir del selector para evitar bandera repetida
+// NGA, CRC, BOL son equipos amistosos que no juegan el Mundial
+const EXCLUDED_TOURNAMENT_TEAM_CODES = new Set(['NGA', 'CRC', 'BOL', 'CUR'])
 
 export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
@@ -53,13 +55,17 @@ export default function TournamentPage({ groupId }) {
   })
 
   const tournamentTeams = useMemo(() => {
+    // Normaliza quitando tildes/diacríticos para comparar nombres sin importar acentos
+    const normalize = (str) =>
+      str.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
+
     const preferredCodes = { curazao: 'CUW' }
     const byName = new Map()
 
     for (const team of teams) {
       if (EXCLUDED_TOURNAMENT_TEAM_CODES.has(team.code?.toUpperCase())) continue
 
-      const displayName = teamEsp(team).trim().toLowerCase()
+      const displayName = normalize(teamEsp(team))
       if (!displayName) continue
 
       const current = byName.get(displayName)
