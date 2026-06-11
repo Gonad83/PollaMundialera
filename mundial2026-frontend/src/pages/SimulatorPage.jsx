@@ -800,6 +800,7 @@ export default function SimulatorPage() {
   const [penaltyWinners, setPenaltyWinners] = useState({}) // {`round-idx` → winner name}
   const [bracketView, setBracketView] = useState('bracket')   // 'list' | 'bracket'
   const [groupsFromApi, setGroupsFromApi] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
   const [groupPairOrders, setGroupPairOrders] = useState({}) // { A: [[i,j],...], ... } orden real de partidos
   const [savedAt, setSavedAt] = useState(null)              // timestamp último guardado
 
@@ -1065,12 +1066,15 @@ export default function SimulatorPage() {
     const state = { scores, phase, bracket, bracketScores, penaltyWinners, bracketView, savedAt: ts }
     localStorage.setItem(SAVE_KEY, JSON.stringify(state))
     setSavedAt(ts)
+    setJustSaved(true)
+    window.setTimeout(() => setJustSaved(false), 2000)
   }, [scores, phase, bracket, bracketScores, penaltyWinners, bracketView])
 
   // Reset (borra guardado)
   const handleReset = () => {
     localStorage.removeItem(SAVE_KEY)
     setSavedAt(null)
+    setJustSaved(false)
     setScores(Object.fromEntries(Object.keys(groups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
     setBracket(null)
     setBracketScores(null)
@@ -1103,8 +1107,16 @@ export default function SimulatorPage() {
           <button onClick={handleSimAll} className="btn-gold px-4 py-2.5 text-xs gap-2 justify-center">
             <Zap size={14} /> Simular Grupos
           </button>
-          <button onClick={handleSave} className="btn-ghost px-4 py-2.5 text-xs gap-2 justify-center border-mundial-gold/30 text-mundial-gold hover:bg-mundial-gold/10">
-            <Save size={14} /> Guardar
+          <button
+            onClick={handleSave}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest gap-2 justify-center inline-flex items-center border transition-all ${
+              justSaved
+                ? 'bg-green-400 text-mundial-navy border-green-400 shadow-lg shadow-green-400/20'
+                : 'bg-transparent border-mundial-gold/30 text-mundial-gold hover:bg-mundial-gold/10'
+            }`}
+          >
+            {justSaved ? <CheckCircle2 size={14} /> : <Save size={14} />}
+            {justSaved ? 'Guardado' : 'Guardar'}
           </button>
           <button onClick={handleReset} className="btn-ghost px-4 py-2.5 text-xs gap-2 justify-center">
             <RotateCcw size={14} /> Reiniciar
