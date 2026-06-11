@@ -131,6 +131,11 @@ export default function TournamentPage({ groupId }) {
   }
 
   const hosts = tournamentTeams.filter(t => ['USA', 'MEX', 'CAN'].includes(t.code))
+  const teamById = useMemo(() => {
+    const map = new Map()
+    tournamentTeams.forEach(team => map.set(team.id, team))
+    return map
+  }, [tournamentTeams])
 
   const { completedCount, totalCount, completionPct } = useMemo(() => {
     const checks = [
@@ -152,6 +157,26 @@ export default function TournamentPage({ groupId }) {
     ]
     const done = checks.filter(Boolean).length
     return { completedCount: done, totalCount: checks.length, completionPct: Math.round((done / checks.length) * 100) }
+  }, [form])
+
+  const isTournamentSummaryComplete = useMemo(() => {
+    return [
+      !!form.champion,
+      !!form.finalist1,
+      !!form.finalist2,
+      (form.round32Teams?.length || 0) === 32,
+      (form.round16Teams?.length || 0) === 16,
+      (form.quarterfinalists?.length || 0) === 8,
+      (form.semifinalists?.length || 0) === 4,
+      !!form.hostFurthest,
+      !!form.topScorerId,
+      !!form.bestPlayerId,
+      !!form.bestKeeperId,
+      !!form.bestYoungId,
+      !!form.totalGoals,
+      !!form.mostGoalsTeamId,
+      !!form.leastGoalsTeamId,
+    ].every(Boolean)
   }, [form])
 
   if (loadingPicks) return <LoadingSkeleton />
@@ -405,6 +430,10 @@ export default function TournamentPage({ groupId }) {
         </motion.div>
       </AnimatePresence>
 
+      {isTournamentSummaryComplete && (
+        <TournamentPickSummary picks={form} teamById={teamById} />
+      )}
+
       {/* Sticky Bottom Bar for Mobile */}
       <div className="fixed bottom-24 left-0 right-0 px-4 md:hidden pointer-events-none z-50">
          <motion.div 
@@ -475,6 +504,114 @@ function KnockoutStage({ title, detail, selectedCount, max, children }) {
 
       {children}
     </section>
+  )
+}
+
+function TournamentPickSummary({ picks, teamById }) {
+  const byId = (id) => teamById.get(id)
+  const list = (ids = []) => ids.map(byId).filter(Boolean)
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-12 card overflow-hidden bg-gradient-to-br from-mundial-gold/10 via-white/[0.04] to-green-500/10 border-mundial-gold/25"
+    >
+      <div className="flex flex-col gap-5 border-b border-white/8 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-mundial-gold/25 bg-mundial-gold/10 text-mundial-gold">
+            <Trophy size={25} />
+          </div>
+          <div>
+            <h3 className="font-display text-2xl uppercase text-white">Resumen de tu pronóstico</h3>
+            <p className="mt-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500">Todo lo que apostaste para el torneo</p>
+          </div>
+        </div>
+        <span className="w-fit rounded-xl border border-green-400/25 bg-green-400/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-green-300">
+          Completo
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
+        <SummaryBlock title="Copa y final">
+          <SummaryLine label="Campeón" team={byId(picks.champion)} highlight />
+          <SummaryLine label="Finalista 1" team={byId(picks.finalist1)} />
+          <SummaryLine label="Finalista 2" team={byId(picks.finalist2)} />
+        </SummaryBlock>
+
+        <SummaryBlock title="Especiales">
+          <SummaryLine label="Anfitrión más lejos" team={byId(picks.hostFurthest)} />
+          <SummaryLine label="Más goleadora" team={byId(picks.mostGoalsTeamId)} />
+          <SummaryLine label="Valla invicta" team={byId(picks.leastGoalsTeamId)} />
+          <div className="mt-2 rounded-xl border border-white/8 bg-white/5 px-3 py-2">
+            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Goles totales</p>
+            <p className="font-display text-2xl text-mundial-gold">{picks.totalGoals}</p>
+          </div>
+        </SummaryBlock>
+
+        <SummaryBlock title="Premios individuales">
+          <SummaryLine label="Bota de Oro" team={byId(picks.topScorerId)} />
+          <SummaryLine label="Balón de Oro" team={byId(picks.bestPlayerId)} />
+          <SummaryLine label="Guante de Oro" team={byId(picks.bestKeeperId)} />
+          <SummaryLine label="Mejor joven" team={byId(picks.bestYoungId)} />
+        </SummaryBlock>
+
+        <SummaryBlock title="Camino al título">
+          <SummaryTeamChips label="Semifinalistas" teams={list(picks.semifinalists)} />
+          <SummaryTeamChips label="Cuartos" teams={list(picks.quarterfinalists)} />
+          <SummaryTeamChips label="8vos" teams={list(picks.round16Teams)} compact />
+          <SummaryTeamChips label="16avos" teams={list(picks.round32Teams)} compact />
+        </SummaryBlock>
+      </div>
+    </motion.section>
+  )
+}
+
+function SummaryBlock({ title, children }) {
+  return (
+    <div className="rounded-[1.35rem] border border-white/8 bg-mundial-navy/45 p-4">
+      <h4 className="mb-3 font-display text-lg uppercase text-mundial-gold">{title}</h4>
+      <div className="space-y-2">{children}</div>
+    </div>
+  )
+}
+
+function SummaryLine({ label, team, highlight = false }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${
+      highlight ? 'border-mundial-gold/30 bg-mundial-gold/10' : 'border-white/8 bg-white/5'
+    }`}>
+      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{label}</span>
+      {team ? (
+        <span className="flex min-w-0 items-center gap-2">
+          <Flag url={team.flagUrl} name={teamEsp(team)} className="h-4 w-6 object-contain" />
+          <span className={`truncate text-right text-[11px] font-black uppercase ${highlight ? 'text-mundial-gold' : 'text-zinc-300'}`}>
+            {teamEsp(team)}
+          </span>
+        </span>
+      ) : (
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700">Sin elegir</span>
+      )}
+    </div>
+  )
+}
+
+function SummaryTeamChips({ label, teams, compact = false }) {
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{label}</p>
+        <span className="text-[9px] font-black uppercase tracking-widest text-mundial-gold">{teams.length}</span>
+      </div>
+      <div className={`grid gap-2 ${compact ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+        {teams.map(team => (
+          <div key={team.id} className="flex min-w-0 items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5">
+            <Flag url={team.flagUrl} name={teamEsp(team)} className="h-3.5 w-5 object-contain shrink-0" />
+            <span className="truncate text-[9px] font-black uppercase text-zinc-400">{teamEsp(team)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
