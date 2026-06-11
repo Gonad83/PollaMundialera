@@ -43,13 +43,30 @@ async function findMatchesToDelete() {
   `;
 }
 
+async function findClubTeamIds() {
+  const teams = await prisma.team.findMany({
+    where: {
+      OR: [
+        { code: { in: ['PSG', 'ARS'] } },
+        { name: { contains: 'Paris', mode: 'insensitive' } },
+        { name: { contains: 'Arsenal', mode: 'insensitive' } },
+      ],
+    },
+    select: { id: true },
+  });
+
+  return teams.map((team) => team.id);
+}
+
 async function main() {
   const matches = await findMatchesToDelete();
   const matchIds = matches.map((m) => m.id);
+  const clubTeamIds = await findClubTeamIds();
 
   const summary = await prisma.$transaction(async (tx) => {
     let deletedPredictions = 0;
     let deletedMatches = 0;
+    let clearedTournamentClubRefs = 0;
 
     if (matchIds.length > 0) {
       deletedPredictions = await tx.$executeRaw`
@@ -61,6 +78,36 @@ async function main() {
         DELETE FROM "Match"
         WHERE "id" IN (${Prisma.join(matchIds)})
       `;
+    }
+
+    for (const teamId of clubTeamIds) {
+      clearedTournamentClubRefs += Number(await tx.$executeRaw`
+        UPDATE "TournamentPicks"
+        SET
+          "champion" = CASE WHEN "champion" = ${teamId} THEN NULL ELSE "champion" END,
+          "finalist1" = CASE WHEN "finalist1" = ${teamId} THEN NULL ELSE "finalist1" END,
+          "finalist2" = CASE WHEN "finalist2" = ${teamId} THEN NULL ELSE "finalist2" END,
+          "mostGoalsTeamId" = CASE WHEN "mostGoalsTeamId" = ${teamId} THEN NULL ELSE "mostGoalsTeamId" END,
+          "leastGoalsTeamId" = CASE WHEN "leastGoalsTeamId" = ${teamId} THEN NULL ELSE "leastGoalsTeamId" END,
+          "hostFurthest" = CASE WHEN "hostFurthest" = ${teamId} THEN NULL ELSE "hostFurthest" END,
+          "round32Teams" = array_remove("round32Teams", ${teamId}),
+          "round16Teams" = array_remove("round16Teams", ${teamId}),
+          "semifinalists" = array_remove("semifinalists", ${teamId}),
+          "quarterfinalists" = array_remove("quarterfinalists", ${teamId}),
+          "groupQualifiers" = array_remove("groupQualifiers", ${teamId})
+        WHERE
+          "champion" = ${teamId}
+          OR "finalist1" = ${teamId}
+          OR "finalist2" = ${teamId}
+          OR "mostGoalsTeamId" = ${teamId}
+          OR "leastGoalsTeamId" = ${teamId}
+          OR "hostFurthest" = ${teamId}
+          OR ${teamId} = ANY("round32Teams")
+          OR ${teamId} = ANY("round16Teams")
+          OR ${teamId} = ANY("semifinalists")
+          OR ${teamId} = ANY("quarterfinalists")
+          OR ${teamId} = ANY("groupQualifiers")
+      `);
     }
 
     const resetPredictions = await tx.prediction.updateMany({
@@ -111,6 +158,8 @@ async function main() {
       matchesFound: matchIds.length,
       deletedMatches: Number(deletedMatches),
       deletedPredictions: Number(deletedPredictions),
+      clubTeamsFound: clubTeamIds.length,
+      clearedTournamentClubRefs,
       resetPredictions: resetPredictions.count,
       resetTournamentPicks: resetTournamentPicks.count,
       resetUsers: resetUsers.count,

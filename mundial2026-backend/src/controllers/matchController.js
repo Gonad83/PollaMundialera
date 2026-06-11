@@ -2,6 +2,7 @@ const prisma = require('../utils/prisma');
 
 // In-memory cache — teams never change during the tournament
 let _teamsCache = null;
+const EXCLUDED_TEAM_CODES = ['PSG', 'ARS'];
 
 // GET /api/matches — Lista de partidos con filtros opcionales
 const getMatches = async (req, res) => {
@@ -64,6 +65,7 @@ const getUpcoming = async (req, res) => {
 const getTeams = async (req, res) => {
   if (!_teamsCache) {
     _teamsCache = await prisma.team.findMany({
+      where: { code: { notIn: EXCLUDED_TEAM_CODES } },
       orderBy: [{ confederation: 'asc' }, { name: 'asc' }],
     });
   }
