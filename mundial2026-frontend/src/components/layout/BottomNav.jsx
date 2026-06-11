@@ -5,9 +5,14 @@ import { motion } from 'framer-motion'
 export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const { pathname, search } = useLocation()
   const navigate = useNavigate()
-  const currentGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
+  const routeGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
+  const storedGroupId = sessionStorage.getItem('lastGroupId') || localStorage.getItem('lastGroupId')
+  const currentGroupId = routeGroupId || (pathname.startsWith('/profile') ? storedGroupId : null)
   const hasItems = filteredNav.length > 0 || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
   if (!hasItems) return null
+  const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !currentGroupId && !headerActions.some(a => a.id === 'config')
+  const tabParam = new URLSearchParams(search).get('tab')
+  const anyGroupActionActive = headerActions.some(a => a.isActive)
 
   const openAdminPanel = () => {
     if (currentGroupId) {
@@ -18,35 +23,39 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   }
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-2 bg-mundial-navy/80 backdrop-blur-2xl border-t border-white/10 safe-area-bottom">
-      <div className="flex items-center justify-around max-w-lg mx-auto">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pb-6 pt-2 bg-mundial-navy/80 backdrop-blur-2xl border-t border-white/10 safe-area-bottom">
+      <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-lg mx-auto">
         {filteredNav.map(({ to, label }) => {
           const Icon = getIcon(label)
           const isSim = to === '/simulator'
+          const resolvedTo = (to === '/matches' && currentGroupId) ? `/groups/${currentGroupId}`
+            : (to === '/rules' && currentGroupId) ? `/groups/${currentGroupId}?tab=reglas`
+            : to
+          const itemActive = currentGroupId
+            ? (to === '/matches'
+                ? !anyGroupActionActive && (!tabParam || tabParam === 'resultados')
+                : to === '/rules'
+                  ? !anyGroupActionActive && tabParam === 'reglas'
+                  : pathname.startsWith(to))
+            : pathname.startsWith(to)
           return (
             <NavLink
               key={to}
-              to={to}
-              className={({ isActive }) =>
-                `flex flex-col items-center gap-1 p-2 transition-all relative ${
-                  isActive ? 'text-mundial-gold' : isSim ? 'text-mundial-gold/50' : 'text-zinc-500'
-                }`
-              }
+              to={resolvedTo}
+              className={`min-w-[72px] flex flex-col items-center gap-1 px-2 py-2 transition-all relative ${
+                itemActive ? 'text-mundial-gold' : isSim ? 'text-mundial-gold/50' : 'text-zinc-500'
+              }`}
             >
-              {({ isActive }) => (
-                <>
-                  {isSim && !isActive && (
-                    <span className="absolute -top-1 -right-0.5 w-1.5 h-1.5 bg-mundial-gold rounded-full animate-pulse" />
-                  )}
-                  <Icon size={20} strokeWidth={isActive ? 2.5 : isSim ? 2 : 2} />
-                  <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
-                  {isActive && (
-                    <motion.div
-                      layoutId="bottomTab"
-                      className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
-                    />
-                  )}
-                </>
+              {isSim && !itemActive && (
+                <span className="absolute -top-1 -right-0.5 w-1.5 h-1.5 bg-mundial-gold rounded-full animate-pulse" />
+              )}
+              <Icon size={20} strokeWidth={itemActive ? 2.5 : isSim ? 2 : 2} />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+              {itemActive && (
+                <motion.div
+                  layoutId="bottomTab"
+                  className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
+                />
               )}
             </NavLink>
           )
@@ -57,7 +66,7 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
           <button
             key={id}
             onClick={onClick}
-            className={`relative flex flex-col items-center gap-1 p-2 transition-all ${
+            className={`relative min-w-[72px] flex flex-col items-center gap-1 px-2 py-2 transition-all shrink-0 ${
               isActive ? 'text-mundial-gold' : 'text-zinc-500'
             }`}
           >
@@ -77,10 +86,10 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
           </button>
         ))}
 
-        {user?.role === 'SUPER_ADMIN' && (
+        {showGlobalAdmin && (
           <button
             onClick={openAdminPanel}
-            className={`flex flex-col items-center gap-1 p-2 transition-all ${
+            className={`min-w-[72px] flex flex-col items-center gap-1 px-2 py-2 transition-all shrink-0 ${
               pathname.startsWith('/admin') || new URLSearchParams(search).get('tab') === 'config'
                 ? 'text-mundial-gold'
                 : 'text-zinc-500'

@@ -198,6 +198,8 @@ export default function GroupDetailPage() {
   useEffect(() => {
     sessionStorage.setItem('lastGroupId', id)
     sessionStorage.setItem('lastGroupCanManage', actingAsAdmin ? 'true' : 'false')
+    localStorage.setItem('lastGroupId', id)
+    localStorage.setItem('lastGroupCanManage', actingAsAdmin ? 'true' : 'false')
   }, [id, actingAsAdmin])
 
   // Sincronizar activeTab con ?tab= de la URL.

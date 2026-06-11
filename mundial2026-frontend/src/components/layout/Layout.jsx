@@ -85,20 +85,26 @@ export default function Layout() {
   const isGroupDetail = /^\/groups\/[^/]+/.test(pathname)
   const routeGroupId = isGroupDetail ? pathname.match(/^\/groups\/([^/]+)/)?.[1] : null
   const isProfileRoute = pathname.startsWith('/profile')
-  const storedGroupId = typeof window !== 'undefined' ? sessionStorage.getItem('lastGroupId') : null
-  const storedCanManageGroup = typeof window !== 'undefined' && sessionStorage.getItem('lastGroupCanManage') === 'true'
+  const storedGroupId = typeof window !== 'undefined'
+    ? sessionStorage.getItem('lastGroupId') || localStorage.getItem('lastGroupId')
+    : null
+  const storedCanManageGroup = typeof window !== 'undefined'
+    && (sessionStorage.getItem('lastGroupCanManage') === 'true' || localStorage.getItem('lastGroupCanManage') === 'true')
   const currentGroupId = routeGroupId || (isProfileRoute ? storedGroupId : null)
   const fallbackHeaderActions = !isGroupDetail && isProfileRoute && currentGroupId
     ? [
         { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => navigate(`/groups/${currentGroupId}?tab=simulador`), isActive: false },
         { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => navigate(`/groups/${currentGroupId}?tab=messages`), isActive: false },
-        ...(storedCanManageGroup ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
+        ...(storedCanManageGroup || isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
       ]
     : []
   const effectiveHeaderActions = headerActions.length > 0 ? headerActions : fallbackHeaderActions
 
   useEffect(() => {
-    if (routeGroupId) sessionStorage.setItem('lastGroupId', routeGroupId)
+    if (routeGroupId) {
+      sessionStorage.setItem('lastGroupId', routeGroupId)
+      localStorage.setItem('lastGroupId', routeGroupId)
+    }
   }, [routeGroupId])
 
   const openAdminPanel = () => {
