@@ -75,16 +75,26 @@ export default function MatchesPage({ groupId }) {
   const worldCupMatchIds = useMemo(() => new Set(worldCupMatches.map(m => m.id)), [worldCupMatches])
   const hasLive = worldCupMatches.some(m => m.status === 'LIVE')
 
-  // All user predictions (always fetched — needed for list display and standings)
+  // Predicciones del usuario — filtradas por grupo si hay groupId
+  // Esto evita que se muestre el pronóstico de otro grupo para el mismo partido
   const { data: allMyPreds = [] } = useQuery({
-    queryKey: ['my-predictions-all'],
-    queryFn: () => predictionApi.my({}).then(r => r.data),
+    queryKey: ['my-predictions-all', groupId ?? 'global'],
+    queryFn: () => predictionApi.my(groupId ? { groupId } : {}).then(r => r.data),
   })
 
-  // Map: matchId → prediction (all groups, first found wins)
-  const allPredMap = useMemo(() => allMyPreds.reduce((acc, p) => {
-    if (!acc[p.matchId]) acc[p.matchId] = p; return acc
-  }, {}), [allMyPreds])
+  // Map: matchId → prediction del grupo actual (o global si no hay grupo)
+  const allPredMap = useMemo(() => {
+    const map = {}
+    // Primero indexar todas las predicciones
+    allMyPreds.forEach(p => { if (!map[p.matchId]) map[p.matchId] = p })
+    // Si hay groupId, priorizar las del grupo actual sobre las de otros grupos
+    if (groupId) {
+      allMyPreds.forEach(p => {
+        if (p.groupId === groupId) map[p.matchId] = p
+      })
+    }
+    return map
+  }, [allMyPreds, groupId])
 
   // List view always uses raw match data; predictions shown via pred prop in MatchRow
   const listMatches = phase
