@@ -15,9 +15,16 @@ function cellStyle(pred, matchFinished) {
   return { bg: 'bg-mundial-red/8', text: 'text-red-400/70', border: 'border-mundial-red/15' }
 }
 
-function PointsBadge({ pred, matchFinished }) {
+// Partido ya debería tener resultado (la fecha pasó) pero aún no se ingresó
+function isAwaitingResult(match) {
+  return match.status !== 'FINISHED' && match.status !== 'LIVE' && new Date(match.dateUtc) < new Date()
+}
+
+function PointsBadge({ pred, match }) {
+  const matchFinished = match.status === 'FINISHED'
   if (!pred) return <span className="text-zinc-700 text-[10px]">—</span>
   const style = cellStyle(pred, matchFinished)
+  const awaiting = isAwaitingResult(match)
   return (
     <div className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg border ${style.bg} ${style.border} min-w-[46px]`}>
       <span className={`font-display text-sm leading-none ${style.text}`}>
@@ -26,6 +33,10 @@ function PointsBadge({ pred, matchFinished }) {
       {matchFinished ? (
         <span className={`text-[8px] font-black uppercase tracking-widest leading-none ${pred.pointsTotal > 0 ? style.text : 'text-zinc-700'}`}>
           {pred.pointsTotal > 0 ? `+${pred.pointsTotal}` : '0'}
+        </span>
+      ) : awaiting ? (
+        <span className="text-[8px] text-amber-500/80 uppercase tracking-widest leading-none">
+          s/res
         </span>
       ) : (
         <span className="text-[8px] text-zinc-600 uppercase tracking-widest leading-none flex items-center gap-0.5">
@@ -166,13 +177,14 @@ export default function CompareView({ groupId, members = [] }) {
       <div className="flex flex-wrap items-center gap-3 px-1">
         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Leyenda:</span>
         {[
-          { bg: 'bg-mundial-gold/15', border: 'border-mundial-gold/30', text: 'text-mundial-gold', label: 'Exacto' },
-          { bg: 'bg-green-500/10',    border: 'border-green-500/25',    text: 'text-green-400',   label: 'Ganador' },
-          { bg: 'bg-mundial-red/8',   border: 'border-mundial-red/15',  text: 'text-red-400/70',  label: 'Fallo' },
-          { bg: 'bg-white/5',         border: 'border-white/10',        text: 'text-zinc-400',    label: 'Pendiente' },
-        ].map(({ bg, border, text, label }) => (
+          { bg: 'bg-mundial-gold/15', border: 'border-mundial-gold/30', text: 'text-mundial-gold',    label: 'Exacto',      icon: null },
+          { bg: 'bg-green-500/10',    border: 'border-green-500/25',    text: 'text-green-400',       label: 'Ganador',     icon: null },
+          { bg: 'bg-mundial-red/8',   border: 'border-mundial-red/15',  text: 'text-red-400/70',      label: 'Fallo',       icon: null },
+          { bg: 'bg-white/5',         border: 'border-white/10',        text: 'text-zinc-400',        label: 'Pendiente',   icon: <Clock size={9} /> },
+          { bg: 'bg-amber-500/8',     border: 'border-amber-500/20',    text: 'text-amber-500/80',    label: 'Sin resultado', icon: null },
+        ].map(({ bg, border, text, label, icon }) => (
           <span key={label} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border ${bg} ${border} text-[9px] font-black uppercase tracking-widest ${text}`}>
-            {label === 'Pendiente' && <Clock size={9} />}{label}
+            {icon}{label}
           </span>
         ))}
       </div>
@@ -192,6 +204,7 @@ export default function CompareView({ groupId, members = [] }) {
                   const homeCode = match.teamHome?.code?.toUpperCase() || '?'
                   const awayCode = match.teamAway?.code?.toUpperCase() || '?'
                   const isFinished = match.status === 'FINISHED'
+                  const awaiting = isAwaitingResult(match)
                   return (
                     <th key={match.id} className="px-2 py-2 min-w-[70px] text-center border-r border-white/5 last:border-r-0">
                       <div className="flex flex-col items-center gap-1">
@@ -202,6 +215,10 @@ export default function CompareView({ groupId, members = [] }) {
                         {isFinished ? (
                           <span className="text-[10px] font-display text-mundial-gold leading-none">
                             {match.scoreHome}–{match.scoreAway}
+                          </span>
+                        ) : awaiting ? (
+                          <span className="text-[9px] text-amber-500/80 flex items-center gap-0.5 leading-none font-black">
+                            S/RES
                           </span>
                         ) : (
                           <span className="text-[9px] text-zinc-500 flex items-center gap-0.5 leading-none">
@@ -253,7 +270,7 @@ export default function CompareView({ groupId, members = [] }) {
                         <div className="flex justify-center">
                           <PointsBadge
                             pred={userPreds[match.id]}
-                            matchFinished={match.status === 'FINISHED'}
+                            match={match}
                           />
                         </div>
                       </td>
