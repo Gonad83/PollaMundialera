@@ -283,8 +283,20 @@ const updateGroupPremium = async (req, res) => {
 // [ADMIN] DELETE /api/admin/groups/:id
 const deleteGroup = async (req, res) => {
   if (req.user.role !== 'SUPER_ADMIN') return res.status(403).json({ error: 'Prohibido' });
+
+  const { confirm } = req.query; // ?confirm=true requerido para borrar con picks activos
+
+  // Advertir si el grupo tiene pronósticos del torneo guardados
+  const picksCount = await prisma.tournamentPicks.count({ where: { groupId: req.params.id } });
+  if (picksCount > 0 && confirm !== 'true') {
+    return res.status(409).json({
+      error: `Este grupo tiene ${picksCount} pronóstico(s) de torneo. Agrega ?confirm=true para confirmar el borrado.`,
+      picksCount,
+    });
+  }
+
   await prisma.group.delete({ where: { id: req.params.id } });
-  return res.json({ message: 'Grupo eliminado' });
+  return res.json({ message: 'Grupo eliminado', picksDeleted: picksCount });
 };
 
 // [ADMIN] POST /api/admin/open-pool — Crear o activar Polla Abierta

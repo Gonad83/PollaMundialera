@@ -29,6 +29,7 @@ export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
+  const [picksReady, setPicksReady] = useState(false) // picks + equipos cargados
   const isTournamentLocked = Date.now() > TOURNAMENT_DEADLINE.getTime()
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
@@ -82,13 +83,14 @@ export default function TournamentPage({ groupId }) {
   }, [teams])
 
   useEffect(() => {
-    if (myPicks && Object.keys(myPicks).length > 0) {
+    if (myPicks) {
       setForm(f => ({ ...f, ...myPicks }))
       try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(myPicks)) } catch {}
     }
   }, [myPicks, groupId])
 
   useEffect(() => {
+    // Sólo corre cuando la lista de equipos está lista (no depende de myPicks)
     if (!tournamentTeams.length) return
 
     const validIds = new Set(tournamentTeams.map(t => t.id))
@@ -113,13 +115,19 @@ export default function TournamentPage({ groupId }) {
       mostGoalsTeamId: keepId(f.mostGoalsTeamId),
       leastGoalsTeamId: keepId(f.leastGoalsTeamId),
     }))
-  }, [tournamentTeams, myPicks])
+
+    // Marcar como listo sólo cuando picks Y equipos están disponibles
+    if (myPicks !== undefined) setPicksReady(true)
+  }, [tournamentTeams]) // myPicks NO va aquí — no se usa dentro del efecto
 
   const mutation = useMutation({
-    mutationFn: (data) => tournamentApi.savePicks({ ...data, groupId }),
+    mutationFn: (data) => {
+      if (!picksReady) throw new Error('Los datos aún no están listos para guardar')
+      return tournamentApi.savePicks({ ...data, groupId })
+    },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['my-tournament-picks'] })
-      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(data)) } catch {}
+      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(data.data ?? data)) } catch {}
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     },
@@ -222,11 +230,11 @@ export default function TournamentPage({ groupId }) {
         <div className="hidden md:block">
             <button
               onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending || isTournamentLocked}
-              className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${isTournamentLocked ? 'opacity-60 cursor-not-allowed grayscale' : saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
+              disabled={mutation.isPending || isTournamentLocked || !picksReady}
+              className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${isTournamentLocked ? 'opacity-60 cursor-not-allowed grayscale' : !picksReady ? 'opacity-50 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
             >
               {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-              <span className="font-black tracking-widest text-xs">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : saved ? '¡PRONÓSTICOS GUARDADOS!' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
+              <span className="font-black tracking-widest text-xs">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? '¡PRONÓSTICOS GUARDADOS!' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
             </button>
         </div>
       </div>
@@ -448,12 +456,12 @@ export default function TournamentPage({ groupId }) {
          >
             <button
               onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending || isTournamentLocked}
+              disabled={mutation.isPending || isTournamentLocked || !picksReady}
               className={`w-full py-5 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-3 transition-all
-                ${isTournamentLocked ? 'bg-zinc-700 text-zinc-300 border-zinc-600 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
+                ${isTournamentLocked ? 'bg-zinc-700 text-zinc-300 border-zinc-600 cursor-not-allowed' : !picksReady ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
             >
               {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-              <span className="uppercase tracking-[0.2em] text-[10px]">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
+              <span className="uppercase tracking-[0.2em] text-[10px]">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
             </button>
          </motion.div>
       </div>

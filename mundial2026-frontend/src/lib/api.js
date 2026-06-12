@@ -115,7 +115,7 @@ export const adminApi = {
   getUsers:        ()          => api.get('/admin/users'),
   sendBroadcast:   (data)      => api.post('/admin/broadcast', data),
   setPremium:      (id, data)  => api.patch(`/admin/groups/${id}/premium`, data),
-  deleteGroup:     (id)        => api.delete(`/admin/groups/${id}`),
+  deleteGroup:     (id, force = false) => api.delete(`/admin/groups/${id}${force ? '?confirm=true' : ''}`),
   setUserPlan:     (id, plan)  => api.patch(`/admin/users/${id}/plan`, { plan }),
   createOpenPool:  ()          => api.post('/admin/open-pool'),
 }

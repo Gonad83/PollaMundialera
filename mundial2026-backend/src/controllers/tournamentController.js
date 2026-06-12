@@ -57,9 +57,30 @@ const savePicks = async (req, res) => {
     return res.status(400).json({ error: parsed.error.errors[0].message });
   }
 
+  // Proteger arrays existentes: no sobrescribir con array vacío si ya había datos.
+  // Un array [] en el body significa "sin cambio", no "borrar todo".
+  // El único camino para vaciar un array es desmarcar equipos uno a uno en la UI.
+  const ARRAY_FIELDS = ['round32Teams', 'round16Teams', 'semifinalists', 'quarterfinalists', 'groupQualifiers'];
+  const existing = await prisma.tournamentPicks.findUnique({
+    where: { userId_groupId: { userId: req.user.id, groupId } },
+    select: Object.fromEntries(ARRAY_FIELDS.map(f => [f, true])),
+  });
+
+  const updateData = { ...parsed.data };
+  if (existing) {
+    for (const field of ARRAY_FIELDS) {
+      const incoming = updateData[field];
+      const stored   = existing[field];
+      if (Array.isArray(incoming) && incoming.length === 0 &&
+          Array.isArray(stored)   && stored.length > 0) {
+        delete updateData[field]; // no pisar datos reales con array vacío
+      }
+    }
+  }
+
   const picks = await prisma.tournamentPicks.upsert({
     where: { userId_groupId: { userId: req.user.id, groupId } },
-    update: parsed.data,
+    update: updateData,
     create: { userId: req.user.id, groupId, ...parsed.data },
   });
 

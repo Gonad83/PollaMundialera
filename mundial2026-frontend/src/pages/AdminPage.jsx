@@ -122,11 +122,24 @@ export default function AdminPage() {
   })
 
   const deleteGroupMut = useMutation({
-    mutationFn: (id) => adminApi.deleteGroup(id),
+    mutationFn: async (id) => {
+      try {
+        return await adminApi.deleteGroup(id)
+      } catch (err) {
+        if (err.response?.status === 409) {
+          const { picksCount } = err.response.data
+          const ok = confirm(`⚠️ Esta liga tiene ${picksCount} pronóstico(s) de torneo guardados.\n\n¿Confirmas que quieres eliminar la liga y BORRAR esos pronósticos permanentemente?`)
+          if (!ok) throw new Error('cancelado')
+          return adminApi.deleteGroup(id, true)
+        }
+        throw err
+      }
+    },
     onSuccess: () => {
       showFeedback('Liga eliminada del sistema', 'error')
       qc.invalidateQueries({ queryKey: ['groups-admin-list'] })
-    }
+    },
+    onError: (err) => { if (err.message !== 'cancelado') showFeedback(err.response?.data?.error || 'Error al eliminar', 'error') },
   })
 
   const broadcastMut = useMutation({
