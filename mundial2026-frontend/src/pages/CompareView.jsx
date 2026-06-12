@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { BarChart3, Clock, LockKeyhole, Trophy } from 'lucide-react'
+import { BarChart3, CheckCircle2, Clock, LockKeyhole, Trophy } from 'lucide-react'
 import { matchApi, predictionApi, tournamentApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
 
@@ -90,12 +90,16 @@ export default function CompareView({ groupId, members = [] }) {
     return map
   }, [rawPreds])
 
+  const finishedMatches = useMemo(() => matches.filter(m => m.status === 'FINISHED'), [matches])
+  const pendingMatches  = useMemo(() => matches.filter(m => m.status !== 'FINISHED'), [matches])
+
   // Filtrar SUPER_ADMIN y ordenar por puntos totales en el comparativo
   const visibleMembers = useMemo(() => {
     const filtered = members.filter(m => m.user?.role !== 'SUPER_ADMIN')
     return filtered.map(m => ({
       ...m,
-      totalCompPts: matches.reduce((acc, match) => acc + (predMap[m.userId]?.[match.id]?.pointsTotal ?? 0), 0),
+      totalCompPts:    matches.reduce((acc, match) => acc + (predMap[m.userId]?.[match.id]?.pointsTotal ?? 0), 0),
+      pendingPredCount: pendingMatches.filter(match => predMap[m.userId]?.[match.id]).length,
     })).sort((a, b) => b.totalCompPts - a.totalCompPts)
   }, [members, matches, predMap])
 
@@ -174,6 +178,14 @@ export default function CompareView({ groupId, members = [] }) {
 
       {mode === 'matches' && matches.length > 0 && (
         <>
+      {/* Resumen jugados vs por jugar */}
+      <MatchProgressSummary
+        finished={finishedMatches.length}
+        pending={pendingMatches.length}
+        total={matches.length}
+        members={visibleMembers}
+      />
+
       {/* Leyenda */}
       <div className="flex flex-wrap items-center gap-3 px-1">
         <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Leyenda:</span>
@@ -294,6 +306,77 @@ export default function CompareView({ groupId, members = [] }) {
         </>
       )}
     </motion.div>
+  )
+}
+
+function MatchProgressSummary({ finished, pending, total, members }) {
+  const pct = total > 0 ? Math.round((finished / total) * 100) : 0
+  const leader = members[0]
+
+  return (
+    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-3">
+      {/* Fila de stats */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-mundial-gold/20 bg-mundial-gold/8 px-3 py-2.5">
+          <CheckCircle2 size={14} className="text-mundial-gold" />
+          <span className="font-display text-2xl leading-none text-mundial-gold">{finished}</span>
+          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Jugados</span>
+        </div>
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+          <Clock size={14} className="text-amber-500/70" />
+          <span className="font-display text-2xl leading-none text-amber-400/80">{pending}</span>
+          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Por jugar</span>
+        </div>
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-white/8 bg-white/5 px-3 py-2.5">
+          <BarChart3 size={14} className="text-zinc-500" />
+          <span className="font-display text-2xl leading-none text-zinc-300">{total}</span>
+          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Total apuestas</span>
+        </div>
+      </div>
+
+      {/* Barra de progreso */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Progreso del torneo</span>
+          <span className="text-[9px] font-black text-mundial-gold">{pct}%</span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-white/8 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-mundial-gold"
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+          />
+        </div>
+      </div>
+
+      {/* Líder actual (si hay partidos jugados) */}
+      {finished > 0 && leader && (
+        <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Va ganando</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded-md bg-mundial-gold/15 flex items-center justify-center text-[9px] font-black text-mundial-gold">
+                {leader.user?.username?.[0]?.toUpperCase()}
+              </div>
+              <span className="text-[11px] font-black text-white">{leader.user?.username}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 block">pts actuales</span>
+              <span className="font-display text-base text-mundial-gold leading-none">{leader.totalCompPts}</span>
+            </div>
+            {leader.pendingPredCount > 0 && (
+              <div className="text-right">
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 block">apuestas abiertas</span>
+                <span className="font-display text-base text-amber-400/80 leading-none">{leader.pendingPredCount}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
