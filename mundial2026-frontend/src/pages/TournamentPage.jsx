@@ -275,19 +275,19 @@ export default function TournamentPage({ groupId }) {
         ))}
       </div>
 
-      {/* Modern Section Tabs */}
-      <div className="flex p-1.5 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-xl mb-12 overflow-x-auto no-scrollbar">
+      {/* Modern Section Tabs — móvil: 3 columnas con ícono arriba, desktop: pills */}
+      <div className="grid grid-cols-3 sm:flex p-1.5 gap-1 sm:gap-0 rounded-[2rem] bg-white/5 border border-white/5 backdrop-blur-xl mb-8 md:mb-12">
         {SECTIONS.map((s) => (
           <button
             key={s.key}
             onClick={() => setSection(s.key)}
-            className={`flex-1 min-w-[140px] py-4 px-4 rounded-3xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3
-              ${section === s.key 
-                ? 'bg-mundial-gold text-mundial-navy shadow-2xl shadow-mundial-gold/20' 
+            className={`sm:flex-1 sm:min-w-[140px] py-3 sm:py-4 px-1 sm:px-4 rounded-2xl sm:rounded-3xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-[0.2em] transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-3
+              ${section === s.key
+                ? 'bg-mundial-gold text-mundial-navy shadow-2xl shadow-mundial-gold/20'
                 : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
           >
             <s.icon size={16} />
-            {s.label}
+            <span className="leading-none text-center">{s.label}</span>
           </button>
         ))}
       </div>

@@ -181,9 +181,9 @@ export default function AdminPage() {
   return (
     <div className="flex flex-col lg:flex-row gap-8 min-h-[80vh]">
       
-      {/* Admin Sidebar */}
+      {/* Admin Sidebar — desktop: columna sticky · móvil: header compacto + pills deslizables */}
       <aside className="w-full lg:w-72 shrink-0">
-        <div className="sticky top-28 space-y-6">
+        <div className="lg:sticky lg:top-28 space-y-4 lg:space-y-6">
           {/* Botón volver */}
           <button
             onClick={() => fromPath ? navigate(fromPath) : navigate(-1)}
@@ -194,28 +194,28 @@ export default function AdminPage() {
           </button>
 
           <div className="flex items-center gap-4 px-2">
-             <div className="w-12 h-12 rounded-2xl bg-mundial-gold/20 flex items-center justify-center text-mundial-gold border border-mundial-gold/30">
-               <ShieldCheck size={24} />
+             <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-2xl bg-mundial-gold/20 flex items-center justify-center text-mundial-gold border border-mundial-gold/30 shrink-0">
+               <ShieldCheck size={22} />
              </div>
              <div>
-               <h1 className="font-display text-xl text-white">CENTRO DE MANDO</h1>
+               <h1 className="font-display text-lg lg:text-xl text-white">CENTRO DE MANDO</h1>
                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mt-1 italic">SaaS Administrator Area</p>
              </div>
           </div>
 
-          <nav className="flex flex-col gap-1">
+          <nav className="flex lg:flex-col gap-1 overflow-x-auto no-scrollbar -mx-4 px-4 lg:mx-0 lg:px-0 pb-1 lg:pb-0">
              {TABS.map(tab => (
                <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-5 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all
-                  ${activeTab === tab.id 
-                    ? 'bg-mundial-gold text-mundial-navy shadow-xl shadow-mundial-gold/20' 
+                className={`flex items-center gap-2 lg:gap-3 px-4 lg:px-5 py-2.5 lg:py-4 rounded-2xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all shrink-0 lg:shrink whitespace-nowrap
+                  ${activeTab === tab.id
+                    ? 'bg-mundial-gold text-mundial-navy shadow-xl shadow-mundial-gold/20'
                     : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
                >
-                 <tab.icon size={18} />
+                 <tab.icon size={16} />
                  {tab.label}
-                 {activeTab === tab.id && <motion.div layoutId="adm-active" className="ml-auto w-1.5 h-1.5 bg-mundial-navy rounded-full" />}
+                 {activeTab === tab.id && <motion.div layoutId="adm-active" className="ml-auto hidden lg:block w-1.5 h-1.5 bg-mundial-navy rounded-full" />}
                </button>
              ))}
           </nav>
@@ -633,12 +633,12 @@ function MatchesTab({
       </div>
 
       {/* Status filter tabs */}
-      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5">
+      <div className="flex gap-1 p-1 bg-white/5 rounded-2xl border border-white/5 overflow-x-auto no-scrollbar">
         {STATUS_TABS.map(({ id, label, count }) => (
           <button
             key={id}
             onClick={() => setMatchStatusFilter(id)}
-            className={`flex-1 py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-[9px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex items-center justify-center gap-1 sm:gap-1.5 shrink-0 sm:shrink whitespace-nowrap
               ${matchStatusFilter === id ? 'bg-mundial-gold text-mundial-navy' : 'text-zinc-500 hover:text-white'}`}
           >
             {label}

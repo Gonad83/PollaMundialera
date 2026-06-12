@@ -428,12 +428,13 @@ export default function GroupDetailPage() {
   const rest = leaderboard.filter(e => e.rank > 3)
 
   // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
+  // shortLabel: versión corta para móvil (los 5 tabs deben caber sin scroll)
   const tabs = [
-    { id: 'resultados', label: 'Pronóstico partidos',    icon: Calendar },
-    { id: 'premios',    label: 'Pronóstico torneo',       icon: Trophy },
-    { id: 'ranking',    label: 'Ranking',      icon: BarChart3 },
-    { id: 'comparar',   label: 'Comparativa',  icon: Star },
-    { id: 'liga',       label: 'Participantes', icon: Users },
+    { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
+    { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
+    { id: 'ranking',    label: 'Ranking',             shortLabel: 'Ranking',  icon: BarChart3 },
+    { id: 'comparar',   label: 'Comparativa',         shortLabel: 'Comparar', icon: Star },
+    { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
   return (
@@ -666,13 +667,17 @@ export default function GroupDetailPage() {
         </motion.div>
       )}
 
-      <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-6 overflow-x-auto no-scrollbar">
-        {tabs.map(({ id: tabId, label, icon: Icon }) => (
+      {/* Móvil: grid 5 columnas con ícono arriba (todos visibles) · Desktop: pills horizontales */}
+      <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5 mb-6">
+        {tabs.map(({ id: tabId, label, shortLabel, icon: Icon }) => (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2
+            className={`sm:flex-1 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
               ${activeTab === tabId ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
           >
-            <Icon size={13} /> {label}
+            <Icon size={15} className="sm:hidden" />
+            <Icon size={13} className="hidden sm:block" />
+            <span className="sm:hidden leading-none">{shortLabel}</span>
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>

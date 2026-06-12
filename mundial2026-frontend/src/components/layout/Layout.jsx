@@ -224,8 +224,8 @@ export default function Layout() {
               <div className="absolute -inset-2 bg-mundial-gold opacity-0 blur-xl rounded-full group-hover:opacity-20 transition" />
             </div>
             <div className="flex flex-col">
-              <span className="font-display text-xl md:text-2xl text-white leading-none tracking-tight">QUIÉN <span className="text-mundial-gold">GANA</span></span>
-              <span className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase mt-1">World Cup 2026</span>
+              <span className="font-display text-lg sm:text-xl md:text-2xl text-white leading-none tracking-tight">QUIÉN <span className="text-mundial-gold">GANA</span></span>
+              <span className="hidden sm:block text-[10px] text-zinc-500 font-mono tracking-widest uppercase mt-1">World Cup 2026</span>
             </div>
           </NavLink>
 
@@ -358,7 +358,7 @@ export default function Layout() {
                 }
               }}
               title={notifPerm === 'granted' ? `Recordatorios activos (${activeCount} partidos)` : notifPerm === 'denied' ? 'Notificaciones bloqueadas' : 'Activar recordatorios de partidos'}
-              className={`relative hidden md:flex w-10 h-10 items-center justify-center rounded-full transition-all border
+              className={`relative flex w-9 h-9 md:w-10 md:h-10 items-center justify-center rounded-full transition-all border
                 ${notifPerm === 'granted'
                   ? 'text-mundial-gold border-mundial-gold/20 bg-mundial-gold/8 hover:bg-mundial-gold/15'
                   : notifPerm === 'denied'
@@ -380,10 +380,11 @@ export default function Layout() {
 
             <button
               onClick={logout}
-              className="hidden md:flex w-10 h-10 items-center justify-center rounded-full text-zinc-500 hover:text-mundial-red hover:bg-mundial-red/10 transition-all border border-transparent hover:border-mundial-red/20"
+              className="flex w-9 h-9 md:w-10 md:h-10 items-center justify-center rounded-full text-zinc-500 hover:text-mundial-red hover:bg-mundial-red/10 transition-all border border-transparent hover:border-mundial-red/20"
               title="Cerrar sesión"
             >
-              <LogOut size={20} />
+              <LogOut size={18} className="md:hidden" />
+              <LogOut size={20} className="hidden md:block" />
             </button>
           </div>
         </div>
