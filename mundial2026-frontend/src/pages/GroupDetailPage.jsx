@@ -621,83 +621,7 @@ export default function GroupDetailPage() {
       </AnimatePresence>
 
 
-      {/* ── Admin quick metrics ── */}
-      {actingAsAdmin && (
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {/* Miembros */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-            className="relative overflow-hidden rounded-2xl p-4 text-center border border-white/10 bg-gradient-to-br from-white/8 to-white/3"
-            style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}
-          >
-            <div className="absolute top-0 right-0 w-16 h-16 rounded-full bg-blue-500/10 blur-xl -mr-4 -mt-4 pointer-events-none" />
-            <div className="flex items-center justify-center mb-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
-                <UserCheck size={14} className="text-blue-400" />
-              </div>
-            </div>
-            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Miembros</p>
-            <p className="font-display text-2xl text-white leading-none">{memberCount}</p>
-            <p className="text-[9px] text-zinc-500 mt-1 font-bold">de {group.maxMembers}</p>
-            {/* Barra de progreso */}
-            <div className="mt-2 h-1 rounded-full bg-white/5 overflow-hidden">
-              <div className="h-full rounded-full bg-blue-400/60 transition-all" style={{ width: `${Math.min(100, (memberCount / group.maxMembers) * 100)}%` }} />
-            </div>
-          </motion.div>
-
-          {/* Plan */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="relative overflow-hidden rounded-2xl p-4 text-center border bg-gradient-to-br from-white/8 to-white/3"
-            style={{
-              borderColor: group.isPremium ? 'rgba(255,215,0,0.25)' : 'rgba(255,255,255,0.08)',
-              boxShadow: group.isPremium ? '0 4px 24px rgba(255,215,0,0.1)' : '0 4px 20px rgba(0,0,0,0.3)',
-            }}
-          >
-            <div className="absolute top-0 right-0 w-16 h-16 rounded-full blur-xl -mr-4 -mt-4 pointer-events-none"
-              style={{ background: group.isPremium ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.05)' }} />
-            <div className="flex items-center justify-center mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center border"
-                style={{
-                  background: group.isPremium ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.06)',
-                  borderColor: group.isPremium ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.1)',
-                }}>
-                <Zap size={14} style={{ color: group.isPremium ? '#FFD700' : '#71717a' }} />
-              </div>
-            </div>
-            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Plan</p>
-            <p className="font-display text-2xl leading-none" style={{ color: group.isPremium ? '#FFD700' : '#a1a1aa' }}>{planLabel}</p>
-            <p className="text-[9px] text-zinc-500 mt-1 font-bold">{planPrice}</p>
-          </motion.div>
-
-          {/* Link */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="relative overflow-hidden rounded-2xl p-4 text-center border bg-gradient-to-br from-white/8 to-white/3"
-            style={{
-              borderColor: group.inviteActive ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.08)',
-              boxShadow: group.inviteActive ? '0 4px 24px rgba(52,211,153,0.08)' : '0 4px 20px rgba(0,0,0,0.3)',
-            }}
-          >
-            <div className="absolute top-0 right-0 w-16 h-16 rounded-full blur-xl -mr-4 -mt-4 pointer-events-none"
-              style={{ background: group.inviteActive ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)' }} />
-            <div className="flex items-center justify-center mb-2">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center border"
-                style={{
-                  background: group.inviteActive ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.06)',
-                  borderColor: group.inviteActive ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)',
-                }}>
-                <Globe size={14} className={group.inviteActive ? 'text-green-400' : 'text-zinc-600'} />
-              </div>
-            </div>
-            <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Link</p>
-            <p className={`font-display text-2xl leading-none ${group.inviteActive ? 'text-green-400' : 'text-mundial-red'}`}>
-              {group.inviteActive ? 'ACTIVO' : 'CERRADO'}
-            </p>
-            <p className="text-[9px] text-zinc-500 mt-1 font-bold">de invitación</p>
-          </motion.div>
-        </div>
-      )}
+      {/* ── Group metrics — visibles para todos los miembros ── */}
 
       {/* ── Tabs ── */}
       {group.paymentButtonEnabled && group.paymentLink && (
@@ -797,7 +721,86 @@ export default function GroupDetailPage() {
 
         {/* ── TAB: LIGA (Members) ── */}
         {activeTab === 'liga' && (
-          <motion.div key="members" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          <motion.div key="members" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
+
+            {/* Stats del grupo */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {/* Participantes */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.0 }}
+                className="relative overflow-hidden rounded-2xl p-4 text-center border border-white/10 bg-gradient-to-br from-white/8 to-white/3">
+                <div className="absolute top-0 right-0 w-14 h-14 rounded-full bg-blue-500/10 blur-xl -mr-3 -mt-3 pointer-events-none" />
+                <div className="flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+                    <UserCheck size={14} className="text-blue-400" />
+                  </div>
+                </div>
+                <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Miembros</p>
+                <p className="font-display text-2xl text-white leading-none">{memberCount}</p>
+                <p className="text-[9px] text-zinc-500 mt-1 font-bold">de {group.maxMembers}</p>
+                <div className="mt-2 h-1 rounded-full bg-white/5 overflow-hidden">
+                  <div className="h-full rounded-full bg-blue-400/60 transition-all" style={{ width: `${Math.min(100, (memberCount / group.maxMembers) * 100)}%` }} />
+                </div>
+              </motion.div>
+
+              {/* Monto Total */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className="relative overflow-hidden rounded-2xl p-4 text-center border border-green-400/20 bg-gradient-to-br from-green-400/8 to-white/3"
+                style={{ boxShadow: '0 4px 24px rgba(52,211,153,0.08)' }}>
+                <div className="absolute top-0 right-0 w-14 h-14 rounded-full bg-green-400/10 blur-xl -mr-3 -mt-3 pointer-events-none" />
+                <div className="flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 rounded-xl bg-green-400/15 border border-green-400/25 flex items-center justify-center">
+                    <CreditCard size={14} className="text-green-400" />
+                  </div>
+                </div>
+                <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Bote total</p>
+                <p className="font-display text-xl text-green-300 leading-none">{formatCLP(groupPaymentAmount * memberCount)}</p>
+                <p className="text-[9px] text-zinc-500 mt-1 font-bold">{formatCLP(groupPaymentAmount)} × {memberCount}</p>
+              </motion.div>
+
+              {/* Plan */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                className="relative overflow-hidden rounded-2xl p-4 text-center border bg-gradient-to-br from-white/8 to-white/3"
+                style={{
+                  borderColor: group.isPremium ? 'rgba(255,215,0,0.25)' : 'rgba(255,255,255,0.08)',
+                  boxShadow: group.isPremium ? '0 4px 24px rgba(255,215,0,0.1)' : '0 4px 20px rgba(0,0,0,0.3)',
+                }}>
+                <div className="absolute top-0 right-0 w-14 h-14 rounded-full blur-xl -mr-3 -mt-3 pointer-events-none"
+                  style={{ background: group.isPremium ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.05)' }} />
+                <div className="flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center border"
+                    style={{ background: group.isPremium ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.06)', borderColor: group.isPremium ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.1)' }}>
+                    <Zap size={14} style={{ color: group.isPremium ? '#FFD700' : '#71717a' }} />
+                  </div>
+                </div>
+                <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Plan</p>
+                <p className="font-display text-2xl leading-none" style={{ color: group.isPremium ? '#FFD700' : '#a1a1aa' }}>{planLabel}</p>
+                <p className="text-[9px] text-zinc-500 mt-1 font-bold">{planPrice}</p>
+              </motion.div>
+
+              {/* Link de invitación */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="relative overflow-hidden rounded-2xl p-4 text-center border bg-gradient-to-br from-white/8 to-white/3"
+                style={{
+                  borderColor: group.inviteActive ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.08)',
+                  boxShadow: group.inviteActive ? '0 4px 24px rgba(52,211,153,0.08)' : '0 4px 20px rgba(0,0,0,0.3)',
+                }}>
+                <div className="absolute top-0 right-0 w-14 h-14 rounded-full blur-xl -mr-3 -mt-3 pointer-events-none"
+                  style={{ background: group.inviteActive ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)' }} />
+                <div className="flex items-center justify-center mb-2">
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center border"
+                    style={{ background: group.inviteActive ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.06)', borderColor: group.inviteActive ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)' }}>
+                    <Globe size={14} className={group.inviteActive ? 'text-green-400' : 'text-zinc-600'} />
+                  </div>
+                </div>
+                <p className="text-[8px] text-zinc-500 font-black uppercase tracking-widest mb-1">Link</p>
+                <p className={`font-display text-2xl leading-none ${group.inviteActive ? 'text-green-400' : 'text-mundial-red'}`}>
+                  {group.inviteActive ? 'ACTIVO' : 'CERRADO'}
+                </p>
+                <p className="text-[9px] text-zinc-500 mt-1 font-bold">de invitación</p>
+              </motion.div>
+            </div>
+
+            {/* Lista de participantes */}
             <div className="card overflow-hidden bg-white/5 border border-white/5">
               <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between">
                 <h2 className="font-display text-lg text-white uppercase">Participantes</h2>
