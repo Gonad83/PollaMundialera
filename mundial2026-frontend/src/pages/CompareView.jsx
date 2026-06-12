@@ -62,7 +62,8 @@ export default function CompareView({ groupId, members = [] }) {
   const { data: rawPreds = [], isLoading } = useQuery({
     queryKey: ['group-compare', groupId],
     queryFn: () => predictionApi.compare(groupId).then(r => r.data),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
 
   const { data: teams = [] } = useQuery({

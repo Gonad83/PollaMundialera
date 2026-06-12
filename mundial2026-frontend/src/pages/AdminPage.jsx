@@ -98,6 +98,8 @@ export default function AdminPage() {
       setActiveMatch(null)
       qc.invalidateQueries({ queryKey: ['matches-all'] })
       qc.invalidateQueries({ queryKey: ['admin-dashboard'] })
+      qc.invalidateQueries({ queryKey: ['group-compare'] })
+      qc.invalidateQueries({ queryKey: ['leaderboard'] })
     },
     onError: (err) => showFeedback(err.response?.data?.error || 'Error al cargar resultado', 'error'),
   })
