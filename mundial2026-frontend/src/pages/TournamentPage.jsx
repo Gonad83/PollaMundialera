@@ -303,27 +303,41 @@ export default function TournamentPage({ groupId }) {
           {section === 'clasificacion' && (
             <div className="space-y-12">
               <PickSection title="Copa del Mundo" subtitle="Acertar el campeón suma 30 puntos vitales" pts="30 PTS" icon={Crown}>
-                <TeamGrid
-                  teams={tournamentTeams}
-                  selected={form.champion ? [form.champion] : []}
-                  onToggle={(id) => set('champion')(form.champion === id ? null : id)}
-                />
+                <KnockoutStage
+                  title="Campeón"
+                  detail="1 selección · 30 pts"
+                  selectedCount={form.champion ? 1 : 0}
+                  max={1}
+                >
+                  <TeamGrid
+                    teams={tournamentTeams}
+                    selected={form.champion ? [form.champion] : []}
+                    onToggle={(id) => set('champion')(form.champion === id ? null : id)}
+                  />
+                </KnockoutStage>
               </PickSection>
 
               <PickSection title="Final Mundialista" subtitle="Pronostica los 2 finalistas (15 pts c/u)" pts="30 PTS MÁX" icon={Shield}>
-                <TeamGrid
-                  teams={tournamentTeams}
-                  selected={[form.finalist1, form.finalist2].filter(Boolean)}
+                <KnockoutStage
+                  title="Finalistas"
+                  detail="2 selecciones · 15 pts c/u"
+                  selectedCount={[form.finalist1, form.finalist2].filter(Boolean).length}
                   max={2}
-                  onToggle={(id) => {
-                    const sel = [form.finalist1, form.finalist2].filter(Boolean)
-                    if (sel.includes(id)) {
-                      if (form.finalist1 === id) set('finalist1')(null)
-                      else set('finalist2')(null)
-                    } else if (!form.finalist1) set('finalist1')(id)
-                    else if (!form.finalist2) set('finalist2')(id)
-                  }}
-                />
+                >
+                  <TeamGrid
+                    teams={tournamentTeams}
+                    selected={[form.finalist1, form.finalist2].filter(Boolean)}
+                    max={2}
+                    onToggle={(id) => {
+                      const sel = [form.finalist1, form.finalist2].filter(Boolean)
+                      if (sel.includes(id)) {
+                        if (form.finalist1 === id) set('finalist1')(null)
+                        else set('finalist2')(null)
+                      } else if (!form.finalist1) set('finalist1')(id)
+                      else if (!form.finalist2) set('finalist2')(id)
+                    }}
+                  />
+                </KnockoutStage>
               </PickSection>
 
               <PickSection title="Camino al Título" subtitle="Pronostica semifinalistas, 4tos, 8vos y 16avos por etapa" pts="128 PTS MÁX" icon={Trophy}>
