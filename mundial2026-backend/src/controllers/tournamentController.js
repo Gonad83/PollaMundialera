@@ -23,7 +23,11 @@ const picksSchema = z.object({
   bestPlayerId:       z.string().optional().nullable(),
   bestKeeperId:       z.string().optional().nullable(),
   bestYoungId:        z.string().optional().nullable(),
-  totalGoals:         z.number().int().min(0).max(300).optional().nullable(),
+  // El input del frontend entrega string ("172" o "") — normalizar antes de validar
+  totalGoals:         z.preprocess(
+    (v) => (v === '' || v === null || v === undefined) ? null : Number(v),
+    z.number().int().min(0).max(300).nullable()
+  ).optional(),
   mostGoalsTeamId:    z.string().optional().nullable(),
   leastGoalsTeamId:   z.string().optional().nullable(),
   hostFurthest:       z.string().optional().nullable(),

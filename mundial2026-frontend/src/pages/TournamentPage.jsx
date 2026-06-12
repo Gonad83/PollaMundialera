@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { tournamentApi, matchApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown } from 'lucide-react'
@@ -29,7 +30,6 @@ export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
-  const [picksReady, setPicksReady] = useState(false) // picks + equipos cargados
   const isTournamentLocked = Date.now() > TOURNAMENT_DEADLINE.getTime()
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
@@ -38,7 +38,7 @@ export default function TournamentPage({ groupId }) {
     totalGoals: '', mostGoalsTeamId: null, leastGoalsTeamId: null, hostFurthest: null,
   })
 
-  const { data: myPicks, isLoading: loadingPicks } = useQuery({
+  const { data: myPicks, isLoading: loadingPicks, isFetched: picksFetched } = useQuery({
     queryKey: ['my-tournament-picks', groupId],
     queryFn: () => tournamentApi.myPicks({ groupId }).then(r => r.data),
     enabled: !!groupId,
@@ -82,6 +82,9 @@ export default function TournamentPage({ groupId }) {
     return Array.from(byName.values())
   }, [teams])
 
+  // Listo para guardar: picks confirmados desde el servidor + lista de equipos cargada
+  const picksReady = picksFetched && tournamentTeams.length > 0
+
   useEffect(() => {
     if (myPicks) {
       setForm(f => ({ ...f, ...myPicks }))
@@ -115,21 +118,28 @@ export default function TournamentPage({ groupId }) {
       mostGoalsTeamId: keepId(f.mostGoalsTeamId),
       leastGoalsTeamId: keepId(f.leastGoalsTeamId),
     }))
-
-    // Marcar como listo sólo cuando picks Y equipos están disponibles
-    if (myPicks !== undefined) setPicksReady(true)
-  }, [tournamentTeams]) // myPicks NO va aquí — no se usa dentro del efecto
+  }, [tournamentTeams])
 
   const mutation = useMutation({
     mutationFn: (data) => {
       if (!picksReady) throw new Error('Los datos aún no están listos para guardar')
-      return tournamentApi.savePicks({ ...data, groupId })
+      // El input numérico entrega string — el backend espera número o null
+      const rawGoals = data.totalGoals
+      const totalGoals = rawGoals === '' || rawGoals == null ? null : Number(rawGoals)
+      return tournamentApi.savePicks({
+        ...data,
+        totalGoals: Number.isFinite(totalGoals) ? totalGoals : null,
+        groupId,
+      })
     },
-    onSuccess: (data) => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['my-tournament-picks'] })
-      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(data.data ?? data)) } catch {}
+      try { localStorage.setItem(`tp_${groupId}`, JSON.stringify(res.data ?? res)) } catch {}
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.error || err.message || 'No se pudo guardar el pronóstico. Intenta de nuevo.')
     },
   })
 
