@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
 import { teamEsp, teamFlagUrl } from '../lib/teams'
@@ -103,24 +103,24 @@ export default function MatchesPage({ groupId }) {
     ? worldCupMatches.filter(m => m.phase === phase)
     : worldCupMatches
 
-  // Ordenar por relevancia: EN VIVO primero → próximos (ASC) → finalizados (DESC)
-  const sortedListMatches = useMemo(() => {
-    return [...listMatches].sort((a, b) => {
-      const sa = STATUS_ORDER[a.status] ?? 1
-      const sb = STATUS_ORDER[b.status] ?? 1
-      if (sa !== sb) return sa - sb
-      const da = new Date(a.dateUtc)
-      const db = new Date(b.dateUtc)
-      return a.status === 'FINISHED' ? db - da : da - db
-    })
-  }, [listMatches])
-
-  const grouped = sortedListMatches.reduce((acc, m) => {
+  const grouped = listMatches.reduce((acc, m) => {
     const day = fmtChileDay(m.dateUtc)
     if (!acc[day]) acc[day] = []
     acc[day].push(m)
     return acc
   }, {})
+
+  // Auto-scroll al primer partido en vivo o próximo al cargar
+  const anchorMatchId = useMemo(() => {
+    const live = listMatches.find(m => m.status === 'LIVE')
+    return live?.id ?? listMatches.find(m => m.status === 'SCHEDULED')?.id ?? null
+  }, [listMatches])
+  const anchorRef = useRef(null)
+  useEffect(() => {
+    if (!isLoading && anchorRef.current) {
+      setTimeout(() => anchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
+    }
+  }, [isLoading, anchorMatchId])
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
@@ -298,7 +298,7 @@ export default function MatchesPage({ groupId }) {
               </div>
               <div className="grid gap-4">
                 {dayMatches.map(match => (
-                  <motion.div key={match.id} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                  <motion.div key={match.id} ref={match.id === anchorMatchId ? anchorRef : undefined} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                     <MatchRow
                       match={match}
                       pred={allPredMap[match.id]}
