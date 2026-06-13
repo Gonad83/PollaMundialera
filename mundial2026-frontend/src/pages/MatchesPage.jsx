@@ -35,6 +35,8 @@ const isClubTestMatch = (match) => {
 
 const isNonWorldCupMatch = (match) => isFriendlyMatch(match) || isClubTestMatch(match)
 
+const STATUS_ORDER = { LIVE: 0, SCHEDULED: 1, FINISHED: 2 }
+
 const STATUS_COLORS = {
   SCHEDULED: 'text-zinc-500 bg-white/5 border-white/5',
   LIVE: 'text-mundial-red bg-mundial-red/10 border-mundial-red/20',
@@ -101,7 +103,19 @@ export default function MatchesPage({ groupId }) {
     ? worldCupMatches.filter(m => m.phase === phase)
     : worldCupMatches
 
-  const grouped = listMatches.reduce((acc, m) => {
+  // Ordenar por relevancia: EN VIVO primero → próximos (ASC) → finalizados (DESC)
+  const sortedListMatches = useMemo(() => {
+    return [...listMatches].sort((a, b) => {
+      const sa = STATUS_ORDER[a.status] ?? 1
+      const sb = STATUS_ORDER[b.status] ?? 1
+      if (sa !== sb) return sa - sb
+      const da = new Date(a.dateUtc)
+      const db = new Date(b.dateUtc)
+      return a.status === 'FINISHED' ? db - da : da - db
+    })
+  }, [listMatches])
+
+  const grouped = sortedListMatches.reduce((acc, m) => {
     const day = fmtChileDay(m.dateUtc)
     if (!acc[day]) acc[day] = []
     acc[day].push(m)
