@@ -20,8 +20,8 @@ const SECTIONS = [
   { key: 'estadisticas',  label: 'DATOS MAESTROS',   icon: BarChart3 },
 ]
 
-const TOURNAMENT_DEADLINE = new Date('2026-06-13T19:00:00.000Z')
-const TOURNAMENT_DEADLINE_LABEL = 'SÁBADO 13 JUN 2026 · 15:00 HRS CHILE'
+const TOURNAMENT_DEADLINE = new Date('2026-06-15T19:00:00.000Z')
+const TOURNAMENT_DEADLINE_LABEL = 'DOMINGO 15 JUN 2026 · 15:00 HRS CHILE'
 // CUR es alias duplicado de Curazao (CUW) — excluir del selector para evitar bandera repetida
 // NGA, CRC, BOL son equipos amistosos que no juegan el Mundial
 const EXCLUDED_TOURNAMENT_TEAM_CODES = new Set(['NGA', 'CRC', 'BOL', 'CUR'])

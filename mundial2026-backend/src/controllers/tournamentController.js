@@ -1,9 +1,9 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 
-// Sabado 13 de junio de 2026, 15:00 hora chilena (CLT, UTC-4).
+// Domingo 15 de junio de 2026, 15:00 hora chilena (CLT, UTC-4).
 // Puede sobreescribirse con TOURNAMENT_DEADLINE si hiciera falta.
-const DEFAULT_TOURNAMENT_DEADLINE = '2026-06-13T19:00:00.000Z';
+const DEFAULT_TOURNAMENT_DEADLINE = '2026-06-15T19:00:00.000Z';
 const TOURNAMENT_DEADLINE_ENV = process.env.TOURNAMENT_DEADLINE || DEFAULT_TOURNAMENT_DEADLINE;
 
 const isTournamentLocked = () => {
