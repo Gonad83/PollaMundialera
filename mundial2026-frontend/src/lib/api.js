@@ -112,6 +112,7 @@ export const adminApi = {
   setStatus:       (id, status) => api.put(`/admin/matches/${id}/status`, { status }),
   setAwards:       (data)      => api.post('/admin/tournament/awards', data),
   syncMatches:     (params)    => api.post('/admin/sync', null, { params }),
+  rebuildLeaderboard: ()       => api.post('/admin/leaderboard/rebuild'),
   getUsers:        ()          => api.get('/admin/users'),
   sendBroadcast:   (data)      => api.post('/admin/broadcast', data),
   setPremium:      (id, data)  => api.patch(`/admin/groups/${id}/premium`, data),

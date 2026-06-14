@@ -160,6 +160,11 @@ export default function AdminPage() {
     }
   })
 
+  const rebuildMut = useMutation({
+    mutationFn: () => adminApi.rebuildLeaderboard(),
+    onSuccess: () => showFeedback('Ranking reconstruido ✓ — Puntos por partidos no apostados aplicados a todos'),
+  })
+
   const setPlanMut = useMutation({
     mutationFn: ({ id, plan }) => adminApi.setUserPlan(id, plan),
     onSuccess: () => {
@@ -545,6 +550,21 @@ export default function AdminPage() {
                           {syncMut.isPending ? 'Sincronizando...' : 'Iniciar Sincronización API'}
                        </button>
                      </div>
+                  </div>
+               </PickSection>
+
+               <PickSection title="Reconstruir Ranking" subtitle="Aplica la regla de 1 pto por partido no apostado a todos los usuarios" icon={BarChart3}>
+                  <div className="flex flex-col gap-4">
+                     <p className="text-sm text-zinc-500 leading-relaxed font-bold uppercase tracking-widest bg-white/5 p-6 rounded-3xl border border-white/5">
+                       Recalcula el ranking completo (global y por grupos) aplicando <span className="text-mundial-gold">+1 punto</span> por cada partido finalizado que el usuario no apostó.
+                     </p>
+                     <button
+                       onClick={() => { if (confirm('¿Reconstruir el ranking con la regla de puntos no apostados?')) rebuildMut.mutate() }}
+                       disabled={rebuildMut.isPending}
+                       className="py-5 rounded-[2rem] bg-mundial-gold/10 border border-mundial-gold/30 text-mundial-gold font-black text-[10px] uppercase tracking-[0.2em] hover:bg-mundial-gold hover:text-mundial-navy hover:border-mundial-gold transition-all disabled:opacity-50"
+                     >
+                       {rebuildMut.isPending ? 'Reconstruyendo...' : 'Reconstruir Ranking Ahora'}
+                     </button>
                   </div>
                </PickSection>
 
