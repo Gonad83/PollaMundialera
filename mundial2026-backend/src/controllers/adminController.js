@@ -152,14 +152,21 @@ const processBonuses = async (matchId) => {
 
 // ─── Reconstruir leaderboard cache ───────────────────────────────────────────
 
+const NO_PICK_BONUS = 1; // 1 punto por partido finalizado sin pronóstico
+
 const rebuildLeaderboard = async () => {
+  // Contar partidos finalizados para calcular el bono por no-apuesta
+  const finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
+
   const users = await prisma.user.findMany({
     where: { role: { not: 'SUPER_ADMIN' } },
     select: {
       id: true,
       totalPoints: true,
       predictions: {
-        select: { pointsExact: true, pointsWinner: true, pointsBonus: true, pointsTotal: true },
+        // Solo partidos finalizados: scheduled tienen 0 pts y no cuentan para no-pick
+        where: { match: { status: 'FINISHED' } },
+        select: { matchId: true, pointsExact: true, pointsWinner: true, pointsBonus: true, pointsTotal: true },
       },
       tournamentPicks: {
         select: { pointsTotal: true },
@@ -171,13 +178,16 @@ const rebuildLeaderboard = async () => {
   const stats = users.map((u) => {
     const matchPts = u.predictions.reduce((s, p) => s + p.pointsTotal, 0);
     const tournamentPts = u.tournamentPicks?.pointsTotal || 0;
-    const bonusPts = u.totalPoints - matchPts - tournamentPts;
+    const streakBonusPts = Math.max(u.totalPoints - matchPts - tournamentPts, 0);
+    // 1 pto por cada partido finalizado que no apostó (matchIds únicos para evitar contar duplicados entre grupos)
+    const predictedMatchIds = new Set(u.predictions.map(p => p.matchId));
+    const noPickPts = Math.max(finishedMatchCount - predictedMatchIds.size, 0) * NO_PICK_BONUS;
     return {
       userId: u.id,
-      totalPoints: u.totalPoints,
+      totalPoints: u.totalPoints + noPickPts,
       matchPoints: matchPts,
       tournamentPoints: tournamentPts,
-      bonusPoints: Math.max(bonusPts, 0),
+      bonusPoints: streakBonusPts + noPickPts,
     };
   });
 
@@ -209,6 +219,9 @@ const rebuildLeaderboard = async () => {
 };
 
 const rebuildGroupLeaderboard = async (groupId) => {
+  // Partidos finalizados para calcular bono no-pick dentro del grupo
+  const finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
+
   const members = await prisma.groupMember.findMany({
     where: { groupId },
     select: { userId: true },
@@ -217,7 +230,7 @@ const rebuildGroupLeaderboard = async (groupId) => {
   const stats = [];
   for (const member of members) {
     const predictions = await prisma.prediction.findMany({
-      where: { userId: member.userId, groupId },
+      where: { userId: member.userId, groupId, match: { status: 'FINISHED' } },
       select: { pointsTotal: true },
     });
     const tournamentPicks = await prisma.tournamentPicks.findUnique({
@@ -227,9 +240,11 @@ const rebuildGroupLeaderboard = async (groupId) => {
 
     const matchPoints = predictions.reduce((s, p) => s + p.pointsTotal, 0);
     const tournamentPoints = tournamentPicks?.pointsTotal || 0;
-    const totalPoints = matchPoints + tournamentPoints;
+    // 1 pto por cada partido finalizado sin pronóstico en este grupo
+    const noPickPoints = Math.max(finishedMatchCount - predictions.length, 0) * NO_PICK_BONUS;
+    const totalPoints = matchPoints + tournamentPoints + noPickPoints;
 
-    stats.push({ userId: member.userId, totalPoints, matchPoints, tournamentPoints });
+    stats.push({ userId: member.userId, totalPoints, matchPoints, tournamentPoints, bonusPoints: noPickPoints });
   }
 
   const sorted = stats.sort((a, b) => b.totalPoints - a.totalPoints);
@@ -241,6 +256,7 @@ const rebuildGroupLeaderboard = async (groupId) => {
         totalPoints: sorted[i].totalPoints,
         matchPoints: sorted[i].matchPoints,
         tournamentPoints: sorted[i].tournamentPoints,
+        bonusPoints: sorted[i].bonusPoints,
         rank: i + 1,
         lastUpdated: new Date(),
       },
@@ -250,6 +266,7 @@ const rebuildGroupLeaderboard = async (groupId) => {
         totalPoints: sorted[i].totalPoints,
         matchPoints: sorted[i].matchPoints,
         tournamentPoints: sorted[i].tournamentPoints,
+        bonusPoints: sorted[i].bonusPoints,
         rank: i + 1,
       },
     });
@@ -519,6 +536,17 @@ const setUserPlan = async (req, res) => {
   return res.json({ message: `Plan actualizado a ${plan}`, user });
 };
 
+// POST /api/admin/leaderboard/rebuild — Forzar reconstrucción del leaderboard (aplica regla no-pick)
+const manualRebuildLeaderboard = async (req, res) => {
+  try {
+    await rebuildLeaderboard();
+    return res.json({ message: 'Leaderboard reconstruido con éxito (incluye puntos por no-apostados)' });
+  } catch (err) {
+    console.error('Rebuild error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 // POST /api/admin/broadcast — Enviar mensaje a todos los conectados
 const sendBroadcast = async (req, res) => {
   const { message, type = 'info' } = req.body;
@@ -543,6 +571,7 @@ module.exports = {
   setTournamentAwards,
   getDashboard,
   rebuildLeaderboard,
+  manualRebuildLeaderboard,
   syncMatches,
   getUsers,
   setUserPlan,
