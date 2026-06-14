@@ -224,7 +224,9 @@ const getGroupCompare = async (req, res) => {
     orderBy: { match: { dateUtc: 'asc' } },
   });
 
-  return res.json(predictions);
+  const finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
+
+  return res.json({ predictions, finishedMatchCount });
 };
 
 // GET /api/predictions/match/:matchId/all — Ver predicciones de todos (solo post-partido)

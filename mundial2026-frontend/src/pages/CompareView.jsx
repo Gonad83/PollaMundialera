@@ -22,7 +22,18 @@ function isAwaitingResult(match) {
 
 function PointsBadge({ pred, match }) {
   const matchFinished = match.status === 'FINISHED'
-  if (!pred) return <span className="text-zinc-700 text-[10px]">—</span>
+  if (!pred) {
+    // Partido finalizado sin pronóstico → +1 punto no-pick
+    if (matchFinished) {
+      return (
+        <div className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg border border-zinc-700/30 bg-zinc-800/30 min-w-[46px]">
+          <span className="text-zinc-600 text-[10px]">—</span>
+          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">+1</span>
+        </div>
+      )
+    }
+    return <span className="text-zinc-700 text-[10px]">—</span>
+  }
   const style = cellStyle(pred, matchFinished)
   const awaiting = isAwaitingResult(match)
   return (
@@ -59,12 +70,14 @@ function TeamFlag({ team, size = 'sm' }) {
 export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
 
-  const { data: rawPreds = [], isLoading } = useQuery({
+  const { data: compareData, isLoading } = useQuery({
     queryKey: ['group-compare', groupId],
     queryFn: () => predictionApi.compare(groupId).then(r => r.data),
     staleTime: 0,
     refetchOnWindowFocus: true,
   })
+  const rawPreds = compareData?.predictions ?? []
+  const finishedMatchCount = compareData?.finishedMatchCount ?? 0
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -96,12 +109,19 @@ export default function CompareView({ groupId, members = [] }) {
   // Filtrar SUPER_ADMIN y ordenar por puntos totales en el comparativo
   const visibleMembers = useMemo(() => {
     const filtered = members.filter(m => m.user?.role !== 'SUPER_ADMIN')
-    return filtered.map(m => ({
-      ...m,
-      totalCompPts:    matches.reduce((acc, match) => acc + (predMap[m.userId]?.[match.id]?.pointsTotal ?? 0), 0),
-      pendingPredCount: pendingMatches.filter(match => predMap[m.userId]?.[match.id]).length,
-    })).sort((a, b) => b.totalCompPts - a.totalCompPts)
-  }, [members, matches, predMap])
+    return filtered.map(m => {
+      const predPts = matches.reduce((acc, match) => acc + (predMap[m.userId]?.[match.id]?.pointsTotal ?? 0), 0)
+      // 1 punto por cada partido finalizado sin pronóstico en este grupo
+      const finishedPredCount = finishedMatches.filter(match => predMap[m.userId]?.[match.id]).length
+      const noPickPts = Math.max(finishedMatchCount - finishedPredCount, 0)
+      return {
+        ...m,
+        totalCompPts: predPts + noPickPts,
+        noPickPts,
+        pendingPredCount: pendingMatches.filter(match => predMap[m.userId]?.[match.id]).length,
+      }
+    }).sort((a, b) => b.totalCompPts - a.totalCompPts)
+  }, [members, matches, predMap, finishedMatches, finishedMatchCount])
 
   const teamById = useMemo(() => {
     const map = new Map()
