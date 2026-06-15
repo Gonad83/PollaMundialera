@@ -482,6 +482,51 @@ const syncMatches = async (req, res) => {
   }
 };
 
+// GET /api/admin/tournament/completion — Estado del pronóstico de torneo por grupo
+const getTournamentCompletion = async (req, res) => {
+  const groups = await prisma.group.findMany({
+    where: { isPublic: false },
+    select: {
+      id: true,
+      name: true,
+      members: {
+        select: {
+          user: { select: { id: true, username: true, email: true } },
+        },
+      },
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const result = await Promise.all(groups.map(async (group) => {
+    const members = await Promise.all(group.members.map(async ({ user }) => {
+      const picks = await prisma.tournamentPicks.findUnique({
+        where: { userId_groupId: { userId: user.id, groupId: group.id } },
+        select: { id: true, champion: true, updatedAt: true },
+      });
+      return {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+        completed: !!picks?.champion, // tiene al menos el campeón seleccionado
+        updatedAt: picks?.updatedAt ?? null,
+      };
+    }));
+
+    const completed = members.filter(m => m.completed).length;
+    return {
+      groupId: group.id,
+      groupName: group.name,
+      total: members.length,
+      completed,
+      pending: members.length - completed,
+      members,
+    };
+  }));
+
+  return res.json(result);
+};
+
 // GET /api/admin/users — Listar todos los usuarios
 const getUsers = async (req, res) => {
   const users = await prisma.user.findMany({
@@ -569,6 +614,7 @@ module.exports = {
   setMatchResult,
   setMatchStatus,
   setTournamentAwards,
+  getTournamentCompletion,
   getDashboard,
   rebuildLeaderboard,
   manualRebuildLeaderboard,

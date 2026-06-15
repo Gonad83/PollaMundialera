@@ -7,7 +7,8 @@ import {
   ShieldCheck, Users, Trophy, BarChart3, RefreshCw, Zap,
   Trash2, Crown, Mail, Search, Settings,
   AlertTriangle, CheckCircle2, LayoutDashboard, Send,
-  Database, FileDigit, Globe, Plus, Minus, Radio, X, ChevronLeft
+  Database, FileDigit, Globe, Plus, Minus, Radio, X, ChevronLeft,
+  ChevronDown, Clock
 } from 'lucide-react'
 
 const TZ = 'America/Santiago'
@@ -60,6 +61,7 @@ export default function AdminPage() {
   // Filtros de partidos
   const [matchStatusFilter, setMatchStatusFilter] = useState('pending') // 'pending'|'live'|'finished'|'all'
   const [matchTeamSearch, setMatchTeamSearch] = useState('')
+  const [expandedGroupId, setExpandedGroupId] = useState(null)
 
   // ─── Consultas ───
   const { data: dashboard } = useQuery({
@@ -71,6 +73,13 @@ export default function AdminPage() {
     queryKey: ['groups-admin-list'],
     queryFn: () => groupApi.listAll().then(r => r.data),
     enabled: activeTab === 'saas'
+  })
+
+  const { data: tournamentCompletion = [] } = useQuery({
+    queryKey: ['admin-tournament-completion'],
+    queryFn: () => adminApi.tournamentCompletion().then(r => r.data),
+    enabled: activeTab === 'saas',
+    staleTime: 0,
   })
 
   const { data: allUsers = [] } = useQuery({
@@ -327,60 +336,132 @@ export default function AdminPage() {
                </div>
 
                <div className="grid gap-3">
-                  {allGroups.map(group => (
-                    <div key={group.id} className="card p-6 flex flex-col md:flex-row items-center gap-6 group hover:border-mundial-gold/30 transition-all">
-                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${group.isPremium ? 'bg-mundial-gold border-mundial-gold text-mundial-navy' : 'bg-white/5 border-white/10 text-zinc-600' }`}>
-                          {group.isPremium ? <Crown size={28} /> : <Users size={28} />}
-                       </div>
-                       
-                       <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3 mb-1">
-                             <h4 className="font-display text-xl text-white uppercase truncate">{group.name}</h4>
-                             {group.isPremium && <span className="bg-mundial-gold text-mundial-navy px-2 py-0.5 rounded-lg text-[8px] font-black uppercase">PREMIUM</span>}
-                          </div>
-                          <div className="flex flex-wrap gap-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                             <span className="flex items-center gap-1.5"><Mail size={12} /> {group.creator?.username}</span>
-                             <span className="flex items-center gap-1.5"><Users size={12} /> {group._count?.members} / {group.maxMembers} Miembros</span>
-                             <span className="font-mono text-mundial-gold">{group.inviteCode}</span>
-                          </div>
+                  {allGroups.map(group => {
+                    const completion = tournamentCompletion.find(c => c.groupId === group.id)
+                    const isExpanded = expandedGroupId === group.id
+                    return (
+                    <div key={group.id} className="card flex flex-col hover:border-mundial-gold/30 transition-all">
+                       {/* Fila principal del grupo */}
+                       <div className="p-6 flex flex-col md:flex-row items-center gap-6">
+                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all shrink-0 ${group.isPremium ? 'bg-mundial-gold border-mundial-gold text-mundial-navy' : 'bg-white/5 border-white/10 text-zinc-600' }`}>
+                            {group.isPremium ? <Crown size={28} /> : <Users size={28} />}
+                         </div>
+
+                         <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-1">
+                               <h4 className="font-display text-xl text-white uppercase truncate">{group.name}</h4>
+                               {group.isPremium && <span className="bg-mundial-gold text-mundial-navy px-2 py-0.5 rounded-lg text-[8px] font-black uppercase">PREMIUM</span>}
+                            </div>
+                            <div className="flex flex-wrap gap-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                               <span className="flex items-center gap-1.5"><Mail size={12} /> {group.creator?.username}</span>
+                               <span className="flex items-center gap-1.5"><Users size={12} /> {group._count?.members} / {group.maxMembers} Miembros</span>
+                               <span className="font-mono text-mundial-gold">{group.inviteCode}</span>
+                               {completion && (
+                                 <span className={`flex items-center gap-1.5 ${completion.pending > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+                                   <Trophy size={12} />
+                                   Torneo: {completion.completed}/{completion.total}
+                                 </span>
+                               )}
+                            </div>
+                         </div>
+
+                         <div className="flex items-center gap-2">
+                            {completion && (
+                              <button
+                                onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
+                                className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-1.5 ${
+                                  completion.pending > 0
+                                    ? 'bg-amber-400/10 border-amber-400/30 text-amber-400 hover:bg-amber-400/20'
+                                    : 'bg-green-500/10 border-green-500/20 text-green-400 hover:bg-green-500/20'
+                                }`}
+                              >
+                                {completion.pending > 0 ? `${completion.pending} pendiente${completion.pending > 1 ? 's' : ''}` : 'Todos listos'}
+                                <ChevronDown size={12} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => premiumMut.mutate({
+                                 id: group.id,
+                                 isPremium: !group.isPremium,
+                                 maxMembers: !group.isPremium ? 999 : 3
+                              })}
+                              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all
+                                ${group.isPremium ? 'bg-white/5 border-white/10 text-zinc-400 hover:text-white' : 'bg-mundial-gold/10 border-mundial-gold/20 text-mundial-gold hover:bg-mundial-gold hover:text-mundial-navy'}`}
+                            >
+                               {group.isPremium ? 'Bajar a Free' : 'Hacer Premium'}
+                            </button>
+                            <button
+                              onClick={() => {
+                                const limit = prompt('Nuevo límite de miembros:', group.maxMembers)
+                                if (limit) premiumMut.mutate({
+                                  id: group.id,
+                                  isPremium: group.isPremium,
+                                  maxMembers: parseInt(limit)
+                                })
+                              }}
+                              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all shadow-inner"
+                            >
+                              <Settings size={18} />
+                            </button>
+                            <button
+                               onClick={() => { if(confirm('¿ELIMINAR LIGA?')) deleteGroupMut.mutate(group.id) }}
+                               className="w-10 h-10 rounded-xl bg-mundial-red/10 border border-mundial-red/20 flex items-center justify-center text-mundial-red/60 hover:text-mundial-red transition-all"
+                            >
+                               <Trash2 size={18} />
+                            </button>
+                         </div>
                        </div>
 
-                       <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => premiumMut.mutate({ 
-                               id: group.id, 
-                               isPremium: !group.isPremium,
-                               maxMembers: !group.isPremium ? 999 : 3
-                            })}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all
-                              ${group.isPremium ? 'bg-white/5 border-white/10 text-zinc-400 hover:text-white' : 'bg-mundial-gold/10 border-mundial-gold/20 text-mundial-gold hover:bg-mundial-gold hover:text-mundial-navy'}`}
-                          >
-                             {group.isPremium ? 'Bajar a Free' : 'Hacer Premium'}
-                          </button>
-                          
-                          <button 
-                            onClick={() => {
-                              const limit = prompt('Nuevo límite de miembros:', group.maxMembers)
-                              if (limit) premiumMut.mutate({ 
-                                id: group.id, 
-                                isPremium: group.isPremium,
-                                maxMembers: parseInt(limit) 
-                              })
-                            }}
-                            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all shadow-inner"
-                          >
-                            <Settings size={18} />
-                          </button>
-
-                          <button 
-                             onClick={() => { if(confirm('¿ELIMINAR LIGA?')) deleteGroupMut.mutate(group.id) }}
-                             className="w-10 h-10 rounded-xl bg-mundial-red/10 border border-mundial-red/20 flex items-center justify-center text-mundial-red/60 hover:text-mundial-red transition-all"
-                          >
-                             <Trash2 size={18} />
-                          </button>
-                       </div>
+                       {/* Panel expandible: estado pronóstico torneo */}
+                       <AnimatePresence>
+                         {isExpanded && completion && (
+                           <motion.div
+                             initial={{ height: 0, opacity: 0 }}
+                             animate={{ height: 'auto', opacity: 1 }}
+                             exit={{ height: 0, opacity: 0 }}
+                             transition={{ duration: 0.25 }}
+                             className="overflow-hidden border-t border-white/5"
+                           >
+                             <div className="p-5 space-y-2">
+                               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3 flex items-center gap-2">
+                                 <Trophy size={11} className="text-mundial-gold" />
+                                 Estado pronóstico torneo — {completion.completed} de {completion.total} completados
+                               </p>
+                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                 {completion.members.map(member => (
+                                   <div
+                                     key={member.userId}
+                                     className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                                       member.completed
+                                         ? 'bg-green-500/8 border-green-500/20'
+                                         : 'bg-amber-400/8 border-amber-400/25'
+                                     }`}
+                                   >
+                                     <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                       member.completed ? 'bg-green-500/20 text-green-400' : 'bg-amber-400/20 text-amber-400'
+                                     }`}>
+                                       {member.completed ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                                     </div>
+                                     <div className="min-w-0 flex-1">
+                                       <p className={`text-[11px] font-black uppercase truncate ${member.completed ? 'text-white' : 'text-amber-300'}`}>
+                                         {member.username}
+                                       </p>
+                                       <p className="text-[9px] text-zinc-600 font-mono truncate">{member.email}</p>
+                                     </div>
+                                     <span className={`text-[8px] font-black uppercase tracking-widest shrink-0 ${
+                                       member.completed ? 'text-green-400' : 'text-amber-400'
+                                     }`}>
+                                       {member.completed ? 'Listo' : 'Pendiente'}
+                                     </span>
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                           </motion.div>
+                         )}
+                       </AnimatePresence>
                     </div>
-                  ))}
+                  )})}
                </div>
             </div>
           )}
