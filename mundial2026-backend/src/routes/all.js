@@ -29,6 +29,7 @@ module.exports.predRouter = predRouter;
 const tournRouter = require('express').Router();
 const tc = require('../controllers/tournamentController');
 
+tournRouter.get('/deadline',        tc.getDeadlineInfo);
 tournRouter.use(authenticate);
 tournRouter.get('/picks',          tc.getMyPicks);
 tournRouter.put('/picks',          tc.savePicks);
@@ -79,6 +80,8 @@ adminRouter.post('/tournament/awards',           ac.setTournamentAwards);
 adminRouter.post('/sync',                        ac.syncMatches);
 adminRouter.post('/leaderboard/rebuild',         ac.manualRebuildLeaderboard);
 adminRouter.get('/tournament/completion',        ac.getTournamentCompletion);
+adminRouter.get('/tournament/deadline',          ac.getAdminDeadline);
+adminRouter.post('/tournament/deadline',         ac.setAdminDeadline);
 adminRouter.get('/users',                        ac.getUsers);
 adminRouter.post('/broadcast',                   ac.sendBroadcast);
 adminRouter.patch('/users/:id/plan',             ac.setUserPlan);

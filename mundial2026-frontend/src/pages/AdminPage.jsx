@@ -23,6 +23,15 @@ const fmtChileDateTime = (date, options = {}) =>
     ...options,
   }).format(new Date(date))
 
+// Convierte un UTC ISO a valor para <input type="datetime-local"> en hora Chile (UTC-4)
+const toChileInput = (isoStr) => {
+  const chileMs = new Date(isoStr).getTime() - 4 * 3600 * 1000
+  return new Date(chileMs).toISOString().slice(0, 16)
+}
+// Convierte el valor de <input type="datetime-local"> (interpretado como hora Chile) a UTC ISO
+const fromChileInput = (str) =>
+  new Date(new Date(str + ':00.000Z').getTime() + 4 * 3600 * 1000).toISOString()
+
 const TABS = [
   { id: 'overview',  label: 'Resumen',     icon: LayoutDashboard },
   { id: 'saas',      label: 'Ligas',       icon: Crown },
@@ -51,7 +60,7 @@ export default function AdminPage() {
       setActiveTab(nextTab)
     }
   }, [location.search])
-  
+
   // States para Formularios
   const [activeMatch, setActiveMatch] = useState(null)
   const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false, winnerId: null })
@@ -62,6 +71,7 @@ export default function AdminPage() {
   const [matchStatusFilter, setMatchStatusFilter] = useState('pending') // 'pending'|'live'|'finished'|'all'
   const [matchTeamSearch, setMatchTeamSearch] = useState('')
   const [expandedGroupId, setExpandedGroupId] = useState(null)
+  const [deadlineInput, setDeadlineInput] = useState('')
 
   // ─── Consultas ───
   const { data: dashboard } = useQuery({
@@ -73,6 +83,13 @@ export default function AdminPage() {
     queryKey: ['groups-admin-list'],
     queryFn: () => groupApi.listAll().then(r => r.data),
     enabled: activeTab === 'saas'
+  })
+
+  const { data: adminDeadline, refetch: refetchDeadline } = useQuery({
+    queryKey: ['admin-tournament-deadline'],
+    queryFn: () => adminApi.getTournamentDeadline().then(r => r.data),
+    enabled: activeTab === 'system',
+    staleTime: 0,
   })
 
   const { data: tournamentCompletion = [] } = useQuery({
@@ -93,6 +110,12 @@ export default function AdminPage() {
     queryFn: () => matchApi.list().then(r => r.data),
     enabled: activeTab === 'matches'
   })
+
+  useEffect(() => {
+    if (adminDeadline?.deadline) {
+      setDeadlineInput(toChileInput(adminDeadline.deadline))
+    }
+  }, [adminDeadline?.deadline])
 
   // ─── Mutaciones ───
   const showFeedback = (msg, type = 'success') => {
@@ -172,6 +195,17 @@ export default function AdminPage() {
   const rebuildMut = useMutation({
     mutationFn: () => adminApi.rebuildLeaderboard(),
     onSuccess: () => showFeedback('Ranking reconstruido ✓ — Puntos por partidos no apostados aplicados a todos'),
+  })
+
+  const deadlineMut = useMutation({
+    mutationFn: (deadline) => adminApi.setTournamentDeadline(deadline),
+    onSuccess: (res) => {
+      const locked = res.data.locked
+      showFeedback(locked ? 'Pronósticos del torneo CERRADOS' : 'Pronósticos del torneo ABIERTOS ✓')
+      refetchDeadline()
+      qc.invalidateQueries({ queryKey: ['tournament-deadline'] })
+    },
+    onError: (err) => showFeedback(err.response?.data?.error || 'Error al actualizar deadline', 'error'),
   })
 
   const setPlanMut = useMutation({
@@ -657,6 +691,69 @@ export default function AdminPage() {
                      >
                        {rebuildMut.isPending ? 'Reconstruyendo...' : 'Reconstruir Ranking Ahora'}
                      </button>
+                  </div>
+               </PickSection>
+
+               <PickSection title="Plazo Pronóstico Torneo" subtitle="Abre, cierra o extiende el tiempo de pronósticos en tiempo real" icon={Clock}>
+                  <div className="flex flex-col gap-5">
+                    {/* Status actual */}
+                    <div className="flex items-center gap-4 bg-white/5 p-5 rounded-2xl border border-white/5">
+                      <div className={`w-3 h-3 rounded-full flex-shrink-0 ${adminDeadline?.locked ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-black text-zinc-500">Estado</p>
+                        <p className={`text-base font-black ${adminDeadline?.locked ? 'text-red-400' : 'text-green-400'}`}>
+                          {adminDeadline ? (adminDeadline.locked ? 'CERRADO' : 'ABIERTO') : '—'}
+                        </p>
+                      </div>
+                      {adminDeadline?.deadline && (
+                        <div className="ml-auto text-right">
+                          <p className="text-[10px] uppercase tracking-widest font-black text-zinc-500">Cierre</p>
+                          <p className="text-xs text-zinc-300 font-mono tabular-nums">{fmtChileDateTime(adminDeadline.deadline)} CHT</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Acciones rápidas */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => { if (confirm('¿Cerrar los pronósticos del torneo ahora?')) deadlineMut.mutate('now') }}
+                        disabled={deadlineMut.isPending}
+                        className="py-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 font-black text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                      >
+                        Cerrar Ahora
+                      </button>
+                      <button
+                        onClick={() => deadlineMut.mutate('open')}
+                        disabled={deadlineMut.isPending}
+                        className="py-4 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-400 font-black text-[10px] uppercase tracking-widest hover:bg-green-500 hover:text-white transition-all disabled:opacity-50"
+                      >
+                        Abrir Indefinido
+                      </button>
+                    </div>
+
+                    {/* Plazo manual */}
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[10px] uppercase tracking-widest font-black text-zinc-500">Nuevo plazo — Hora Chile (UTC-4)</p>
+                      <input
+                        type="datetime-local"
+                        value={deadlineInput}
+                        onChange={e => setDeadlineInput(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-2xl px-5 py-3 text-white text-sm font-mono focus:outline-none focus:border-mundial-gold/60 transition-colors"
+                      />
+                      <button
+                        onClick={() => {
+                          if (!deadlineInput) return
+                          const iso = fromChileInput(deadlineInput)
+                          if (confirm(`¿Establecer nuevo plazo de cierre?\n${deadlineInput.replace('T', ' ')} hora Chile`)) {
+                            deadlineMut.mutate(iso)
+                          }
+                        }}
+                        disabled={deadlineMut.isPending || !deadlineInput}
+                        className="py-4 rounded-[2rem] bg-mundial-gold/10 border border-mundial-gold/30 text-mundial-gold font-black text-[10px] uppercase tracking-[0.2em] hover:bg-mundial-gold hover:text-mundial-navy hover:border-mundial-gold transition-all disabled:opacity-50"
+                      >
+                        {deadlineMut.isPending ? 'Guardando...' : 'Guardar Nuevo Plazo'}
+                      </button>
+                    </div>
                   </div>
                </PickSection>
 

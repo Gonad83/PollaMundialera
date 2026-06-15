@@ -20,17 +20,41 @@ const SECTIONS = [
   { key: 'estadisticas',  label: 'DATOS MAESTROS',   icon: BarChart3 },
 ]
 
-const TOURNAMENT_DEADLINE = new Date('2026-06-15T19:00:00.000Z')
-const TOURNAMENT_DEADLINE_LABEL = 'DOMINGO 15 JUN 2026 · 15:00 HRS CHILE'
 // CUR es alias duplicado de Curazao (CUW) — excluir del selector para evitar bandera repetida
 // NGA, CRC, BOL son equipos amistosos que no juegan el Mundial
 const EXCLUDED_TOURNAMENT_TEAM_CODES = new Set(['NGA', 'CRC', 'BOL', 'CUR'])
+
+const formatDeadlineLabel = (isoStr) => {
+  const d = new Date(isoStr)
+  const parts = new Intl.DateTimeFormat('es-CL', {
+    weekday: 'long', day: 'numeric', month: 'short',
+    hour: '2-digit', minute: '2-digit', hour12: false,
+    timeZone: 'America/Santiago',
+  }).formatToParts(d)
+  const get = (t) => parts.find(p => p.type === t)?.value ?? ''
+  const wd = get('weekday').toUpperCase()
+  const day = get('day')
+  const mon = get('month').replace('.', '').toUpperCase()
+  const yr = new Intl.DateTimeFormat('es-CL', { year: 'numeric', timeZone: 'America/Santiago' }).format(d)
+  return `${wd} ${day} ${mon} ${yr} · ${get('hour')}:${get('minute')} HRS CHILE`
+}
 
 export default function TournamentPage({ groupId }) {
   const qc = useQueryClient()
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
-  const isTournamentLocked = Date.now() > TOURNAMENT_DEADLINE.getTime()
+
+  const { data: deadlineData } = useQuery({
+    queryKey: ['tournament-deadline'],
+    queryFn: () => tournamentApi.deadline().then(r => r.data),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  })
+
+  const isTournamentLocked = deadlineData?.locked ?? (Date.now() > new Date('2026-06-15T19:00:00.000Z').getTime())
+  const TOURNAMENT_DEADLINE_LABEL = deadlineData?.deadline
+    ? formatDeadlineLabel(deadlineData.deadline)
+    : 'DOMINGO 15 JUN 2026 · 15:00 HRS CHILE'
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
     round32Teams: [], round16Teams: [], semifinalists: [], quarterfinalists: [], groupQualifiers: [],

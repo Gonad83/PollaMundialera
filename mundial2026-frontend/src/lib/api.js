@@ -98,6 +98,7 @@ export const tournamentApi = {
   myPicks:   (params) => api.get('/tournament/picks', { params }),
   savePicks: (data) => api.put('/tournament/picks', data),
   userPicks: (id, params) => api.get(`/tournament/picks/${id}`, { params }),
+  deadline:  () => api.get('/tournament/deadline'),
 }
 
 export const leaderboardApi = {
@@ -114,6 +115,8 @@ export const adminApi = {
   syncMatches:     (params)    => api.post('/admin/sync', null, { params }),
   rebuildLeaderboard: ()         => api.post('/admin/leaderboard/rebuild'),
   tournamentCompletion: ()       => api.get('/admin/tournament/completion'),
+  getTournamentDeadline: ()      => api.get('/admin/tournament/deadline'),
+  setTournamentDeadline: (d)     => api.post('/admin/tournament/deadline', { deadline: d }),
   getUsers:        ()          => api.get('/admin/users'),
   sendBroadcast:   (data)      => api.post('/admin/broadcast', data),
   setPremium:      (id, data)  => api.patch(`/admin/groups/${id}/premium`, data),

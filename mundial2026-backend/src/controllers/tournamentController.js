@@ -1,14 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
-
-// Domingo 15 de junio de 2026, 15:00 hora chilena (CLT, UTC-4).
-// Puede sobreescribirse con TOURNAMENT_DEADLINE si hiciera falta.
-const DEFAULT_TOURNAMENT_DEADLINE = '2026-06-15T19:00:00.000Z';
-const TOURNAMENT_DEADLINE_ENV = process.env.TOURNAMENT_DEADLINE || DEFAULT_TOURNAMENT_DEADLINE;
-
-const isTournamentLocked = () => {
-  return new Date() > new Date(TOURNAMENT_DEADLINE_ENV);
-};
+const { getDeadline, isLocked: isTournamentLocked } = require('../utils/tournamentDeadlineStore');
 
 const picksSchema = z.object({
   champion:           z.string().optional().nullable(),
@@ -52,7 +44,7 @@ const savePicks = async (req, res) => {
   if (isTournamentLocked()) {
     return res.status(403).json({
       error: 'El plazo para los pronósticos del torneo ha cerrado',
-      deadline: TOURNAMENT_DEADLINE_ENV,
+      deadline: getDeadline(),
     });
   }
 
@@ -111,4 +103,10 @@ const getUserPicks = async (req, res) => {
   return res.json(picks);
 };
 
-module.exports = { getMyPicks, savePicks, getUserPicks };
+// GET /api/tournament/deadline — Deadline actual (público)
+const getDeadlineInfo = (req, res) => {
+  const deadline = getDeadline();
+  res.json({ deadline, locked: isTournamentLocked() });
+};
+
+module.exports = { getMyPicks, savePicks, getUserPicks, getDeadlineInfo };

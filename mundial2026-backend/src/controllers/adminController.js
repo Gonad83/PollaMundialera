@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { calculatePredictionPoints } = require('./predictionController');
+const { getDeadline, setDeadline, isLocked } = require('../utils/tournamentDeadlineStore');
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -646,6 +647,35 @@ const sendBroadcast = async (req, res) => {
   return res.json({ message: 'Broadcast enviado con éxito' });
 };
 
+// GET /api/admin/tournament/deadline
+const getAdminDeadline = (req, res) => {
+  const deadline = getDeadline();
+  res.json({ deadline, locked: isLocked() });
+};
+
+// POST /api/admin/tournament/deadline — { deadline: ISO string | "now" | "open" }
+const setAdminDeadline = (req, res) => {
+  const { deadline } = req.body;
+  if (!deadline) return res.status(400).json({ error: 'Campo deadline requerido' });
+
+  let iso;
+  if (deadline === 'now') {
+    iso = new Date().toISOString();
+  } else if (deadline === 'open') {
+    // Abrir por 99 años — efectivamente siempre abierto
+    const far = new Date();
+    far.setFullYear(far.getFullYear() + 99);
+    iso = far.toISOString();
+  } else {
+    const d = new Date(deadline);
+    if (isNaN(d.getTime())) return res.status(400).json({ error: 'Fecha inválida' });
+    iso = d.toISOString();
+  }
+
+  setDeadline(iso);
+  return res.json({ deadline: iso, locked: isLocked() });
+};
+
 module.exports = {
   setMatchResult,
   setMatchStatus,
@@ -658,4 +688,6 @@ module.exports = {
   getUsers,
   setUserPlan,
   sendBroadcast,
+  getAdminDeadline,
+  setAdminDeadline,
 };
