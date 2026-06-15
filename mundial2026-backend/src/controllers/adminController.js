@@ -482,6 +482,25 @@ const syncMatches = async (req, res) => {
   }
 };
 
+// Los mismos 15 checks que usa el frontend (TournamentPage.jsx líneas 165-181)
+const TOURNAMENT_FIELD_LABELS = [
+  { key: 'champion',        label: 'Campeón',          check: (p) => !!p.champion },
+  { key: 'finalist1',       label: 'Finalista 1',       check: (p) => !!p.finalist1 },
+  { key: 'finalist2',       label: 'Finalista 2',       check: (p) => !!p.finalist2 },
+  { key: 'semifinalists',   label: 'Semifinalistas',    check: (p) => (p.semifinalists?.length || 0) > 0 },
+  { key: 'quarterfinalists',label: 'Cuartos de final',  check: (p) => (p.quarterfinalists?.length || 0) > 0 },
+  { key: 'round16Teams',    label: '8vos de final',     check: (p) => (p.round16Teams?.length || 0) > 0 },
+  { key: 'round32Teams',    label: '16avos de final',   check: (p) => (p.round32Teams?.length || 0) > 0 },
+  { key: 'hostFurthest',    label: 'Anfitrión más lejos', check: (p) => !!p.hostFurthest },
+  { key: 'topScorerId',     label: 'Bota de Oro',       check: (p) => !!p.topScorerId },
+  { key: 'bestPlayerId',    label: 'Balón de Oro',      check: (p) => !!p.bestPlayerId },
+  { key: 'bestKeeperId',    label: 'Guante de Oro',     check: (p) => !!p.bestKeeperId },
+  { key: 'bestYoungId',     label: 'Mejor Joven',       check: (p) => !!p.bestYoungId },
+  { key: 'totalGoals',      label: 'Total de goles',    check: (p) => p.totalGoals != null },
+  { key: 'mostGoalsTeamId', label: 'Equipo más goleador', check: (p) => !!p.mostGoalsTeamId },
+  { key: 'leastGoalsTeamId',label: 'Equipo menos goles', check: (p) => !!p.leastGoalsTeamId },
+];
+
 // GET /api/admin/tournament/completion — Estado del pronóstico de torneo por grupo
 const getTournamentCompletion = async (req, res) => {
   const groups = await prisma.group.findMany({
@@ -502,13 +521,30 @@ const getTournamentCompletion = async (req, res) => {
     const members = await Promise.all(group.members.map(async ({ user }) => {
       const picks = await prisma.tournamentPicks.findUnique({
         where: { userId_groupId: { userId: user.id, groupId: group.id } },
-        select: { id: true, champion: true, updatedAt: true },
+        select: {
+          champion: true, finalist1: true, finalist2: true,
+          round32Teams: true, round16Teams: true, semifinalists: true,
+          quarterfinalists: true, groupQualifiers: true,
+          topScorerId: true, bestPlayerId: true, bestKeeperId: true, bestYoungId: true,
+          totalGoals: true, mostGoalsTeamId: true, leastGoalsTeamId: true, hostFurthest: true,
+          updatedAt: true,
+        },
       });
+
+      const missing = picks
+        ? TOURNAMENT_FIELD_LABELS.filter(f => !f.check(picks)).map(f => f.label)
+        : TOURNAMENT_FIELD_LABELS.map(f => f.label);
+
+      const completedCount = TOURNAMENT_FIELD_LABELS.length - missing.length;
+
       return {
         userId: user.id,
         username: user.username,
         email: user.email,
-        completed: !!picks?.champion, // tiene al menos el campeón seleccionado
+        completed: missing.length === 0,
+        completedCount,
+        totalCount: TOURNAMENT_FIELD_LABELS.length,
+        missing,
         updatedAt: picks?.updatedAt ?? null,
       };
     }));

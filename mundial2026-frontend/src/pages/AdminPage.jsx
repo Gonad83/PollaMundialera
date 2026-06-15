@@ -422,37 +422,48 @@ export default function AdminPage() {
                              transition={{ duration: 0.25 }}
                              className="overflow-hidden border-t border-white/5"
                            >
-                             <div className="p-5 space-y-2">
-                               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 mb-3 flex items-center gap-2">
+                             <div className="p-5 space-y-3">
+                               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500 flex items-center gap-2">
                                  <Trophy size={11} className="text-mundial-gold" />
                                  Estado pronóstico torneo — {completion.completed} de {completion.total} completados
                                </p>
-                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                               <div className="grid grid-cols-1 gap-2">
                                  {completion.members.map(member => (
                                    <div
                                      key={member.userId}
-                                     className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${
+                                     className={`flex flex-col gap-2 px-4 py-3 rounded-2xl border ${
                                        member.completed
                                          ? 'bg-green-500/8 border-green-500/20'
                                          : 'bg-amber-400/8 border-amber-400/25'
                                      }`}
                                    >
-                                     <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                       member.completed ? 'bg-green-500/20 text-green-400' : 'bg-amber-400/20 text-amber-400'
-                                     }`}>
-                                       {member.completed ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                                     <div className="flex items-center gap-3">
+                                       <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+                                         member.completed ? 'bg-green-500/20 text-green-400' : 'bg-amber-400/20 text-amber-400'
+                                       }`}>
+                                         {member.completed ? <CheckCircle2 size={14} /> : <Clock size={14} />}
+                                       </div>
+                                       <div className="min-w-0 flex-1">
+                                         <p className={`text-[11px] font-black uppercase ${member.completed ? 'text-white' : 'text-amber-300'}`}>
+                                           {member.username}
+                                           <span className="ml-2 text-zinc-500 font-mono normal-case text-[9px]">{member.email}</span>
+                                         </p>
+                                       </div>
+                                       <span className={`text-[9px] font-black tracking-widest shrink-0 ${
+                                         member.completed ? 'text-green-400' : 'text-amber-400'
+                                       }`}>
+                                         {member.completedCount}/{member.totalCount}
+                                       </span>
                                      </div>
-                                     <div className="min-w-0 flex-1">
-                                       <p className={`text-[11px] font-black uppercase truncate ${member.completed ? 'text-white' : 'text-amber-300'}`}>
-                                         {member.username}
-                                       </p>
-                                       <p className="text-[9px] text-zinc-600 font-mono truncate">{member.email}</p>
-                                     </div>
-                                     <span className={`text-[8px] font-black uppercase tracking-widest shrink-0 ${
-                                       member.completed ? 'text-green-400' : 'text-amber-400'
-                                     }`}>
-                                       {member.completed ? 'Listo' : 'Pendiente'}
-                                     </span>
+                                     {!member.completed && member.missing?.length > 0 && (
+                                       <div className="flex flex-wrap gap-1 pl-10">
+                                         {member.missing.map(field => (
+                                           <span key={field} className="px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/25 text-amber-400 text-[8px] font-black uppercase tracking-widest">
+                                             {field}
+                                           </span>
+                                         ))}
+                                       </div>
+                                     )}
                                    </div>
                                  ))}
                                </div>
