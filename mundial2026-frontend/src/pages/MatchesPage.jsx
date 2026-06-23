@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
 import { teamEsp, teamFlagUrl } from '../lib/teams'
@@ -131,16 +131,18 @@ export default function MatchesPage({ groupId }) {
     const live = listMatches.find(m => m.status === 'LIVE')
     return live?.id ?? listMatches.find(m => m.status === 'SCHEDULED')?.id ?? null
   }, [listMatches])
-  const anchorRef = useRef(null)
-  // useLayoutEffect: corre sincrónicamente ANTES del primer paint del browser.
-  // El usuario nunca ve México vs Sudáfrica porque el scroll ocurre antes de pintar.
-  useLayoutEffect(() => {
-    if (!anchorMatchId) return
-    const el = anchorRef.current
-    if (!el) return
+  // scrolled: se resetea cada vez que MatchesPage desmonta/monta (cambio de tab)
+  const scrolled = useRef(false)
+  useEffect(() => { scrolled.current = false }, [])
+
+  // Ref callback: React lo llama sincrónicamente cuando el elemento entra al DOM.
+  // No depende de timers ni de cuándo pinta el browser.
+  const anchorRefCb = useCallback((el) => {
+    if (!el || scrolled.current) return
+    scrolled.current = true
     const top = el.getBoundingClientRect().top + window.pageYOffset - 80
-    window.scrollTo({ top: Math.max(0, top), behavior: 'instant' })
-  }, [anchorMatchId])
+    window.scrollTo({ top: Math.max(0, top) })
+  }, [])
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
@@ -314,7 +316,7 @@ export default function MatchesPage({ groupId }) {
               </div>
               <div className="grid gap-4">
                 {dayMatches.map(match => (
-                  <motion.div key={match.id} ref={match.id === anchorMatchId ? anchorRef : undefined} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                  <motion.div key={match.id} ref={match.id === anchorMatchId ? anchorRefCb : undefined} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                     <MatchRow
                       match={match}
                       pred={allPredMap[match.id]}
