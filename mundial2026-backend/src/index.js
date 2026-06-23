@@ -178,6 +178,13 @@ async function startServer() {
     await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentLink" TEXT`;
     await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentButtonEnabled" BOOLEAN NOT NULL DEFAULT false`;
     await prisma.$executeRaw`ALTER TABLE "Group" ADD COLUMN IF NOT EXISTS "paymentAmount" INTEGER NOT NULL DEFAULT 8000`;
+
+    // Performance indexes
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Match_status_idx" ON "Match"("status")`;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Match_dateUtc_idx" ON "Match"("dateUtc")`;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "LeaderboardEntry_userId_idx" ON "LeaderboardEntry"("userId")`;
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Prediction_userId_groupId_idx" ON "Prediction"("userId", "groupId")`;
+
     console.log('✅ Schema migration OK');
   } catch (e) {
     console.error('⚠️  Schema migration warning (continuing):', e.message);

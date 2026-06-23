@@ -95,19 +95,21 @@ const setMatchResult = async (req, res) => {
   // 4. Verificar rachas y bonos (fuera de la transacción principal)
   await processBonuses(matchId);
 
-  // 5. Reconstruir el leaderboard
-  await rebuildLeaderboard();
-
-  // 6. Emitir actualización por Socket.io
+  // 5. Responder de inmediato — el leaderboard se reconstruye en background
   const io = req.app.get('io');
-  if (io) {
-    const topPlayers = await getTopN(10);
-    io.to('global').emit('leaderboard:update', { matchId, topPlayers });
-  }
-
-  return res.json({
+  res.json({
     message: `Resultado cargado: ${scoreHome}-${scoreAway}. Puntos calculados para ${match.predictions.length} pronósticos.`,
   });
+
+  // 6. Reconstruir leaderboard y emitir socket en background (no bloquea la respuesta)
+  rebuildLeaderboard()
+    .then(async () => {
+      if (io) {
+        const topPlayers = await getTopN(10);
+        io.to('global').emit('leaderboard:update', { matchId, topPlayers });
+      }
+    })
+    .catch((err) => console.error('[rebuildLeaderboard background]', err.message));
 };
 
 // ─── Bonos por racha y día perfecto ──────────────────────────────────────────
@@ -178,7 +180,8 @@ const rebuildLeaderboard = async () => {
   // Calcular stats por usuario
   const stats = users.map((u) => {
     const matchPts = u.predictions.reduce((s, p) => s + p.pointsTotal, 0);
-    const tournamentPts = u.tournamentPicks?.pointsTotal || 0;
+    // tournamentPicks es array (uno por grupo) → sumar todos
+    const tournamentPts = u.tournamentPicks.reduce((s, tp) => s + (tp.pointsTotal || 0), 0);
     const streakBonusPts = Math.max(u.totalPoints - matchPts - tournamentPts, 0);
     // 1 pto por cada partido finalizado que no apostó (matchIds únicos para evitar contar duplicados entre grupos)
     const predictedMatchIds = new Set(u.predictions.map(p => p.matchId));
@@ -195,33 +198,25 @@ const rebuildLeaderboard = async () => {
   // Ordenar y asignar rank
   stats.sort((a, b) => b.totalPoints - a.totalPoints);
 
-  for (let i = 0; i < stats.length; i++) {
-    const existing = await prisma.leaderboardEntry.findFirst({
-      where: { userId: stats[i].userId, groupId: null },
-    });
+  // Upsert en paralelo — elimina N extra findFirst queries
+  await Promise.all(stats.map((s, i) =>
+    prisma.leaderboardEntry.upsert({
+      where: { userId_groupId: { userId: s.userId, groupId: null } },
+      update: { ...s, rank: i + 1, lastUpdated: new Date() },
+      create: { ...s, rank: i + 1, groupId: null },
+    })
+  ));
 
-    if (existing) {
-      await prisma.leaderboardEntry.update({
-        where: { id: existing.id },
-        data: { ...stats[i], rank: i + 1, lastUpdated: new Date() },
-      });
-    } else {
-      await prisma.leaderboardEntry.create({
-        data: { ...stats[i], rank: i + 1, groupId: null },
-      });
-    }
-  }
-
-  // Recalcular rankings por grupo
+  // Recalcular rankings por grupo reutilizando finishedMatchCount ya calculado
   const groups = await prisma.group.findMany({ select: { id: true } });
-  for (const group of groups) {
-    await rebuildGroupLeaderboard(group.id);
-  }
+  await Promise.all(groups.map((g) => rebuildGroupLeaderboard(g.id, finishedMatchCount)));
 };
 
-const rebuildGroupLeaderboard = async (groupId) => {
-  // Partidos finalizados para calcular bono no-pick dentro del grupo
-  const finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
+const rebuildGroupLeaderboard = async (groupId, finishedMatchCount) => {
+  // Partidos finalizados: reutilizar si viene del rebuild global, si no calcular
+  if (finishedMatchCount === undefined) {
+    finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
+  }
 
   const members = await prisma.groupMember.findMany({
     where: { groupId },
@@ -289,7 +284,7 @@ const getTopN = async (n = 10) => {
 
 // GET /api/admin/dashboard
 const getDashboard = async (req, res) => {
-  const [users, matches, predictions, groups, planFree, planClasico, planPro, openPool] = await Promise.all([
+  const [users, matches, predictions, groups, planFree, planClasico, planPro, openPool, finished, scheduled] = await Promise.all([
     prisma.user.count({ where: { role: 'USER' } }),
     prisma.match.count(),
     prisma.prediction.count(),
@@ -298,10 +293,9 @@ const getDashboard = async (req, res) => {
     prisma.user.count({ where: { plan: 'CLASICO' } }),
     prisma.user.count({ where: { plan: 'PRO' } }),
     prisma.group.findFirst({ where: { isPublic: true }, select: { id: true, name: true, _count: { select: { members: true } } } }),
+    prisma.match.count({ where: { status: 'FINISHED' } }),
+    prisma.match.count({ where: { status: 'SCHEDULED' } }),
   ]);
-
-  const finished = await prisma.match.count({ where: { status: 'FINISHED' } });
-  const scheduled = await prisma.match.count({ where: { status: 'SCHEDULED' } });
 
   return res.json({
     stats: {
