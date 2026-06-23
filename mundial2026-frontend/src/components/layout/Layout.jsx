@@ -90,7 +90,8 @@ export default function Layout() {
     : null
   const storedCanManageGroup = typeof window !== 'undefined'
     && (sessionStorage.getItem('lastGroupCanManage') === 'true' || localStorage.getItem('lastGroupCanManage') === 'true')
-  const currentGroupId = routeGroupId || (isProfileRoute ? storedGroupId : null)
+  const isAdminRoute = pathname.startsWith('/admin')
+  const currentGroupId = routeGroupId || ((isProfileRoute || isAdminRoute) ? storedGroupId : null)
   const fallbackHeaderActions = !isGroupDetail && isProfileRoute && currentGroupId
     ? [
         { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => navigate(`/groups/${currentGroupId}?tab=simulador`), isActive: false },

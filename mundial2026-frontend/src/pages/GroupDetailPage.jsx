@@ -385,7 +385,7 @@ export default function GroupDetailPage() {
   ]
 
   const openCommandCenter = (tab = 'overview') => {
-    navigate(`/admin?tab=${tab}`, { state: { from: `/groups/${id}?tab=config` } })
+    navigate(`/admin?tab=${tab}`, { state: { from: `/groups/${id}` } })
   }
 
   if (isLoading) return (
