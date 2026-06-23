@@ -134,7 +134,7 @@ export default function MatchesPage({ groupId }) {
   const anchorRef = useRef(null)
   useEffect(() => {
     if (!isLoading && anchorRef.current) {
-      setTimeout(() => anchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400)
+      setTimeout(() => anchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400)
     }
   }, [isLoading, anchorMatchId])
 
