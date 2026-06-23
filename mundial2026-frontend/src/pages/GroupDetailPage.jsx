@@ -668,7 +668,8 @@ export default function GroupDetailPage() {
       )}
 
       {/* Móvil: grid 5 columnas con ícono arriba (todos visibles) · Desktop: pills horizontales */}
-      <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5 mb-6">
+      <div className="sticky top-16 md:top-20 z-30 -mx-4 px-4 py-2 bg-mundial-navy/90 backdrop-blur-xl border-b border-white/5 mb-6">
+      <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5">
         {tabs.map(({ id: tabId, label, shortLabel, icon: Icon }) => (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
             className={`sm:flex-1 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
@@ -680,6 +681,7 @@ export default function GroupDetailPage() {
             <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
+      </div>
       </div>
 
       <AnimatePresence mode="wait">
