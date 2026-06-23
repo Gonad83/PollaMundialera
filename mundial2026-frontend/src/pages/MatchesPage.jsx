@@ -133,12 +133,17 @@ export default function MatchesPage({ groupId }) {
   }, [listMatches])
   const anchorRef = useRef(null)
   useEffect(() => {
-    if (!isLoading && anchorRef.current) {
-      // Sin animación para que no se vea el scroll pasando por partidos anteriores
-      requestAnimationFrame(() => {
-        anchorRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' })
-      })
-    }
+    if (isLoading) return
+    // window.scrollTo en lugar de scrollIntoView para evitar que scroll
+    // quede atrapado en un ancestro overflow-hidden de Framer Motion.
+    // 200ms para que el layout de Framer Motion esté estable.
+    const t = setTimeout(() => {
+      const el = anchorRef.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.pageYOffset - 80
+      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' })
+    }, 200)
+    return () => clearTimeout(t)
   }, [isLoading, anchorMatchId])
 
   // Real standings: only counts FINISHED matches with actual scores
