@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { BarChart3, CheckCircle2, Clock, LockKeyhole, Trophy } from 'lucide-react'
@@ -129,6 +129,18 @@ export default function CompareView({ groupId, members = [] }) {
     return map
   }, [teams])
 
+  // Scroll automático al partido más reciente (extremo derecho) al cargar
+  const tableScrollRef = useRef(null)
+  useEffect(() => {
+    if (tableScrollRef.current && matches.length > 0) {
+      setTimeout(() => {
+        if (tableScrollRef.current) {
+          tableScrollRef.current.scrollLeft = tableScrollRef.current.scrollWidth
+        }
+      }, 100)
+    }
+  }, [matches.length])
+
   const tournamentCompare = useQuery({
     queryKey: ['tournament-compare', groupId, visibleMembers.map(m => m.userId).join('|')],
     enabled: mode === 'tournament' && !!groupId && visibleMembers.length > 0,
@@ -224,7 +236,7 @@ export default function CompareView({ groupId, members = [] }) {
 
       {/* Tabla scrollable */}
       <div className="card overflow-hidden bg-white/5 border border-white/5">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" ref={tableScrollRef}>
           <table className="min-w-full border-collapse">
             <thead>
               <tr className="bg-white/5 border-b border-white/8">
