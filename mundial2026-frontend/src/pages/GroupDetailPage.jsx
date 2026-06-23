@@ -667,22 +667,26 @@ export default function GroupDetailPage() {
         </motion.div>
       )}
 
-      {/* Móvil: grid 5 columnas con ícono arriba (todos visibles) · Desktop: pills horizontales */}
-      <div className="sticky top-16 md:top-20 z-30 -mx-4 px-4 py-2 bg-mundial-navy/90 backdrop-blur-xl border-b border-white/5 mb-6">
-      <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5">
-        {tabs.map(({ id: tabId, label, shortLabel, icon: Icon }) => (
-          <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
-            className={`sm:flex-1 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
-              ${activeTab === tabId ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <Icon size={15} className="sm:hidden" />
-            <Icon size={13} className="hidden sm:block" />
-            <span className="sm:hidden leading-none">{shortLabel}</span>
-            <span className="hidden sm:inline">{label}</span>
-          </button>
-        ))}
+      {/* Tabs fijos — fixed en vez de sticky porque motion.div con transform rompe sticky */}
+      <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5">
+            {tabs.map(({ id: tabId, label, shortLabel, icon: Icon }) => (
+              <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
+                className={`sm:flex-1 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
+                  ${activeTab === tabId ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+              >
+                <Icon size={15} className="sm:hidden" />
+                <Icon size={13} className="hidden sm:block" />
+                <span className="sm:hidden leading-none">{shortLabel}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-      </div>
+      {/* Espaciador para compensar el alto del tab bar fixed (~64px móvil / ~56px desktop) */}
+      <div className="h-16 md:h-14 mb-2" />
 
       <AnimatePresence mode="wait">
 
