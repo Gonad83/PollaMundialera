@@ -134,7 +134,10 @@ export default function MatchesPage({ groupId }) {
   const anchorRef = useRef(null)
   useEffect(() => {
     if (!isLoading && anchorRef.current) {
-      setTimeout(() => anchorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 400)
+      // Sin animación para que no se vea el scroll pasando por partidos anteriores
+      requestAnimationFrame(() => {
+        anchorRef.current?.scrollIntoView({ behavior: 'instant', block: 'start' })
+      })
     }
   }, [isLoading, anchorMatchId])
 
