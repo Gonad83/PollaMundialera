@@ -129,17 +129,17 @@ export default function CompareView({ groupId, members = [] }) {
     return map
   }, [teams])
 
-  // Scroll automático al partido más reciente (extremo derecho) al cargar
+  // Scroll al extremo derecho (partidos más recientes) al cargar o cuando llegan los datos
   const tableScrollRef = useRef(null)
   useEffect(() => {
-    if (tableScrollRef.current && matches.length > 0) {
-      setTimeout(() => {
-        if (tableScrollRef.current) {
-          tableScrollRef.current.scrollLeft = tableScrollRef.current.scrollWidth
-        }
-      }, 100)
-    }
-  }, [matches.length])
+    if (isLoading || matches.length === 0 || mode !== 'matches') return
+    // 400ms para que Framer Motion y el render de la tabla terminen
+    const t = setTimeout(() => {
+      const el = tableScrollRef.current
+      if (el) el.scrollLeft = el.scrollWidth
+    }, 400)
+    return () => clearTimeout(t)
+  }, [isLoading, matches.length, mode])
 
   const tournamentCompare = useQuery({
     queryKey: ['tournament-compare', groupId, visibleMembers.map(m => m.userId).join('|')],
