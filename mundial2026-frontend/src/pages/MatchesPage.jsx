@@ -1,8 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
 import { teamEsp, teamFlagUrl } from '../lib/teams'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi } from '../lib/api'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -65,9 +65,23 @@ export default function MatchesPage({ groupId }) {
   const [phase, setPhase] = useState('')
   const [viewMode, setViewMode] = useState('apostado') // 'apostado' | 'real'
 
+  const qc = useQueryClient()
+
+  // Cuando el servidor despierta del cold start → refetch inmediato de queries fallidas
+  useEffect(() => {
+    const handler = () => {
+      qc.refetchQueries({ queryKey: ['matches-all'] })
+      qc.refetchQueries({ queryKey: ['my-predictions-all', groupId ?? 'global'] })
+    }
+    window.addEventListener('server:awake', handler)
+    return () => window.removeEventListener('server:awake', handler)
+  }, [qc, groupId])
+
   const { data: allMatches = [], isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['matches-all'],
     queryFn: () => matchApi.list({}).then(r => r.data),
+    staleTime: 3 * 60 * 1000,   // 3 min: visitas repetidas ven datos en caché al instante
+    gcTime: 60 * 60 * 1000,     // 1h: datos sobreviven navegación entre tabs
     // Auto-refresh cada 30 segundos cuando hay al menos un partido EN VIVO
     refetchInterval: (query) =>
       query.state.data?.some(m => m.status === 'LIVE') ? 30_000 : false,
@@ -82,6 +96,8 @@ export default function MatchesPage({ groupId }) {
   const { data: allMyPreds = [] } = useQuery({
     queryKey: ['my-predictions-all', groupId ?? 'global'],
     queryFn: () => predictionApi.my(groupId ? { groupId } : {}).then(r => r.data),
+    staleTime: 2 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
   })
 
   // Map: matchId → prediction del grupo actual (o global si no hay grupo)
@@ -237,11 +253,7 @@ export default function MatchesPage({ groupId }) {
       </motion.div>
 
       {isLoading ? (
-        <div className="grid gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="card h-28 animate-pulse bg-white/5 border-white/5" />
-          ))}
-        </div>
+        <MatchesSkeleton />
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
         <div className="space-y-16">
@@ -384,6 +396,28 @@ function predResult(pred) {
   if ((pred.pointsExact || 0) >= 5) return { icon: Flame,     label: 'Exacto',     cls: 'text-mundial-gold', pts }
   if ((pred.pointsWinner || 0) > 0) return { icon: Check,     label: 'Ganador',    cls: 'text-green-400',    pts }
   return                                    { icon: X,         label: 'Fallo',      cls: 'text-zinc-600',     pts }
+}
+
+function MatchesSkeleton() {
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setSlow(true), 8000)
+    return () => clearTimeout(t)
+  }, [])
+  return (
+    <div className="grid gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="card h-28 animate-pulse bg-white/5 border-white/5" />
+      ))}
+      {slow && (
+        <div className="mt-4 flex flex-col items-center gap-3 py-8 text-center">
+          <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <p className="text-[11px] text-amber-400 font-black uppercase tracking-widest">Despertando el servidor…</p>
+          <p className="text-[10px] text-zinc-500 font-bold">Railway tarda ~30-60s en el primer acceso. Ya casi.</p>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function MatchRow({ match, pred, groupId, apostado = false }) {

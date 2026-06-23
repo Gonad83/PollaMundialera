@@ -32,10 +32,12 @@ export function useServerStatus() {
           await axios.get(HEALTH_URL, { timeout: 5000 })
           setStatus('ok')
           clearInterval(interval)
+          // Notificar que el servidor despertó → queries pueden reintentarse
+          window.dispatchEvent(new Event('server:awake'))
         } catch {}
       }, 4000)
-      // Limpiar después de 60s máximo
-      setTimeout(() => clearInterval(interval), 60000)
+      // Limpiar después de 90s máximo
+      setTimeout(() => clearInterval(interval), 90000)
     }
 
     window.addEventListener('server:waking', handler)
