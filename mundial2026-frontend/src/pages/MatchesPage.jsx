@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
 import { teamEsp, teamFlagUrl } from '../lib/teams'
@@ -132,19 +132,15 @@ export default function MatchesPage({ groupId }) {
     return live?.id ?? listMatches.find(m => m.status === 'SCHEDULED')?.id ?? null
   }, [listMatches])
   const anchorRef = useRef(null)
-  useEffect(() => {
-    if (isLoading) return
-    // window.scrollTo en lugar de scrollIntoView para evitar que scroll
-    // quede atrapado en un ancestro overflow-hidden de Framer Motion.
-    // 200ms para que el layout de Framer Motion esté estable.
-    const t = setTimeout(() => {
-      const el = anchorRef.current
-      if (!el) return
-      const top = el.getBoundingClientRect().top + window.pageYOffset - 80
-      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' })
-    }, 200)
-    return () => clearTimeout(t)
-  }, [isLoading, anchorMatchId])
+  // useLayoutEffect: corre sincrónicamente ANTES del primer paint del browser.
+  // El usuario nunca ve México vs Sudáfrica porque el scroll ocurre antes de pintar.
+  useLayoutEffect(() => {
+    if (!anchorMatchId) return
+    const el = anchorRef.current
+    if (!el) return
+    const top = el.getBoundingClientRect().top + window.pageYOffset - 80
+    window.scrollTo({ top: Math.max(0, top), behavior: 'instant' })
+  }, [anchorMatchId])
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
