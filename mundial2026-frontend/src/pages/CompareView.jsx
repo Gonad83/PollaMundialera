@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { BarChart3, CheckCircle2, Clock, LockKeyhole, Trophy } from 'lucide-react'
+import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy } from 'lucide-react'
 import { matchApi, predictionApi, tournamentApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
 
