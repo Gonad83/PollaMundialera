@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { tournamentApi, matchApi } from '../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown } from 'lucide-react'
+import { Trophy, Award, BarChart3, Save, Star, Search, Shield, ChevronRight, Zap, Target, Crown, Users, LockKeyhole } from 'lucide-react'
 import { teamEsp } from '../lib/teams'
 
 // Helper: muestra bandera como img si es URL, o emoji/icono si no
@@ -39,8 +39,9 @@ const formatDeadlineLabel = (isoStr) => {
   return `${wd} ${day} ${mon} ${yr} · ${get('hour')}:${get('minute')} HRS CHILE`
 }
 
-export default function TournamentPage({ groupId }) {
+export default function TournamentPage({ groupId, members = [] }) {
   const qc = useQueryClient()
+  const [viewMode, setViewMode] = useState('own') // 'own' | 'compare'
   const [section, setSection] = useState('clasificacion')
   const [saved, setSaved] = useState(false)
 
@@ -185,6 +186,29 @@ export default function TournamentPage({ groupId }) {
     return map
   }, [tournamentTeams])
 
+  const visibleMembers = useMemo(() =>
+    members.filter(m => m.user?.role !== 'SUPER_ADMIN'),
+    [members]
+  )
+
+  const { data: compareRows = [], isLoading: loadingCompare } = useQuery({
+    queryKey: ['tournament-compare-tab', groupId, visibleMembers.map(m => m.userId).join('|')],
+    enabled: viewMode === 'compare' && !!groupId && visibleMembers.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const results = await Promise.allSettled(
+        visibleMembers.map(m =>
+          tournamentApi.userPicks(m.userId, { groupId }).then(r => ({ member: m, picks: r.data }))
+        )
+      )
+      return results.map((r, i) =>
+        r.status === 'fulfilled'
+          ? r.value
+          : { member: visibleMembers[i], error: r.reason?.response?.data?.error || 'No disponible' }
+      )
+    },
+  })
+
   const { completedCount, totalCount, completionPct } = useMemo(() => {
     const checks = [
       !!form.champion,
@@ -231,6 +255,37 @@ export default function TournamentPage({ groupId }) {
 
   return (
     <div className="max-w-4xl mx-auto pb-32 px-4">
+
+      {/* Toggle MI PREDICCIÓN / VER GRUPO */}
+      <div className="flex p-1 rounded-2xl bg-white/5 border border-white/5 mb-8">
+        <button
+          onClick={() => setViewMode('own')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+            ${viewMode === 'own' ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20' : 'text-zinc-500 hover:text-white'}`}
+        >
+          <Trophy size={13} /> Mi Predicción
+        </button>
+        <button
+          onClick={() => setViewMode('compare')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+            ${viewMode === 'compare' ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20' : 'text-zinc-500 hover:text-white'}`}
+        >
+          <Users size={13} /> Ver Grupo
+        </button>
+      </div>
+
+      {/* ── VISTA COMPARATIVA DEL GRUPO ── */}
+      {viewMode === 'compare' && (
+        <TournamentGroupCompare
+          rows={compareRows}
+          isLoading={loadingCompare}
+          teamById={teamById}
+        />
+      )}
+
+      {/* ── MI PREDICCIÓN ── */}
+      {viewMode === 'own' && (<>
+
       {/* Header Section */}
       <div className="mb-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
         <div className="flex flex-col flex-1">
@@ -498,7 +553,7 @@ export default function TournamentPage({ groupId }) {
 
       {/* Sticky Bottom Bar for Mobile */}
       <div className="fixed bottom-24 left-0 right-0 px-4 md:hidden pointer-events-none z-50">
-         <motion.div 
+         <motion.div
           initial={{ y: 100 }} animate={{ y: 0 }}
           className="max-w-lg mx-auto pointer-events-auto"
          >
@@ -512,6 +567,199 @@ export default function TournamentPage({ groupId }) {
               <span className="uppercase tracking-[0.2em] text-[10px]">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
             </button>
          </motion.div>
+      </div>
+      </>)}
+    </div>
+  )
+}
+
+// ── Comparativa de grupo (torneo) ────────────────────────────────────────────
+
+function TournamentGroupCompare({ rows, isLoading, teamById }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-4 animate-pulse">
+        {[...Array(3)].map((_, i) => <div key={i} className="h-48 rounded-3xl bg-white/5" />)}
+      </div>
+    )
+  }
+
+  if (!rows.length) {
+    return (
+      <div className="card p-16 text-center bg-white/5 border border-white/5">
+        <Users size={40} className="mx-auto text-zinc-800 mb-4" />
+        <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">Sin participantes para comparar</p>
+      </div>
+    )
+  }
+
+  const allLocked = rows.every(r => r.error && String(r.error).toLowerCase().includes('revelan'))
+  if (allLocked) {
+    return (
+      <div className="card p-12 text-center bg-white/5 border border-white/5">
+        <LockKeyhole size={40} className="mx-auto text-mundial-gold mb-4" />
+        <h3 className="font-display text-2xl uppercase text-white mb-2">Pronósticos bloqueados</h3>
+        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Los pronósticos del torneo se revelan cuando cierre el plazo.</p>
+      </div>
+    )
+  }
+
+  const byId = (id) => teamById.get(id)
+  const list = (ids = []) => ids?.map(byId).filter(Boolean) ?? []
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-2">
+        <Users size={18} className="text-mundial-gold" />
+        <h2 className="font-display text-2xl uppercase text-white">Predicciones del Grupo</h2>
+      </div>
+
+      {/* Tabla resumen rápida: campeón + bota de oro de todos */}
+      <div className="card overflow-hidden bg-white/5 border border-white/5">
+        <div className="px-4 py-3 border-b border-white/8 bg-white/5">
+          <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Resumen rápido</p>
+        </div>
+        <div className="divide-y divide-white/5">
+          {rows.map(({ member, picks, error }) => {
+            if (error) return null
+            const champion = byId(picks?.champion)
+            const scorer = byId(picks?.topScorerId)
+            return (
+              <div key={member.userId} className="flex items-center gap-3 px-4 py-3">
+                <div className="w-7 h-7 rounded-lg bg-mundial-gold/10 flex items-center justify-center text-[11px] font-black text-mundial-gold shrink-0">
+                  {member.user?.username?.[0]?.toUpperCase()}
+                </div>
+                <span className="text-[11px] font-bold text-zinc-300 w-24 truncate shrink-0">{member.user?.username}</span>
+                <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
+                  <span className="text-[9px] text-zinc-600 font-black uppercase">Campeón:</span>
+                  {champion ? (
+                    <span className="flex items-center gap-1.5">
+                      <Flag url={champion.flagUrl} name={teamEsp(champion)} className="w-5 h-3.5 object-contain" />
+                      <span className="text-[10px] font-black text-mundial-gold uppercase">{teamEsp(champion)}</span>
+                    </span>
+                  ) : <span className="text-zinc-700 text-[10px]">—</span>}
+                  <span className="text-zinc-700 mx-1">·</span>
+                  <span className="text-[9px] text-zinc-600 font-black uppercase">Bota:</span>
+                  {scorer ? (
+                    <span className="flex items-center gap-1.5">
+                      <Flag url={scorer.flagUrl} name={teamEsp(scorer)} className="w-5 h-3.5 object-contain" />
+                      <span className="text-[10px] font-black text-zinc-300 uppercase">{teamEsp(scorer)}</span>
+                    </span>
+                  ) : <span className="text-zinc-700 text-[10px]">—</span>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Tarjetas detalladas por jugador */}
+      {rows.map(({ member, picks, error }) => (
+        <motion.article
+          key={member.userId}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="card overflow-hidden bg-white/5 border border-white/5"
+        >
+          <div className="flex items-center gap-3 border-b border-white/8 p-4">
+            <div className="w-10 h-10 rounded-2xl bg-mundial-gold/10 flex items-center justify-center font-black text-mundial-gold">
+              {member.user?.username?.[0]?.toUpperCase()}
+            </div>
+            <div>
+              <h3 className="font-display text-xl uppercase text-white">{member.user?.username}</h3>
+              <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Pronóstico de torneo</p>
+            </div>
+          </div>
+
+          {error ? (
+            <div className="p-6 text-xs font-bold uppercase tracking-widest text-zinc-600">{error}</div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+              {/* Copa y final */}
+              <GroupBlock title="Copa y final">
+                <GroupLine label="Campeón" team={byId(picks.champion)} highlight />
+                <GroupLine label="Finalista 1" team={byId(picks.finalist1)} />
+                <GroupLine label="Finalista 2" team={byId(picks.finalist2)} />
+              </GroupBlock>
+
+              {/* Premios */}
+              <GroupBlock title="Premios individuales">
+                <GroupLine label="Bota de Oro" team={byId(picks.topScorerId)} />
+                <GroupLine label="Balón de Oro" team={byId(picks.bestPlayerId)} />
+                <GroupLine label="Guante de Oro" team={byId(picks.bestKeeperId)} />
+                <GroupLine label="Mejor joven" team={byId(picks.bestYoungId)} />
+              </GroupBlock>
+
+              {/* Especiales */}
+              <GroupBlock title="Estadísticas">
+                <GroupLine label="Anfitrión" team={byId(picks.hostFurthest)} />
+                <GroupLine label="Más goleadora" team={byId(picks.mostGoalsTeamId)} />
+                <GroupLine label="Valla invicta" team={byId(picks.leastGoalsTeamId)} />
+                <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 flex items-center justify-between">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Total goles</p>
+                  <p className="font-display text-xl text-mundial-gold">{picks.totalGoals ?? '—'}</p>
+                </div>
+              </GroupBlock>
+
+              {/* Camino al título */}
+              <GroupBlock title="Camino al título">
+                <GroupChips label="Semis (4)" teams={list(picks.semifinalists)} />
+                <GroupChips label="4tos (8)" teams={list(picks.quarterfinalists)} />
+                <GroupChips label="8vos (16)" teams={list(picks.round16Teams)} compact />
+                <GroupChips label="16avos (32)" teams={list(picks.round32Teams)} compact />
+              </GroupBlock>
+            </div>
+          )}
+        </motion.article>
+      ))}
+    </div>
+  )
+}
+
+function GroupBlock({ title, children }) {
+  return (
+    <div className="rounded-2xl border border-white/8 bg-mundial-navy/45 p-4">
+      <h4 className="mb-3 font-display text-lg uppercase text-mundial-gold">{title}</h4>
+      <div className="space-y-2">{children}</div>
+    </div>
+  )
+}
+
+function GroupLine({ label, team, highlight = false }) {
+  return (
+    <div className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${highlight ? 'border-mundial-gold/25 bg-mundial-gold/10' : 'border-white/8 bg-white/5'}`}>
+      <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{label}</span>
+      {team ? (
+        <span className="flex items-center gap-2 min-w-0">
+          <Flag url={team.flagUrl} name={teamEsp(team)} className="w-5 h-3.5 object-contain" />
+          <span className={`text-[11px] font-black uppercase truncate ${highlight ? 'text-mundial-gold' : 'text-zinc-300'}`}>{teamEsp(team)}</span>
+        </span>
+      ) : (
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-700">—</span>
+      )}
+    </div>
+  )
+}
+
+function GroupChips({ label, teams, compact = false }) {
+  return (
+    <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{label}</span>
+        <span className="text-[9px] font-black text-mundial-gold">{teams.length}</span>
+      </div>
+      <div className={`grid gap-1.5 ${compact ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'}`}>
+        {teams.slice(0, compact ? 8 : 4).map(team => (
+          <div key={team.id} className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1.5 min-w-0">
+            <Flag url={team.flagUrl} name={teamEsp(team)} className="w-5 h-3.5 object-contain shrink-0" />
+            <span className="text-[9px] font-black uppercase text-zinc-400 truncate">{teamEsp(team)}</span>
+          </div>
+        ))}
+        {teams.length > (compact ? 8 : 4) && (
+          <div className="flex items-center justify-center rounded-lg bg-white/5 px-2 py-1.5">
+            <span className="text-[9px] font-black uppercase text-zinc-600">+{teams.length - (compact ? 8 : 4)} más</span>
+          </div>
+        )}
       </div>
     </div>
   )

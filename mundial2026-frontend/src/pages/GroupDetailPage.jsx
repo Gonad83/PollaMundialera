@@ -712,7 +712,7 @@ export default function GroupDetailPage() {
         {/* ── TAB: PREMIOS ── */}
         {activeTab === 'premios' && (
           <motion.div key="premios" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <TournamentPage groupId={id} />
+            <TournamentPage groupId={id} members={group.members || []} />
           </motion.div>
         )}
 
