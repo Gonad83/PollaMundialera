@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import MatchDetailPage from './MatchDetailPage'
 import { teamEsp, teamFlagUrl } from '../lib/teams'
@@ -126,23 +126,42 @@ export default function MatchesPage({ groupId }) {
     return acc
   }, {})
 
-  // Auto-scroll al primer partido en vivo o próximo al cargar
+  // Primer partido por jugar (en vivo o próximo). Es el ancla donde se posiciona la vista
+  // al entrar: así siempre se ven los partidos que vienen, y para ver los pasados se sube el scroll.
   const anchorMatchId = useMemo(() => {
+    if (!listMatches.length) return null
     const live = listMatches.find(m => m.status === 'LIVE')
-    return live?.id ?? listMatches.find(m => m.status === 'SCHEDULED')?.id ?? null
+    if (live) return live.id
+    const now = Date.now()
+    // El próximo por jugarse: primer partido no finalizado cuya fecha aún no pasó.
+    const upcoming =
+      listMatches.find(m => m.status !== 'FINISHED' && new Date(m.dateUtc).getTime() >= now)
+      ?? listMatches.find(m => m.status !== 'FINISHED')
+    return (upcoming ?? listMatches[listMatches.length - 1]).id
   }, [listMatches])
-  // scrolled: se resetea cada vez que MatchesPage desmonta/monta (cambio de tab)
-  const scrolled = useRef(false)
-  useEffect(() => { scrolled.current = false }, [])
 
-  // Ref callback: React lo llama sincrónicamente cuando el elemento entra al DOM.
-  // No depende de timers ni de cuándo pinta el browser.
-  const anchorRefCb = useCallback((el) => {
-    if (!el || scrolled.current) return
-    scrolled.current = true
-    const top = el.getBoundingClientRect().top + window.pageYOffset - 80
-    window.scrollTo({ top: Math.max(0, top) })
-  }, [])
+  // Posicionar la vista en el próximo partido al cargar. Reintenta hasta encontrar el
+  // elemento (espera a que termine la animación de entrada) y solo lo hace una vez,
+  // para no pelear con el scroll manual del usuario.
+  const didAutoScroll = useRef(false)
+  useEffect(() => { didAutoScroll.current = false }, [groupId])
+  useEffect(() => {
+    if (didAutoScroll.current || isLoading || !anchorMatchId) return
+    let cancelled = false
+    let tries = 0
+    const tryScroll = () => {
+      if (cancelled || didAutoScroll.current) return
+      const el = document.getElementById(`match-card-${anchorMatchId}`)
+      if (el) {
+        el.scrollIntoView({ block: 'start' })
+        didAutoScroll.current = true
+        return
+      }
+      if (++tries < 20) setTimeout(tryScroll, 100)
+    }
+    const t = setTimeout(tryScroll, 150)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [isLoading, anchorMatchId, groupId])
 
   // Real standings: only counts FINISHED matches with actual scores
   const realStandings = useMemo(() =>
@@ -324,7 +343,7 @@ export default function MatchesPage({ groupId }) {
               </div>
               <div className="grid gap-4">
                 {dayMatches.map(match => (
-                  <motion.div key={match.id} ref={match.id === anchorMatchId ? anchorRefCb : undefined} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
+                  <motion.div key={match.id} id={`match-card-${match.id}`} style={match.id === anchorMatchId ? { scrollMarginTop: '170px' } : undefined} variants={itemVariants} whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }}>
                     <MatchRow
                       match={match}
                       pred={allPredMap[match.id]}

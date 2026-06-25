@@ -166,7 +166,7 @@ export default function Layout() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-mundial-navy text-white selection:bg-mundial-gold selection:text-mundial-navy overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-mundial-navy text-white selection:bg-mundial-gold selection:text-mundial-navy overflow-x-clip">
       {/* Notificación Global (Real-time Broadcast) */}
       <AnimatePresence>
         {notification && (

@@ -438,9 +438,7 @@ export default function GroupDetailPage() {
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
-  // La barra de tabs queda FIJA arriba en Ranking, Comparativa, Pronóstico Torneo y
-  // Participantes; en "Pronóstico partidos" (resultados) se desplaza con la lista de partidos.
-  const tabsFixed = activeTab !== 'resultados'
+  // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
     <div className="grid grid-cols-[1fr_1fr_1.4fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
       {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
@@ -695,23 +693,14 @@ export default function GroupDetailPage() {
         </motion.div>
       )}
 
-      {/* Tabs — fijos arriba en Ranking/Comparativa/Torneo/Participantes; en Pronóstico
-          partidos se desplazan junto con la lista de partidos (no quedan pegados arriba) */}
-      {tabsFixed ? (
-        <>
-          <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
-            <div className="max-w-7xl mx-auto px-4 py-2">
-              {tabsPill}
-            </div>
-          </div>
-          {/* Espaciador para compensar el alto del tab bar fixed (~64px móvil / ~56px desktop) */}
-          <div className="h-16 md:h-14 mb-2" />
-        </>
-      ) : (
-        <div className="mb-4">
+      {/* Tabs — siempre fijos arriba (debajo del header sticky) en todas las pestañas */}
+      <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
+        <div className="max-w-7xl mx-auto px-4 py-2">
           {tabsPill}
         </div>
-      )}
+      </div>
+      {/* Espaciador para compensar el alto del tab bar fixed (~64px móvil / ~56px desktop) */}
+      <div className="h-16 md:h-14 mb-2" />
 
       <AnimatePresence mode="wait">
 
