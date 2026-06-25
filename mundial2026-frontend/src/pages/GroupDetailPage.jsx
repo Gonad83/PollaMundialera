@@ -213,7 +213,7 @@ export default function GroupDetailPage() {
   // Sin activeTab en deps para evitar loop; cuando no hay tabParam siempre vuelve a resultados.
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['resultados', 'premios', 'ranking', 'liga', 'messages', 'config', 'reglas', 'simulador'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'ranking', 'comparar', 'liga', 'messages', 'config', 'reglas', 'simulador'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group) {
       setActiveTab('resultados')
@@ -429,11 +429,12 @@ export default function GroupDetailPage() {
 
   // Tabs — MENSAJES, REGLAS y AJUSTES se mueven al header
   // shortLabel: versión corta para móvil (los 5 tabs deben caber sin scroll)
+  // Comparativa va al centro y destacada: ahí los jugadores ven a los otros apostadores
   const tabs = [
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
-    { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
     { id: 'ranking',    label: 'Ranking',             shortLabel: 'Ranking',  icon: BarChart3 },
-    { id: 'comparar',   label: 'Comparativa',         shortLabel: 'Comparar', icon: Star },
+    { id: 'comparar',   label: 'Comparativa',         shortLabel: 'Comparar', icon: Star, featured: true },
+    { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
@@ -670,18 +671,26 @@ export default function GroupDetailPage() {
       {/* Tabs fijos — fixed en vez de sticky porque motion.div con transform rompe sticky */}
       <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
         <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="grid grid-cols-5 sm:flex p-1 gap-0.5 sm:gap-0 rounded-2xl bg-white/5 border border-white/5">
-            {tabs.map(({ id: tabId, label, shortLabel, icon: Icon }) => (
-              <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
-                className={`sm:flex-1 py-2 sm:py-2.5 px-1 sm:px-4 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
-                  ${activeTab === tabId ? 'bg-mundial-gold text-mundial-navy shadow-lg' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-              >
-                <Icon size={15} className="sm:hidden" />
-                <Icon size={13} className="hidden sm:block" />
-                <span className="sm:hidden leading-none">{shortLabel}</span>
-                <span className="hidden sm:inline">{label}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-[1fr_1fr_1.4fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+            {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
+              const active = activeTab === tabId
+              return (
+                <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
+                  className={`relative rounded-xl py-2 sm:py-2.5 px-1 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
+                    ${featured ? 'sm:flex-[1.6]' : 'sm:flex-1'}
+                    ${active
+                      ? `bg-mundial-gold text-mundial-navy shadow-lg${featured ? ' shadow-mundial-gold/40 ring-2 ring-mundial-gold/60' : ''}`
+                      : featured
+                        ? 'bg-mundial-gold/[0.12] text-mundial-gold ring-1 ring-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.12)] hover:bg-mundial-gold/20'
+                        : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+                >
+                  <Icon size={featured ? 17 : 15} className="sm:hidden" fill={featured ? 'currentColor' : 'none'} />
+                  <Icon size={featured ? 15 : 13} className="hidden sm:block" fill={featured ? 'currentColor' : 'none'} />
+                  <span className="sm:hidden leading-none">{shortLabel}</span>
+                  <span className="hidden sm:inline text-center leading-tight">{label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>

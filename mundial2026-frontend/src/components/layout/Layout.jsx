@@ -264,15 +264,20 @@ export default function Layout() {
                     </NavLink>
                   )
                 })}
-                {/* Botones de grupo (Mensajes, Ajustes) pegados al mismo pill */}
+                {/* Divisor: separa la navegación principal de las herramientas del grupo */}
+                {effectiveHeaderActions.length > 0 && (
+                  <span className="self-center w-px h-5 bg-white/10 mx-1.5" aria-hidden="true" />
+                )}
+                {/* Herramientas del grupo (Simular, Mensajes, Ajustes) — agrupadas al final del pill */}
                 {effectiveHeaderActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
                   <button
                     key={id}
                     onClick={onClick}
-                    className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                    title={label}
+                    className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
                       ${isActive
                         ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
+                        : 'text-zinc-500 hover:text-white hover:bg-white/10'}`}
                   >
                     <Icon size={13} /> {label}
                     {badge > 0 && (

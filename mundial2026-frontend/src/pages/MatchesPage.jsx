@@ -206,56 +206,64 @@ export default function MatchesPage({ groupId }) {
         </div>
       </motion.div>
 
-      {/* Real vs Apostado toggle */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="flex p-1 rounded-2xl bg-white/5 border border-white/10 max-w-xs">
-          <button
-            onClick={() => setViewMode('apostado')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              viewMode === 'apostado'
-                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <Target size={12} /> Pronósticos
-          </button>
-          <button
-            onClick={() => setViewMode('real')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-              viewMode === 'real'
-                ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            <Wifi size={12} /> Real
-          </button>
+      {/* Toolbar unificado: modo de vista + filtros de fase en una sola fila */}
+      <motion.div variants={itemVariants} className="mb-8 border-b border-white/5 pb-5 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          {/* Modo de vista */}
+          <div className="flex p-1 rounded-2xl bg-white/5 border border-white/10 shrink-0 w-full sm:w-auto">
+            <button
+              onClick={() => setViewMode('apostado')}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                viewMode === 'apostado'
+                  ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <Target size={12} /> Pronósticos
+            </button>
+            <button
+              onClick={() => setViewMode('real')}
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                viewMode === 'real'
+                  ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                  : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              <Wifi size={12} /> Real
+            </button>
+          </div>
+
+          {/* Separador en desktop */}
+          <span className="hidden sm:block w-px h-7 bg-white/10 shrink-0" aria-hidden="true" />
+
+          {/* Filtros de fase */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="shrink-0 flex items-center justify-center w-9 h-9 rounded-xl bg-white/5 border border-white/5 text-zinc-500">
+              <Filter size={15} />
+            </div>
+            {PHASES.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setPhase(value)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-extrabold whitespace-nowrap transition-all uppercase tracking-widest border shrink-0 ${
+                  phase === value
+                    ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-2xl shadow-mundial-gold/20'
+                    : 'bg-white/5 text-zinc-500 border-white/5 hover:border-white/10 hover:text-zinc-300'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Hint de pronósticos registrados */}
         {viewMode === 'apostado' && (
-          <p className="mt-2 text-[10px] text-mundial-gold/70 font-bold uppercase tracking-widest flex items-center gap-1.5">
+          <p className="text-[10px] text-mundial-gold/70 font-bold uppercase tracking-widest flex items-center gap-1.5">
             <Target size={10} />
             {apostadoCount} pronóstico{apostadoCount !== 1 ? 's' : ''} registrado{apostadoCount !== 1 ? 's' : ''}
           </p>
         )}
-      </motion.div>
-
-      {/* Phase filters */}
-      <motion.div variants={itemVariants} className="flex gap-2 overflow-x-auto pb-6 no-scrollbar mb-8 border-b border-white/5">
-        <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/5 text-zinc-500 mr-2">
-          <Filter size={16} />
-        </div>
-        {PHASES.map(({ value, label }) => (
-          <button
-            key={value}
-            onClick={() => setPhase(value)}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-extrabold whitespace-nowrap transition-all uppercase tracking-widest border ${
-              phase === value
-                ? 'bg-mundial-gold text-mundial-navy border-mundial-gold shadow-2xl shadow-mundial-gold/20'
-                : 'bg-white/5 text-zinc-500 border-white/5 hover:border-white/10 hover:text-zinc-300'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
       </motion.div>
 
       {isLoading ? (

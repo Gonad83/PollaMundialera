@@ -81,6 +81,11 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
           </button>
         )}
 
+        {/* Divisor: separa navegación principal de las herramientas del grupo */}
+        {headerActions.length > 0 && (
+          <span className="self-center h-7 w-px bg-white/10 shrink-0 mx-0.5" aria-hidden="true" />
+        )}
+
         {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
           <button
             key={id}

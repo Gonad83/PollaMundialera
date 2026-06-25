@@ -175,24 +175,30 @@ export default function CompareView({ groupId, members = [] }) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-2xl uppercase text-white">Comparativa</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600">Revisa partidos y pronósticos del torneo</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600">Compara tus pronósticos con los de los demás apostadores</p>
         </div>
-        <div className="flex rounded-2xl border border-white/8 bg-white/5 p-1">
-          {[
-            { id: 'matches', label: 'Partidos', icon: BarChart3 },
-            { id: 'tournament', label: 'Torneo', icon: Trophy },
-          ].map(item => (
-            <button
-              key={item.id}
-              onClick={() => setMode(item.id)}
-              className={`flex min-w-[110px] items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all ${
-                mode === item.id ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/15' : 'text-zinc-500 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <item.icon size={14} />
-              {item.label}
-            </button>
-          ))}
+        {/* Filtro de contenido (secundario) — no es navegación principal, por eso un estilo más liviano */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span className="hidden text-[9px] font-black uppercase tracking-widest text-zinc-600 sm:inline">Ver:</span>
+          <div className="inline-flex rounded-xl border border-white/8 bg-white/[0.03] p-0.5">
+            {[
+              { id: 'matches', label: 'Partidos', icon: BarChart3 },
+              { id: 'tournament', label: 'Torneo', icon: Trophy },
+            ].map(item => (
+              <button
+                key={item.id}
+                onClick={() => setMode(item.id)}
+                className={`flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${
+                  mode === item.id
+                    ? 'bg-mundial-gold/15 text-mundial-gold ring-1 ring-mundial-gold/30'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                <item.icon size={13} />
+                {item.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
