@@ -490,8 +490,8 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
         )}
       </div>
 
-      {error ? (
-        <div className="p-6 text-xs font-bold uppercase tracking-widest text-zinc-600">{error}</div>
+      {error || !picks ? (
+        <div className="p-6 text-xs font-bold uppercase tracking-widest text-zinc-600">{error || 'Sin pronóstico registrado'}</div>
       ) : (
         <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
           <CompareBlock title="Copa y final">
