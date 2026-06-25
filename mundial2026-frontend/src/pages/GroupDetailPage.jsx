@@ -438,6 +438,33 @@ export default function GroupDetailPage() {
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
+  // La barra de tabs queda FIJA arriba en Ranking, Comparativa, Pronóstico Torneo y
+  // Participantes; en "Pronóstico partidos" (resultados) se desplaza con la lista de partidos.
+  const tabsFixed = activeTab !== 'resultados'
+  const tabsPill = (
+    <div className="grid grid-cols-[1fr_1fr_1.4fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+      {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
+        const active = activeTab === tabId
+        return (
+          <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
+            className={`relative rounded-xl py-2 sm:py-2.5 px-1 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
+              ${featured ? 'sm:flex-[1.6]' : 'sm:flex-1'}
+              ${active
+                ? `bg-mundial-gold text-mundial-navy shadow-lg${featured ? ' shadow-mundial-gold/40 ring-2 ring-mundial-gold/60' : ''}`
+                : featured
+                  ? 'bg-mundial-gold/[0.12] text-mundial-gold ring-1 ring-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.12)] hover:bg-mundial-gold/20'
+                  : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
+          >
+            <Icon size={featured ? 17 : 15} className="sm:hidden" fill={featured ? 'currentColor' : 'none'} />
+            <Icon size={featured ? 15 : 13} className="hidden sm:block" fill={featured ? 'currentColor' : 'none'} />
+            <span className="sm:hidden leading-none">{shortLabel}</span>
+            <span className="hidden sm:inline text-center leading-tight">{label}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4">
       {/* Sim mode banner */}
@@ -668,34 +695,23 @@ export default function GroupDetailPage() {
         </motion.div>
       )}
 
-      {/* Tabs fijos — fixed en vez de sticky porque motion.div con transform rompe sticky */}
-      <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="grid grid-cols-[1fr_1fr_1.4fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
-            {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
-              const active = activeTab === tabId
-              return (
-                <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
-                  className={`relative rounded-xl py-2 sm:py-2.5 px-1 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
-                    ${featured ? 'sm:flex-[1.6]' : 'sm:flex-1'}
-                    ${active
-                      ? `bg-mundial-gold text-mundial-navy shadow-lg${featured ? ' shadow-mundial-gold/40 ring-2 ring-mundial-gold/60' : ''}`
-                      : featured
-                        ? 'bg-mundial-gold/[0.12] text-mundial-gold ring-1 ring-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.12)] hover:bg-mundial-gold/20'
-                        : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
-                >
-                  <Icon size={featured ? 17 : 15} className="sm:hidden" fill={featured ? 'currentColor' : 'none'} />
-                  <Icon size={featured ? 15 : 13} className="hidden sm:block" fill={featured ? 'currentColor' : 'none'} />
-                  <span className="sm:hidden leading-none">{shortLabel}</span>
-                  <span className="hidden sm:inline text-center leading-tight">{label}</span>
-                </button>
-              )
-            })}
+      {/* Tabs — fijos arriba en Ranking/Comparativa/Torneo/Participantes; en Pronóstico
+          partidos se desplazan junto con la lista de partidos (no quedan pegados arriba) */}
+      {tabsFixed ? (
+        <>
+          <div className="fixed top-16 md:top-20 left-0 right-0 z-40 bg-mundial-navy/95 backdrop-blur-xl border-b border-white/8">
+            <div className="max-w-7xl mx-auto px-4 py-2">
+              {tabsPill}
+            </div>
           </div>
+          {/* Espaciador para compensar el alto del tab bar fixed (~64px móvil / ~56px desktop) */}
+          <div className="h-16 md:h-14 mb-2" />
+        </>
+      ) : (
+        <div className="mb-4">
+          {tabsPill}
         </div>
-      </div>
-      {/* Espaciador para compensar el alto del tab bar fixed (~64px móvil / ~56px desktop) */}
-      <div className="h-16 md:h-14 mb-2" />
+      )}
 
       <AnimatePresence mode="wait">
 
