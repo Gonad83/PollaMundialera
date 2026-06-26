@@ -251,23 +251,32 @@ function buildR32(standings) {
   const F = g => f[g] ?? '?'
   const S = g => s[g] ?? '?'
 
+  // ORDEN DEL CUADRO OFICIAL FIFA 2026 (no es el orden numérico P73→P88).
+  // La posición en el array define los cruces de octavos en adelante mediante
+  // emparejamiento adyacente: R16[i] = (pos 2i, pos 2i+1), 4tos = R16 adyacentes, etc.
+  // Octavos oficiales: M89(74-77) M90(73-75) M91(76-78) M92(79-80)
+  //                    M93(83-84) M94(81-82) M95(86-88) M96(85-87)
+  // 4tos: M97(89-90) M98(93-94) M99(91-92) M100(95-96)
+  // Semis: M101(97-98) M102(99-100) · Final: M104(101-102)
   const RAW = [
-    { label: 'P73', desc: '2A vs 2B',  teams: [S('A'), S('B')] },
-    { label: 'P74', desc: '1E vs 3°',  teams: [F('E'), resolveSlot('P74')] },
-    { label: 'P75', desc: '1F vs 2C',  teams: [F('F'), S('C')] },
-    { label: 'P76', desc: '1C vs 2F',  teams: [F('C'), S('F')] },
-    { label: 'P77', desc: '1I vs 3°',  teams: [F('I'), resolveSlot('P77')] },
-    { label: 'P78', desc: '2E vs 2I',  teams: [S('E'), S('I')] },
-    { label: 'P79', desc: '1A vs 3°',  teams: [F('A'), resolveSlot('P79')] },
-    { label: 'P80', desc: '1L vs 3°',  teams: [F('L'), resolveSlot('P80')] },
-    { label: 'P81', desc: '1D vs 3°',  teams: [F('D'), resolveSlot('P81')] },
-    { label: 'P82', desc: '1G vs 3°',  teams: [F('G'), resolveSlot('P82')] },
-    { label: 'P83', desc: '2K vs 2L',  teams: [S('K'), S('L')] },
-    { label: 'P84', desc: '1H vs 2J',  teams: [F('H'), S('J')] },
-    { label: 'P85', desc: '1B vs 3°',  teams: [F('B'), resolveSlot('P85')] },
-    { label: 'P86', desc: '1J vs 2H',  teams: [F('J'), S('H')] },
-    { label: 'P87', desc: '1K vs 3°',  teams: [F('K'), resolveSlot('P87')] },
-    { label: 'P88', desc: '2D vs 2G',  teams: [S('D'), S('G')] },
+    // ── Mitad izquierda → Semifinal M101 ──
+    { label: 'P74', desc: '1E vs 3°',  teams: [F('E'), resolveSlot('P74')] }, // ┐ Octavos M89
+    { label: 'P77', desc: '1I vs 3°',  teams: [F('I'), resolveSlot('P77')] }, // ┘
+    { label: 'P73', desc: '2A vs 2B',  teams: [S('A'), S('B')] },             // ┐ Octavos M90
+    { label: 'P75', desc: '1F vs 2C',  teams: [F('F'), S('C')] },             // ┘
+    { label: 'P83', desc: '2K vs 2L',  teams: [S('K'), S('L')] },             // ┐ Octavos M93
+    { label: 'P84', desc: '1H vs 2J',  teams: [F('H'), S('J')] },             // ┘
+    { label: 'P81', desc: '1D vs 3°',  teams: [F('D'), resolveSlot('P81')] }, // ┐ Octavos M94
+    { label: 'P82', desc: '1G vs 3°',  teams: [F('G'), resolveSlot('P82')] }, // ┘
+    // ── Mitad derecha → Semifinal M102 ──
+    { label: 'P76', desc: '1C vs 2F',  teams: [F('C'), S('F')] },             // ┐ Octavos M91
+    { label: 'P78', desc: '2E vs 2I',  teams: [S('E'), S('I')] },             // ┘
+    { label: 'P79', desc: '1A vs 3°',  teams: [F('A'), resolveSlot('P79')] }, // ┐ Octavos M92
+    { label: 'P80', desc: '1L vs 3°',  teams: [F('L'), resolveSlot('P80')] }, // ┘
+    { label: 'P86', desc: '1J vs 2H',  teams: [F('J'), S('H')] },             // ┐ Octavos M95
+    { label: 'P88', desc: '2D vs 2G',  teams: [S('D'), S('G')] },             // ┘
+    { label: 'P85', desc: '1B vs 3°',  teams: [F('B'), resolveSlot('P85')] }, // ┐ Octavos M96
+    { label: 'P87', desc: '1K vs 3°',  teams: [F('K'), resolveSlot('P87')] }, // ┘
   ]
 
   return {
@@ -682,9 +691,11 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
   if (!bracketTeams || !bracketScores || !bracket) return null
   const gm = (num) => `GM${num}`
   const r32Code = (i) => (bracket.r32labels?.[i] || gm(73 + i)).replace(/^P/, 'GM')
+  // Octavos: el orden del array de R16 sigue el cuadro oficial → códigos no consecutivos
+  const R16_CODES = [89, 90, 93, 94, 91, 92, 95, 96]
   const roundCode = (round, i) => {
     if (round === 'r32') return r32Code(i)
-    if (round === 'r16') return gm(89 + i)
+    if (round === 'r16') return gm(R16_CODES[i] ?? 89 + i)
     if (round === 'qf') return gm(97 + i)
     if (round === 'sf') return gm(101 + i)
     return ''
@@ -788,7 +799,9 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
   )
 }
 
-const SAVE_KEY = 'mundial2026_sim_v3'
+// v4: se corrigió el orden del cuadro (cruces oficiales FIFA). Las sims v3 guardadas
+// tenían el bracket con el orden antiguo → se invalidan para regenerar con el correcto.
+const SAVE_KEY = 'mundial2026_sim_v4'
 
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
 export default function SimulatorPage() {
