@@ -198,14 +198,22 @@ const rebuildLeaderboard = async () => {
   // Ordenar y asignar rank
   stats.sort((a, b) => b.totalPoints - a.totalPoints);
 
-  // Upsert en paralelo — elimina N extra findFirst queries
-  await Promise.all(stats.map((s, i) =>
-    prisma.leaderboardEntry.upsert({
-      where: { userId_groupId: { userId: s.userId, groupId: null } },
-      update: { ...s, rank: i + 1, lastUpdated: new Date() },
-      create: { ...s, rank: i + 1, groupId: null },
-    })
-  ));
+  // Ranking GLOBAL (groupId = null). Prisma no admite null en el selector único
+  // compuesto userId_groupId de un upsert (lanza "Argument groupId must not be null"),
+  // lo que abortaba toda la función y dejaba sin reconstruir los rankings por grupo.
+  // Por eso usamos updateMany (acepta null en el filtro) + create si no existe.
+  await Promise.all(stats.map(async (s, i) => {
+    const { userId, ...points } = s;
+    const updated = await prisma.leaderboardEntry.updateMany({
+      where: { userId, groupId: null },
+      data: { ...points, rank: i + 1, lastUpdated: new Date() },
+    });
+    if (updated.count === 0) {
+      await prisma.leaderboardEntry.create({
+        data: { userId, groupId: null, ...points, rank: i + 1 },
+      });
+    }
+  }));
 
   // Recalcular rankings por grupo reutilizando finishedMatchCount ya calculado
   const groups = await prisma.group.findMany({ select: { id: true } });

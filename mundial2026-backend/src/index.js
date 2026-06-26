@@ -103,6 +103,19 @@ app.post('/sync-matches', async (req, res) => {
   }
   try {
     const result = await syncUtil();
+    // Reconstruir leaderboards cuando se finalizaron/puntuaron partidos en este sync.
+    // syncUtil ya actualiza user.totalPoints y los puntos de cada predicción, pero el
+    // ranking de grupo (LeaderboardEntry) quedaba congelado porque solo se reconstruía
+    // en el sync de admin. Esto recalcula desde las predicciones existentes (no borra ni
+    // modifica puntos ni pronósticos), manteniendo Ranking, Comparativa y header alineados.
+    if ((result.finished || 0) > 0 || (result.scoredPredictions || 0) > 0) {
+      try {
+        const { rebuildLeaderboard } = require('./controllers/adminController');
+        await rebuildLeaderboard();
+      } catch (e) {
+        console.error('[sync-matches] rebuildLeaderboard falló:', e.message);
+      }
+    }
     return res.json({ ok: true, ...result });
   } catch (err) {
     console.error('Sync error:', err.message);
@@ -194,6 +207,14 @@ async function startServer() {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
     console.log(`📡 Socket.io listo`);
     console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
+
+    // Reconstruir leaderboards al arrancar (en segundo plano, sin bloquear el arranque).
+    // Recalcula el ranking de grupo desde las predicciones existentes para corregir
+    // cualquier estado desactualizado tras un deploy. No borra ni modifica puntos ni pronósticos.
+    const { rebuildLeaderboard } = require('./controllers/adminController');
+    rebuildLeaderboard()
+      .then(() => console.log('✅ Leaderboards reconstruidos al arrancar'))
+      .catch((e) => console.error('[startup rebuildLeaderboard] error:', e.message));
   });
 }
 
