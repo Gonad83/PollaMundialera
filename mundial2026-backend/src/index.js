@@ -198,9 +198,27 @@ async function startServer() {
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "LeaderboardEntry_userId_idx" ON "LeaderboardEntry"("userId")`;
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "Prediction_userId_groupId_idx" ON "Prediction"("userId", "groupId")`;
 
+    // Tabla de config global key/value (deadline del torneo persistente)
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Setting" (
+        "key" TEXT PRIMARY KEY,
+        "value" TEXT NOT NULL,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `;
+
     console.log('✅ Schema migration OK');
   } catch (e) {
     console.error('⚠️  Schema migration warning (continuing):', e.message);
+  }
+
+  // Hidratar el deadline del torneo desde la BD: cierre durable que sobrevive
+  // reinicios/deploys (antes vivía solo en memoria y se reabría en cada arranque).
+  try {
+    const { loadDeadlineFromDb } = require('./utils/tournamentDeadlineStore');
+    await loadDeadlineFromDb();
+  } catch (e) {
+    console.error('⚠️  No se pudo cargar el deadline del torneo:', e.message);
   }
 
   httpServer.listen(PORT, () => {

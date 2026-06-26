@@ -284,3 +284,10 @@ model LeaderboardEntry {
   @@unique([userId, groupId])
   @@index([groupId, totalPoints])
 }
+
+// ─── Config global key/value (ej. deadline del torneo, persistente) ───────────
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @default(now())
+}

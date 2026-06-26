@@ -82,6 +82,7 @@ adminRouter.post('/leaderboard/rebuild',         ac.manualRebuildLeaderboard);
 adminRouter.get('/tournament/completion',        ac.getTournamentCompletion);
 adminRouter.get('/tournament/deadline',          ac.getAdminDeadline);
 adminRouter.post('/tournament/deadline',         ac.setAdminDeadline);
+adminRouter.get('/tournament/changes',           ac.getTournamentChanges);
 adminRouter.get('/users',                        ac.getUsers);
 adminRouter.post('/broadcast',                   ac.sendBroadcast);
 adminRouter.patch('/users/:id/plan',             ac.setUserPlan);

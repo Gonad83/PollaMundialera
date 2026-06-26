@@ -664,7 +664,7 @@ const getAdminDeadline = (req, res) => {
 };
 
 // POST /api/admin/tournament/deadline — { deadline: ISO string | "now" | "open" }
-const setAdminDeadline = (req, res) => {
+const setAdminDeadline = async (req, res) => {
   const { deadline } = req.body;
   if (!deadline) return res.status(400).json({ error: 'Campo deadline requerido' });
 
@@ -682,8 +682,46 @@ const setAdminDeadline = (req, res) => {
     iso = d.toISOString();
   }
 
-  setDeadline(iso);
+  await setDeadline(iso); // persiste en BD → el cierre sobrevive reinicios
   return res.json({ deadline: iso, locked: isLocked() });
+};
+
+// GET /api/admin/tournament/changes?since=ISO — Pronósticos de torneo modificados
+// después de una fecha (por defecto, después del deadline). Detecta cambios post-cierre.
+const getTournamentChanges = async (req, res) => {
+  const sinceRaw = req.query.since || getDeadline();
+  const since = new Date(sinceRaw);
+  if (isNaN(since.getTime())) return res.status(400).json({ error: 'Fecha "since" inválida' });
+
+  const picks = await prisma.tournamentPicks.findMany({
+    where: { updatedAt: { gt: since } },
+    select: {
+      userId: true,
+      groupId: true,
+      createdAt: true,
+      updatedAt: true,
+      user:  { select: { username: true, email: true } },
+      group: { select: { name: true } },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  return res.json({
+    since: since.toISOString(),
+    deadline: getDeadline(),
+    locked: isLocked(),
+    count: picks.length,
+    picks: picks.map((p) => ({
+      username:  p.user?.username,
+      email:     p.user?.email,
+      group:     p.group?.name,
+      groupId:   p.groupId,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      // editado tras crearse (no es solo el guardado inicial)
+      editadoTrasCrear: new Date(p.updatedAt).getTime() - new Date(p.createdAt).getTime() > 1000,
+    })),
+  });
 };
 
 module.exports = {
@@ -700,4 +738,5 @@ module.exports = {
   sendBroadcast,
   getAdminDeadline,
   setAdminDeadline,
+  getTournamentChanges,
 };
