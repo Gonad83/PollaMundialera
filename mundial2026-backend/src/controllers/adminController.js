@@ -400,15 +400,23 @@ const setTournamentAwards = async (req, res) => {
 
     pts.pointsTotal = Object.values(pts).reduce((s, v) => s + v, 0);
 
+    // Idempotente: aplicar solo la DIFERENCIA respecto al último cálculo de este pick.
+    // Así re-ejecutar la carga de resultados no vuelve a sumar los puntos del torneo
+    // (1ª corrida: prev = 0 → suma normal; re-corrida con los mismos datos → delta 0).
+    const prevTournamentPts = pick.pointsTotal || 0;
+    const delta = pts.pointsTotal - prevTournamentPts;
+
     await prisma.tournamentPicks.update({
       where: { id: pick.id },
       data: pts,
     });
 
-    await prisma.user.update({
-      where: { id: pick.userId },
-      data: { totalPoints: { increment: pts.pointsTotal } },
-    });
+    if (delta !== 0) {
+      await prisma.user.update({
+        where: { id: pick.userId },
+        data: { totalPoints: { increment: delta } },
+      });
+    }
   }
 
   await rebuildLeaderboard();
