@@ -118,6 +118,7 @@ export const adminApi = {
   tournamentCompletion: ()       => api.get('/admin/tournament/completion'),
   getTournamentDeadline: ()      => api.get('/admin/tournament/deadline'),
   setTournamentDeadline: (d)     => api.post('/admin/tournament/deadline', { deadline: d }),
+  tournamentChanges: (since)     => api.get('/admin/tournament/changes', { params: since ? { since } : {} }),
   getUsers:        ()          => api.get('/admin/users'),
   sendBroadcast:   (data)      => api.post('/admin/broadcast', data),
   setPremium:      (id, data)  => api.patch(`/admin/groups/${id}/premium`, data),

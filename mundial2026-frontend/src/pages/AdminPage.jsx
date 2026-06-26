@@ -208,6 +208,12 @@ export default function AdminPage() {
     onError: (err) => showFeedback(err.response?.data?.error || 'Error al actualizar deadline', 'error'),
   })
 
+  // Auditoría: pronósticos de torneo editados después del cierre
+  const changesMut = useMutation({
+    mutationFn: (since) => adminApi.tournamentChanges(since).then(r => r.data),
+    onError: (err) => showFeedback(err.response?.data?.error || 'Error al consultar cambios', 'error'),
+  })
+
   const setPlanMut = useMutation({
     mutationFn: ({ id, plan }) => adminApi.setUserPlan(id, plan),
     onSuccess: () => {
@@ -753,6 +759,59 @@ export default function AdminPage() {
                       >
                         {deadlineMut.isPending ? 'Guardando...' : 'Guardar Nuevo Plazo'}
                       </button>
+                    </div>
+
+                    {/* Auditoría: pronósticos editados después del cierre */}
+                    <div className="flex flex-col gap-3 border-t border-white/5 pt-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-widest font-black text-zinc-500">Auditoría</p>
+                          <p className="text-xs text-zinc-300">Pronósticos editados después del cierre</p>
+                        </div>
+                        <button
+                          onClick={() => changesMut.mutate(undefined)}
+                          disabled={changesMut.isPending}
+                          className="py-3 px-5 rounded-2xl bg-white/5 border border-white/10 text-zinc-300 font-black text-[10px] uppercase tracking-widest hover:border-mundial-gold/40 hover:text-mundial-gold transition-all disabled:opacity-50 shrink-0"
+                        >
+                          {changesMut.isPending ? 'Buscando...' : 'Ver cambios tras el cierre'}
+                        </button>
+                      </div>
+
+                      {changesMut.data && (
+                        <div className="rounded-2xl border border-white/8 bg-white/[0.03] overflow-hidden">
+                          <div className="px-4 py-3 border-b border-white/5 flex items-center justify-between gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                              Desde {fmtChileDateTime(changesMut.data.since)} CHT
+                            </span>
+                            <span className={`text-[10px] font-black uppercase tracking-widest ${changesMut.data.count > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                              {changesMut.data.count} cambio{changesMut.data.count !== 1 ? 's' : ''}
+                            </span>
+                          </div>
+                          {changesMut.data.count === 0 ? (
+                            <p className="px-4 py-5 text-center text-xs text-green-400 font-bold">
+                              ✓ Nadie editó su pronóstico de torneo después del cierre
+                            </p>
+                          ) : (
+                            <div className="divide-y divide-white/5 max-h-72 overflow-y-auto">
+                              {changesMut.data.picks.map((p, i) => (
+                                <div key={i} className="px-4 py-3 flex items-center justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-bold text-white truncate">{p.username || '—'}</p>
+                                    <p className="text-[10px] text-zinc-500 truncate">{p.email} · {p.group}</p>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <p className="text-[9px] uppercase tracking-widest font-black text-red-400">Editó</p>
+                                    <p className="text-[10px] text-zinc-400 font-mono tabular-nums">{fmtChileDateTime(p.updatedAt)} CHT</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <p className="px-4 py-2 text-[9px] text-zinc-600 border-t border-white/5">
+                            No hay historial: se detecta quién editó, pero el valor previo no se puede restaurar.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                </PickSection>
