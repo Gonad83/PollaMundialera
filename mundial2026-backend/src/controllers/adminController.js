@@ -1,7 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { calculatePredictionPoints } = require('./predictionController');
-const { getDeadline, setDeadline, isLocked } = require('../utils/tournamentDeadlineStore');
+const { getDeadline, setDeadline, isLocked, isBracketReopen, getBracketReopenUntil, setBracketReopen } = require('../utils/tournamentDeadlineStore');
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -724,6 +724,27 @@ const getTournamentChanges = async (req, res) => {
   });
 };
 
+// GET /api/admin/tournament/bracket-reopen — estado de la reapertura acotada de cruces
+const getBracketReopenStatus = (req, res) => {
+  res.json({ active: isBracketReopen(), until: getBracketReopenUntil() });
+};
+
+// POST /api/admin/tournament/bracket-reopen — { action: 'open' | 'close', hours? }
+// Abre SOLO la edición de 4tos/semis/finalistas por una ventana (default 24h, auto-expira).
+const setBracketReopenStatus = async (req, res) => {
+  const { action, hours } = req.body || {};
+  if (action === 'close') {
+    await setBracketReopen(null);
+  } else if (action === 'open') {
+    const h = Number(hours) > 0 ? Number(hours) : 24;
+    const until = new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
+    await setBracketReopen(until);
+  } else {
+    return res.status(400).json({ error: 'action debe ser "open" o "close"' });
+  }
+  return res.json({ active: isBracketReopen(), until: getBracketReopenUntil() });
+};
+
 module.exports = {
   setMatchResult,
   setMatchStatus,
@@ -739,4 +760,6 @@ module.exports = {
   getAdminDeadline,
   setAdminDeadline,
   getTournamentChanges,
+  getBracketReopenStatus,
+  setBracketReopenStatus,
 };

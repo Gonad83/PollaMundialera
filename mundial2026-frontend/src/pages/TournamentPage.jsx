@@ -56,6 +56,15 @@ export default function TournamentPage({ groupId, members = [] }) {
   const TOURNAMENT_DEADLINE_LABEL = deadlineData?.deadline
     ? formatDeadlineLabel(deadlineData.deadline)
     : 'DOMINGO 15 JUN 2026 · 15:00 HRS CHILE'
+
+  // Reapertura ACOTADA de cruces: con el torneo cerrado, el admin puede habilitar
+  // editar SOLO 4tos/semis/finalistas. El resto (campeón, premios, etc.) sigue bloqueado.
+  const bracketReopen = !!deadlineData?.bracketReopen
+  const REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists']
+  // ¿Bloqueado este campo? Abierto → nada bloqueado; cerrado → todo salvo cruces si hay reapertura.
+  const lockedField = (key) => isTournamentLocked && !(bracketReopen && REOPEN_FIELDS.includes(key))
+  // ¿Puede guardar? (torneo abierto, o reapertura activa)
+  const canSubmit = !isTournamentLocked || bracketReopen
   const [form, setForm] = useState({
     champion: null, finalist1: null, finalist2: null,
     round32Teams: [], round16Teams: [], semifinalists: [], quarterfinalists: [], groupQualifiers: [],
@@ -319,14 +328,25 @@ export default function TournamentPage({ groupId, members = [] }) {
         <div className="hidden md:block">
             <button
               onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending || isTournamentLocked || !picksReady}
-              className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${isTournamentLocked ? 'opacity-60 cursor-not-allowed grayscale' : !picksReady ? 'opacity-50 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
+              disabled={mutation.isPending || !canSubmit || !picksReady}
+              className={`btn-gold px-8 py-4 rounded-2xl flex items-center gap-3 transition-all ${!canSubmit ? 'opacity-60 cursor-not-allowed grayscale' : !picksReady ? 'opacity-50 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white shadow-green-500/20' : 'shadow-mundial-gold/20'}`}
             >
               {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-              <span className="font-black tracking-widest text-xs">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? '¡PRONÓSTICOS GUARDADOS!' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR CAMBIOS'}</span>
+              <span className="font-black tracking-widest text-xs">{!canSubmit ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? '¡GUARDADO!' : mutation.isPending ? 'GUARDANDO...' : bracketReopen ? 'GUARDAR CRUCES' : 'GUARDAR CAMBIOS'}</span>
             </button>
         </div>
       </div>
+
+      {/* Aviso de reapertura acotada de cruces */}
+      {bracketReopen && (
+        <div className="mb-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
+          <p className="text-sm font-black text-amber-300 uppercase tracking-wide">🔓 Rectificación de cruces abierta</p>
+          <p className="text-[11px] text-amber-100/80 font-bold mt-1 leading-relaxed">
+            Solo puedes corregir <strong>Finalistas, Semifinales y Cuartos</strong> (lo que el simulador mostró mal).
+            El campeón, premios y todo lo demás quedan bloqueados. No olvides apretar <strong>Guardar</strong>.
+          </p>
+        </div>
+      )}
 
       {/* Points Summary Tracker */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
@@ -392,6 +412,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     teams={tournamentTeams}
                     selected={form.champion ? [form.champion] : []}
                     onToggle={(id) => set('champion')(form.champion === id ? null : id)}
+                    locked={lockedField('champion')}
                   />
                 </KnockoutStage>
               </PickSection>
@@ -407,6 +428,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     teams={tournamentTeams}
                     selected={[form.finalist1, form.finalist2].filter(Boolean)}
                     max={2}
+                    locked={lockedField('finalist1')}
                     onToggle={(id) => {
                       const sel = [form.finalist1, form.finalist2].filter(Boolean)
                       if (sel.includes(id)) {
@@ -427,7 +449,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.semifinalists?.length || 0}
                     max={4}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} locked={lockedField('semifinalists')} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -436,7 +458,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.quarterfinalists?.length || 0}
                     max={8}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} locked={lockedField('quarterfinalists')} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -445,7 +467,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.round16Teams?.length || 0}
                     max={16}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} locked={lockedField('round16Teams')} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -454,7 +476,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.round32Teams?.length || 0}
                     max={32}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} />
+                    <TeamGrid teams={tournamentTeams} selected={form.round32Teams || []} max={32} onToggle={(id) => toggleArray('round32Teams', id, 32)} locked={lockedField('round32Teams')} />
                   </KnockoutStage>
                 </div>
               </PickSection>
@@ -464,8 +486,9 @@ export default function TournamentPage({ groupId, members = [] }) {
                     {hosts.map(t => (
                       <button
                         key={t.id}
-                        onClick={() => set('hostFurthest')(form.hostFurthest === t.id ? null : t.id)}
-                        className={`group relative flex flex-col items-center gap-4 p-8 rounded-[2rem] border transition-all overflow-hidden
+                        disabled={lockedField('hostFurthest')}
+                        onClick={() => { if (!lockedField('hostFurthest')) set('hostFurthest')(form.hostFurthest === t.id ? null : t.id) }}
+                        className={`group relative flex flex-col items-center gap-4 p-8 rounded-[2rem] border transition-all overflow-hidden ${lockedField('hostFurthest') ? 'opacity-60 cursor-not-allowed' : ''}
                           ${form.hostFurthest === t.id
                             ? 'bg-mundial-gold border-mundial-gold shadow-2xl shadow-mundial-gold/20'
                             : 'bg-white/5 border-white/10 hover:border-white/30'}`}
@@ -484,10 +507,10 @@ export default function TournamentPage({ groupId, members = [] }) {
 
           {section === 'premios' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <AwardPick title="Bota de Oro" subtitle="Máximo Goleador" pts="20 PTS" teams={tournamentTeams} value={form.topScorerId} onChange={set('topScorerId')} icon={Target} />
-              <AwardPick title="Balón de Oro" subtitle="Mejor Jugador" pts="15 PTS" teams={tournamentTeams} value={form.bestPlayerId} onChange={set('bestPlayerId')} icon={Star} />
-              <AwardPick title="Guante de Oro" subtitle="Mejor Portero" pts="12 PTS" teams={tournamentTeams} value={form.bestKeeperId} onChange={set('bestKeeperId')} icon={Shield} />
-              <AwardPick title="Mejor Joven" subtitle="Talento Emergente" pts="10 PTS" teams={tournamentTeams} value={form.bestYoungId} onChange={set('bestYoungId')} icon={Zap} />
+              <AwardPick title="Bota de Oro" subtitle="Máximo Goleador" pts="20 PTS" teams={tournamentTeams} value={form.topScorerId} onChange={set('topScorerId')} icon={Target} locked={lockedField('topScorerId')} />
+              <AwardPick title="Balón de Oro" subtitle="Mejor Jugador" pts="15 PTS" teams={tournamentTeams} value={form.bestPlayerId} onChange={set('bestPlayerId')} icon={Star} locked={lockedField('bestPlayerId')} />
+              <AwardPick title="Guante de Oro" subtitle="Mejor Portero" pts="12 PTS" teams={tournamentTeams} value={form.bestKeeperId} onChange={set('bestKeeperId')} icon={Shield} locked={lockedField('bestKeeperId')} />
+              <AwardPick title="Mejor Joven" subtitle="Talento Emergente" pts="10 PTS" teams={tournamentTeams} value={form.bestYoungId} onChange={set('bestYoungId')} icon={Zap} locked={lockedField('bestYoungId')} />
             </div>
           )}
 
@@ -510,6 +533,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                           value={form.totalGoals || ''}
                           onChange={e => setForm(f => ({ ...f, totalGoals: e.target.value }))}
                           placeholder="000"
+                          disabled={lockedField('totalGoals')}
                         />
                         <div className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest leading-loose">
                           <p className="text-zinc-500">Mundial 2022: 172 GOLES</p>
@@ -531,6 +555,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                    value={form.mostGoalsTeamId}
                    onChange={set('mostGoalsTeamId')}
                    icon={Target}
+                   locked={lockedField('mostGoalsTeamId')}
                  />
                  <AwardPick
                    title="Valla Invicta"
@@ -540,6 +565,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                    value={form.leastGoalsTeamId}
                    onChange={set('leastGoalsTeamId')}
                    icon={Shield}
+                   locked={lockedField('leastGoalsTeamId')}
                  />
                </div>
             </div>
@@ -559,12 +585,12 @@ export default function TournamentPage({ groupId, members = [] }) {
          >
             <button
               onClick={() => mutation.mutate(form)}
-              disabled={mutation.isPending || isTournamentLocked || !picksReady}
+              disabled={mutation.isPending || !canSubmit || !picksReady}
               className={`w-full py-5 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-3 transition-all
-                ${isTournamentLocked ? 'bg-zinc-700 text-zinc-300 border-zinc-600 cursor-not-allowed' : !picksReady ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
+                ${!canSubmit ? 'bg-zinc-700 text-zinc-300 border-zinc-600 cursor-not-allowed' : !picksReady ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed' : saved ? 'bg-green-500 border-green-400 text-white' : 'bg-mundial-gold text-mundial-navy border-mundial-gold font-black'}`}
             >
               {saved ? <Zap size={20} fill="currentColor" /> : <Save size={20} />}
-              <span className="uppercase tracking-[0.2em] text-[10px]">{isTournamentLocked ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? 'PRONÓSTICOS GUARDADOS' : mutation.isPending ? 'GUARDANDO...' : 'GUARDAR MI PREDICCIÓN'}</span>
+              <span className="uppercase tracking-[0.2em] text-[10px]">{!canSubmit ? 'PRONÓSTICO CERRADO' : !picksReady ? 'CARGANDO...' : saved ? 'GUARDADO' : mutation.isPending ? 'GUARDANDO...' : bracketReopen ? 'GUARDAR CRUCES' : 'GUARDAR MI PREDICCIÓN'}</span>
             </button>
          </motion.div>
       </div>
@@ -925,16 +951,17 @@ function SummaryTeamChips({ label, teams, compact = false }) {
   )
 }
 
-function TeamGrid({ teams, selected, onToggle, max }) {
+function TeamGrid({ teams, selected, onToggle, max, locked = false }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+    <div className={`grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 ${locked ? 'opacity-60' : ''}`}>
       {teams.map(t => {
         const isSel = selected.includes(t.id)
         return (
           <button
             key={t.id}
-            onClick={() => onToggle(t.id)}
-            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all
+            disabled={locked}
+            onClick={() => { if (!locked) onToggle(t.id) }}
+            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${locked ? 'cursor-not-allowed' : ''}
               ${isSel
                 ? 'bg-mundial-gold border-mundial-gold shadow-lg shadow-mundial-gold/20'
                 : 'bg-white/5 border-white/10 hover:border-white/30'}`}
@@ -950,13 +977,13 @@ function TeamGrid({ teams, selected, onToggle, max }) {
   )
 }
 
-function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon }) {
+function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon, locked = false }) {
   const [search, setSearch] = useState('')
   const filtered = teams.filter(t => teamEsp(t).toLowerCase().includes(search.toLowerCase()) || t.name.toLowerCase().includes(search.toLowerCase()))
   const selected = teams.find(t => t.id === value)
 
   return (
-    <div className="card p-8 bg-white/5 border-white/5 group hover:border-mundial-gold/20 transition-all">
+    <div className={`card p-8 bg-white/5 border-white/5 group hover:border-mundial-gold/20 transition-all ${locked ? 'opacity-60' : ''}`}>
       <div className="flex items-center justify-between mb-8">
          <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-mundial-navy border border-white/10 flex items-center justify-center text-mundial-gold shadow-inner group-hover:rotate-12 transition-transform">
@@ -973,10 +1000,11 @@ function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon })
       <div className="space-y-4">
          <div className="relative">
             <input
-              className="input pl-10 pr-4 py-3 text-xs uppercase font-black tracking-widest placeholder:text-zinc-700"
+              className="input pl-10 pr-4 py-3 text-xs uppercase font-black tracking-widest placeholder:text-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="BUSCAR SELECCIÓN..."
               value={search}
               onChange={e => setSearch(e.target.value)}
+              disabled={locked}
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-700" size={16} />
          </div>
@@ -989,9 +1017,11 @@ function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon })
                <p className="text-[10px] text-mundial-navy font-black opacity-60 uppercase tracking-widest">TU SELECCIÓN</p>
                <h4 className="font-display text-xl text-mundial-navy uppercase">{teamEsp(selected)}</h4>
              </div>
-             <button onClick={() => onChange(null)} className="p-2 hover:bg-mundial-navy hover:text-white rounded-lg transition-colors text-mundial-navy">
-               <Zap size={20} fill="currentColor" />
-             </button>
+             {!locked && (
+               <button onClick={() => onChange(null)} className="p-2 hover:bg-mundial-navy hover:text-white rounded-lg transition-colors text-mundial-navy">
+                 <Zap size={20} fill="currentColor" />
+               </button>
+             )}
            </div>
          )}
 
@@ -1000,8 +1030,9 @@ function AwardPick({ title, subtitle, pts, teams, value, onChange, icon: Icon })
            {(search.length > 0 ? filtered : teams).map(t => (
              <button
                key={t.id}
-               onClick={() => { onChange(t.id); setSearch('') }}
-               className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left
+               disabled={locked}
+               onClick={() => { if (!locked) { onChange(t.id); setSearch('') } }}
+               className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${locked ? 'cursor-not-allowed' : ''}
                  ${value === t.id ? 'bg-mundial-gold/20 border-mundial-gold/40 text-mundial-gold' : 'bg-white/3 border-white/5 hover:bg-white/8 hover:border-white/15 text-zinc-400'}`}
              >
                <Flag url={t.flagUrl} name={teamEsp(t)} className="w-7 h-5 object-contain shrink-0" />

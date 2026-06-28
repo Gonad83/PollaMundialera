@@ -1,6 +1,10 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
-const { getDeadline, isLocked: isTournamentLocked } = require('../utils/tournamentDeadlineStore');
+const { getDeadline, isLocked: isTournamentLocked, isBracketReopen, getBracketReopenUntil } = require('../utils/tournamentDeadlineStore');
+
+// Únicos campos editables durante la reapertura acotada de cruces (nada más).
+const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists'];
+const pickOnly = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => keys.includes(k)));
 
 const picksSchema = z.object({
   champion:           z.string().optional().nullable(),
@@ -41,7 +45,10 @@ const savePicks = async (req, res) => {
   const { groupId, ...bodyData } = req.body;
   if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
 
-  if (isTournamentLocked()) {
+  const locked = isTournamentLocked();
+  const reopen = isBracketReopen();
+  // Cerrado y sin reapertura → bloqueado del todo.
+  if (locked && !reopen) {
     return res.status(403).json({
       error: 'El plazo para los pronósticos del torneo ha cerrado',
       deadline: getDeadline(),
@@ -74,10 +81,19 @@ const savePicks = async (req, res) => {
     }
   }
 
+  // Reapertura acotada: aunque el torneo esté cerrado, SOLO se aplican los campos de
+  // cruces (4tos/semis/finalistas). El resto se ignora aquí, pase lo que pase en el front.
+  let finalUpdate = updateData;
+  let finalCreate = parsed.data;
+  if (locked && reopen) {
+    finalUpdate = pickOnly(updateData, BRACKET_REOPEN_FIELDS);
+    finalCreate = pickOnly(parsed.data, BRACKET_REOPEN_FIELDS);
+  }
+
   const picks = await prisma.tournamentPicks.upsert({
     where: { userId_groupId: { userId: req.user.id, groupId } },
-    update: updateData,
-    create: { userId: req.user.id, groupId, ...parsed.data },
+    update: finalUpdate,
+    create: { userId: req.user.id, groupId, ...finalCreate },
   });
 
   return res.json(picks);
@@ -105,8 +121,12 @@ const getUserPicks = async (req, res) => {
 
 // GET /api/tournament/deadline — Deadline actual (público)
 const getDeadlineInfo = (req, res) => {
-  const deadline = getDeadline();
-  res.json({ deadline, locked: isTournamentLocked() });
+  res.json({
+    deadline: getDeadline(),
+    locked: isTournamentLocked(),
+    bracketReopen: isBracketReopen(),
+    bracketReopenUntil: getBracketReopenUntil(),
+  });
 };
 
 module.exports = { getMyPicks, savePicks, getUserPicks, getDeadlineInfo };

@@ -15,6 +15,14 @@ let _deadline = DEFAULT_DEADLINE;
 const getDeadline = () => _deadline;
 const isLocked = () => new Date() > new Date(_deadline);
 
+// ── Reapertura ACOTADA de cruces (4tos/semis/finalistas) ──────────────────────
+// Ventana temporal donde se permite editar SOLO esos campos aunque el torneo esté
+// cerrado (para rectificar tras el error del simulador). Auto-expira por seguridad.
+const REOPEN_KEY = 'bracket_reopen_until';
+let _bracketReopenUntil = null; // ISO string o null
+const getBracketReopenUntil = () => _bracketReopenUntil;
+const isBracketReopen = () => !!_bracketReopenUntil && new Date() < new Date(_bracketReopenUntil);
+
 // Persistir el deadline en la tabla Setting para que sobreviva reinicios/deploys.
 async function _persist(isoString) {
   await prisma.$executeRaw`
@@ -42,9 +50,30 @@ async function loadDeadlineFromDb() {
       _deadline = DEFAULT_DEADLINE;
       await _persist(_deadline);
     }
-    console.log(`🔒 Deadline torneo: ${_deadline} · cerrado=${isLocked()}`);
+    // Cargar ventana de reapertura de cruces (si existe)
+    const rr = await prisma.$queryRaw`SELECT "value" FROM "Setting" WHERE "key" = ${REOPEN_KEY} LIMIT 1`;
+    _bracketReopenUntil = (Array.isArray(rr) && rr[0] && rr[0].value) ? rr[0].value : null;
+    console.log(`🔒 Deadline torneo: ${_deadline} · cerrado=${isLocked()} · reaperturaCruces=${isBracketReopen()}`);
   } catch (e) {
     console.error('[tournamentDeadline] loadFromDb error:', e.message);
+  }
+}
+
+// Abrir/cerrar la ventana de reapertura de cruces (persistente).
+async function setBracketReopen(untilIsoOrNull) {
+  _bracketReopenUntil = untilIsoOrNull || null;
+  try {
+    if (_bracketReopenUntil) {
+      await prisma.$executeRaw`
+        INSERT INTO "Setting" ("key", "value", "updatedAt")
+        VALUES (${REOPEN_KEY}, ${_bracketReopenUntil}, now())
+        ON CONFLICT ("key") DO UPDATE SET "value" = ${_bracketReopenUntil}, "updatedAt" = now()
+      `;
+    } else {
+      await prisma.$executeRaw`DELETE FROM "Setting" WHERE "key" = ${REOPEN_KEY}`;
+    }
+  } catch (e) {
+    console.error('[bracketReopen] persist error:', e.message);
   }
 }
 
@@ -58,4 +87,7 @@ async function setDeadline(isoString) {
   }
 }
 
-module.exports = { getDeadline, setDeadline, isLocked, loadDeadlineFromDb };
+module.exports = {
+  getDeadline, setDeadline, isLocked, loadDeadlineFromDb,
+  isBracketReopen, getBracketReopenUntil, setBracketReopen,
+};
