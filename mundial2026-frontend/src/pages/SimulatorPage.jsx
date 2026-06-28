@@ -720,9 +720,13 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
     matchCode: gm(104),
     onPickWinner: (winner) => onPickWinner?.('final', 0, winner),
   }
-  const L32 = r32d.slice(0, 8); const R32 = [...r32d.slice(8)].reverse()
-  const L16 = r16d.slice(0, 4); const R16 = [...r16d.slice(4)].reverse()
-  const LQF = qfd.slice(0, 2);  const RQF = [...qfd.slice(2)].reverse()
+  // Lado derecho en orden natural (sin invertir) para que la disposición vertical
+  // coincida con el cuadro oficial FIFA 2026 (Brasil/Japón arriba a la derecha).
+  // Los conectores son geométricos (emparejan vecinos verticales), así que al dejar
+  // R32/R16/4tos del lado derecho en el mismo orden, las líneas siguen alineadas.
+  const L32 = r32d.slice(0, 8); const R32 = r32d.slice(8)
+  const L16 = r16d.slice(0, 4); const R16 = r16d.slice(4)
+  const LQF = qfd.slice(0, 2);  const RQF = qfd.slice(2)
   const LSF = sfd.slice(0, 1);  const RSF = sfd.slice(1)
   const H = VB_H, W = VB_MW, c = 'rgba(255,255,255,0.12)'
   const COLS = [
