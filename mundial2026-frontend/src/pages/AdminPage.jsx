@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 const TZ = 'America/Santiago'
+const BRACKET_REOPEN_TEST_EMAILS = ['garaosd@gmail.com']
 const fmtChileDateTime = (date, options = {}) =>
   new Intl.DateTimeFormat('es-CL', {
     day: 'numeric',
@@ -220,7 +221,10 @@ export default function AdminPage() {
     queryFn: () => adminApi.getBracketReopen().then(r => r.data),
   })
   const reopenMut = useMutation({
-    mutationFn: ({ action, hours }) => adminApi.setBracketReopen(action, hours).then(r => r.data),
+    mutationFn: ({ action, hours, allowedEmails }) => {
+      const scope = allowedEmails ?? (action === 'open' ? BRACKET_REOPEN_TEST_EMAILS : undefined)
+      return adminApi.setBracketReopen(action, hours, scope).then(r => r.data)
+    },
     onSuccess: (data) => {
       showFeedback(data.active ? 'Rectificación de cruces ABIERTA' : 'Rectificación de cruces CERRADA')
       refetchReopen()
@@ -850,7 +854,7 @@ export default function AdminPage() {
                           disabled={reopenMut.isPending}
                           className="py-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50"
                         >
-                          Reabrir 24h
+                          Probar 24h
                         </button>
                         <button
                           onClick={() => reopenMut.mutate({ action: 'close' })}

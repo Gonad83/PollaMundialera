@@ -1,7 +1,15 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
 const { calculatePredictionPoints } = require('./predictionController');
-const { getDeadline, setDeadline, isLocked, isBracketReopen, getBracketReopenUntil, setBracketReopen } = require('../utils/tournamentDeadlineStore');
+const {
+  getDeadline,
+  setDeadline,
+  isLocked,
+  isBracketReopen,
+  getBracketReopenUntil,
+  getBracketReopenAllowedEmails,
+  setBracketReopen,
+} = require('../utils/tournamentDeadlineStore');
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -11,6 +19,8 @@ const matchResultSchema = z.object({
   wentToPenalties: z.boolean().default(false),
   winnerId: z.string().optional().nullable(),
 });
+
+const BRACKET_REOPEN_TEST_EMAILS = ['garaosd@gmail.com'];
 
 const STREAK_BONUS = 5;  // Puntos por racha de 3 exactos seguidos
 const PERFECT_DAY_BONUS = 10; // Todos los partidos de una jornada
@@ -726,23 +736,31 @@ const getTournamentChanges = async (req, res) => {
 
 // GET /api/admin/tournament/bracket-reopen — estado de la reapertura acotada de cruces
 const getBracketReopenStatus = (req, res) => {
-  res.json({ active: isBracketReopen(), until: getBracketReopenUntil() });
+  res.json({
+    active: isBracketReopen(),
+    until: getBracketReopenUntil(),
+    allowedEmails: getBracketReopenAllowedEmails(),
+  });
 };
 
 // POST /api/admin/tournament/bracket-reopen — { action: 'open' | 'close', hours? }
 // Abre SOLO la edición de 4tos/semis/finalistas por una ventana (default 24h, auto-expira).
 const setBracketReopenStatus = async (req, res) => {
-  const { action, hours } = req.body || {};
+  const { action, hours, allowedEmails } = req.body || {};
   if (action === 'close') {
     await setBracketReopen(null);
   } else if (action === 'open') {
     const h = Number(hours) > 0 ? Number(hours) : 24;
     const until = new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
-    await setBracketReopen(until);
+    await setBracketReopen(until, allowedEmails === undefined ? BRACKET_REOPEN_TEST_EMAILS : allowedEmails);
   } else {
     return res.status(400).json({ error: 'action debe ser "open" o "close"' });
   }
-  return res.json({ active: isBracketReopen(), until: getBracketReopenUntil() });
+  return res.json({
+    active: isBracketReopen(),
+    until: getBracketReopenUntil(),
+    allowedEmails: getBracketReopenAllowedEmails(),
+  });
 };
 
 module.exports = {

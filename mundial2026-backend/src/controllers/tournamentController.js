@@ -1,6 +1,12 @@
 const { z } = require('zod');
 const prisma = require('../utils/prisma');
-const { getDeadline, isLocked: isTournamentLocked, isBracketReopen, getBracketReopenUntil } = require('../utils/tournamentDeadlineStore');
+const {
+  getDeadline,
+  isLocked: isTournamentLocked,
+  isBracketReopenForUser,
+  getBracketReopenUntil,
+  getBracketReopenAllowedEmails,
+} = require('../utils/tournamentDeadlineStore');
 
 // Únicos campos editables durante la reapertura acotada de cruces (nada más).
 const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists'];
@@ -46,7 +52,7 @@ const savePicks = async (req, res) => {
   if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
 
   const locked = isTournamentLocked();
-  const reopen = isBracketReopen();
+  const reopen = isBracketReopenForUser(req.user);
   // Cerrado y sin reapertura → bloqueado del todo.
   if (locked && !reopen) {
     return res.status(403).json({
@@ -64,9 +70,10 @@ const savePicks = async (req, res) => {
   // Un array [] en el body significa "sin cambio", no "borrar todo".
   // El único camino para vaciar un array es desmarcar equipos uno a uno en la UI.
   const ARRAY_FIELDS = ['round32Teams', 'round16Teams', 'semifinalists', 'quarterfinalists', 'groupQualifiers'];
+  const EXISTING_FIELDS = [...ARRAY_FIELDS, 'champion', 'finalist1', 'finalist2'];
   const existing = await prisma.tournamentPicks.findUnique({
     where: { userId_groupId: { userId: req.user.id, groupId } },
-    select: Object.fromEntries(ARRAY_FIELDS.map(f => [f, true])),
+    select: Object.fromEntries(EXISTING_FIELDS.map(f => [f, true])),
   });
 
   const updateData = { ...parsed.data };
@@ -88,6 +95,15 @@ const savePicks = async (req, res) => {
   if (locked && reopen) {
     finalUpdate = pickOnly(updateData, BRACKET_REOPEN_FIELDS);
     finalCreate = pickOnly(parsed.data, BRACKET_REOPEN_FIELDS);
+
+    if (existing?.champion) {
+      if (existing.finalist1 === existing.champion) {
+        finalUpdate.finalist1 = existing.champion;
+      }
+      if (existing.finalist2 === existing.champion) {
+        finalUpdate.finalist2 = existing.champion;
+      }
+    }
   }
 
   const picks = await prisma.tournamentPicks.upsert({
@@ -121,11 +137,13 @@ const getUserPicks = async (req, res) => {
 
 // GET /api/tournament/deadline — Deadline actual (público)
 const getDeadlineInfo = (req, res) => {
+  const bracketReopen = isBracketReopenForUser(req.user);
   res.json({
     deadline: getDeadline(),
     locked: isTournamentLocked(),
-    bracketReopen: isBracketReopen(),
+    bracketReopen,
     bracketReopenUntil: getBracketReopenUntil(),
+    bracketReopenAllowedEmails: req.user?.role === 'SUPER_ADMIN' ? getBracketReopenAllowedEmails() : undefined,
   });
 };
 

@@ -31,6 +31,13 @@ const authenticate = async (req, res, next) => {
   }
 };
 
+// Verifica el token si viene presente; deja pasar requests publicos sin token.
+const optionalAuthenticate = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return next();
+  return authenticate(req, res, next);
+};
+
 // Solo Super Admin
 const requireAdmin = (req, res, next) => {
   if (req.user?.role !== 'SUPER_ADMIN') {
@@ -39,4 +46,4 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, requireAdmin };
+module.exports = { authenticate, optionalAuthenticate, requireAdmin };

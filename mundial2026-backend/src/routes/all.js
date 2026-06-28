@@ -13,7 +13,7 @@ module.exports.matchRouter = matchRouter;
 // ─── predictions ──────────────────────────────────────────────────────────────
 const predRouter = require('express').Router();
 const pc = require('../controllers/predictionController');
-const { authenticate } = require('../middlewares/auth');
+const { authenticate, optionalAuthenticate } = require('../middlewares/auth');
 
 predRouter.use(authenticate);
 predRouter.get('/my',                      pc.getMyPredictions);
@@ -29,7 +29,7 @@ module.exports.predRouter = predRouter;
 const tournRouter = require('express').Router();
 const tc = require('../controllers/tournamentController');
 
-tournRouter.get('/deadline',        tc.getDeadlineInfo);
+tournRouter.get('/deadline',        optionalAuthenticate, tc.getDeadlineInfo);
 tournRouter.use(authenticate);
 tournRouter.get('/picks',          tc.getMyPicks);
 tournRouter.put('/picks',          tc.savePicks);

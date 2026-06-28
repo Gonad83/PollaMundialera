@@ -71,6 +71,9 @@ export default function TournamentPage({ groupId, members = [] }) {
     topScorerId: null, bestPlayerId: null, bestKeeperId: null, bestYoungId: null,
     totalGoals: '', mostGoalsTeamId: null, leastGoalsTeamId: null, hostFurthest: null,
   })
+  const lockedFinalistIds = bracketReopen && form.champion && [form.finalist1, form.finalist2].includes(form.champion)
+    ? [form.champion]
+    : []
 
   const { data: myPicks, isLoading: loadingPicks, isFetched: picksFetched } = useQuery({
     queryKey: ['my-tournament-picks', groupId],
@@ -429,7 +432,9 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selected={[form.finalist1, form.finalist2].filter(Boolean)}
                     max={2}
                     locked={lockedField('finalist1')}
+                    disabledIds={lockedFinalistIds}
                     onToggle={(id) => {
+                      if (lockedFinalistIds.includes(id)) return
                       const sel = [form.finalist1, form.finalist2].filter(Boolean)
                       if (sel.includes(id)) {
                         if (form.finalist1 === id) set('finalist1')(null)
@@ -951,17 +956,19 @@ function SummaryTeamChips({ label, teams, compact = false }) {
   )
 }
 
-function TeamGrid({ teams, selected, onToggle, max, locked = false }) {
+function TeamGrid({ teams, selected, onToggle, max, locked = false, disabledIds = [] }) {
+  const disabledSet = new Set(disabledIds)
   return (
     <div className={`grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 ${locked ? 'opacity-60' : ''}`}>
       {teams.map(t => {
         const isSel = selected.includes(t.id)
+        const itemLocked = locked || disabledSet.has(t.id)
         return (
           <button
             key={t.id}
-            disabled={locked}
-            onClick={() => { if (!locked) onToggle(t.id) }}
-            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${locked ? 'cursor-not-allowed' : ''}
+            disabled={itemLocked}
+            onClick={() => { if (!itemLocked) onToggle(t.id) }}
+            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${itemLocked ? 'cursor-not-allowed' : ''}
               ${isSel
                 ? 'bg-mundial-gold border-mundial-gold shadow-lg shadow-mundial-gold/20'
                 : 'bg-white/5 border-white/10 hover:border-white/30'}`}
