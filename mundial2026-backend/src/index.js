@@ -226,13 +226,31 @@ async function startServer() {
     console.log(`📡 Socket.io listo`);
     console.log(`🌍 Entorno: ${process.env.NODE_ENV}`);
 
-    // Reconstruir leaderboards al arrancar (en segundo plano, sin bloquear el arranque).
-    // Recalcula el ranking de grupo desde las predicciones existentes para corregir
-    // cualquier estado desactualizado tras un deploy. No borra ni modifica puntos ni pronósticos.
-    const { rebuildLeaderboard } = require('./controllers/adminController');
-    rebuildLeaderboard()
-      .then(() => console.log('✅ Leaderboards reconstruidos al arrancar'))
-      .catch((e) => console.error('[startup rebuildLeaderboard] error:', e.message));
+    // ── Sincronización automática de partidos ───────────────────────────────
+    // Al arrancar y cada N minutos: baja resultados y carga las rondas nuevas
+    // (16avos, 8vos, 4tos, …) en cuanto la API las publica, sin apretar el botón.
+    // Tras cada sync reconstruye los leaderboards. NO borra ni modifica pronósticos.
+    const SYNC_INTERVAL_MIN = Number(process.env.SYNC_INTERVAL_MINUTES) || 15;
+    const runAutoSync = async (label) => {
+      try {
+        const r = await syncUtil();
+        console.log(`🔄 Sync (${label}): +${r.created || 0} nuevos · ${r.updated || 0} act. · ${r.finished || 0} fin.`);
+      } catch (e) {
+        console.error(`[sync ${label}] error:`, e.message);
+      }
+      // Reconstruir leaderboards siempre (haya cambiado algo o no) para mantener
+      // ranking, comparativa y header alineados tras un deploy/sync.
+      try {
+        const { rebuildLeaderboard } = require('./controllers/adminController');
+        await rebuildLeaderboard();
+      } catch (e) {
+        console.error(`[sync ${label}] rebuild error:`, e.message);
+      }
+    };
+    // Primer sync poco después de arrancar (deja respirar al server) + periódico.
+    setTimeout(() => runAutoSync('arranque'), 5000);
+    setInterval(() => runAutoSync('periódico'), SYNC_INTERVAL_MIN * 60 * 1000);
+    console.log(`🗓️  Auto-sync de partidos activado · cada ${SYNC_INTERVAL_MIN} min`);
   });
 }
 
