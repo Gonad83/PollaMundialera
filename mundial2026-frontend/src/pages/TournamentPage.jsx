@@ -74,7 +74,6 @@ export default function TournamentPage({ groupId, members = [] }) {
   const lockedFinalistIds = bracketReopen && form.champion && [form.finalist1, form.finalist2].includes(form.champion)
     ? [form.champion]
     : []
-
   const { data: myPicks, isLoading: loadingPicks, isFetched: picksFetched } = useQuery({
     queryKey: ['my-tournament-picks', groupId],
     queryFn: () => tournamentApi.myPicks({ groupId }).then(r => r.data),
@@ -118,6 +117,13 @@ export default function TournamentPage({ groupId, members = [] }) {
 
     return Array.from(byName.values())
   }, [teams])
+  const disabledOutside = (allowedIds = [], extraDisabled = []) => {
+    if (!bracketReopen) return extraDisabled
+    const allowed = new Set(allowedIds)
+    return tournamentTeams
+      .map(t => t.id)
+      .filter(id => !allowed.has(id) || extraDisabled.includes(id))
+  }
 
   // Listo para guardar: picks confirmados desde el servidor + lista de equipos cargada
   const picksReady = picksFetched && tournamentTeams.length > 0
@@ -432,7 +438,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selected={[form.finalist1, form.finalist2].filter(Boolean)}
                     max={2}
                     locked={lockedField('finalist1')}
-                    disabledIds={lockedFinalistIds}
+                    disabledIds={disabledOutside(form.semifinalists, lockedFinalistIds)}
                     onToggle={(id) => {
                       if (lockedFinalistIds.includes(id)) return
                       const sel = [form.finalist1, form.finalist2].filter(Boolean)
@@ -454,7 +460,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.semifinalists?.length || 0}
                     max={4}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} locked={lockedField('semifinalists')} />
+                    <TeamGrid teams={tournamentTeams} selected={form.semifinalists || []} max={4} onToggle={(id) => toggleArray('semifinalists', id, 4)} locked={lockedField('semifinalists')} disabledIds={disabledOutside(form.quarterfinalists)} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -463,7 +469,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.quarterfinalists?.length || 0}
                     max={8}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} locked={lockedField('quarterfinalists')} />
+                    <TeamGrid teams={tournamentTeams} selected={form.quarterfinalists || []} max={8} onToggle={(id) => toggleArray('quarterfinalists', id, 8)} locked={lockedField('quarterfinalists')} disabledIds={disabledOutside(form.round16Teams)} />
                   </KnockoutStage>
 
                   <KnockoutStage
@@ -472,7 +478,7 @@ export default function TournamentPage({ groupId, members = [] }) {
                     selectedCount={form.round16Teams?.length || 0}
                     max={16}
                   >
-                    <TeamGrid teams={tournamentTeams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} locked={lockedField('round16Teams')} />
+                    <TeamGrid teams={tournamentTeams} selected={form.round16Teams || []} max={16} onToggle={(id) => toggleArray('round16Teams', id, 16)} locked={lockedField('round16Teams')} disabledIds={disabledOutside(form.round32Teams)} />
                   </KnockoutStage>
 
                   <KnockoutStage

@@ -11,6 +11,16 @@ const {
 // Únicos campos editables durante la reapertura acotada de cruces (nada más).
 const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists', 'round16Teams'];
 const pickOnly = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => keys.includes(k)));
+const filterAllowed = (items, allowed) => {
+  if (!Array.isArray(items)) return items;
+  const allowedSet = new Set(Array.isArray(allowed) ? allowed : []);
+  return items.filter(id => allowedSet.has(id));
+};
+const keepFinalistIfAllowed = (value, allowed) => {
+  if (value == null) return value;
+  const allowedSet = new Set(Array.isArray(allowed) ? allowed : []);
+  return allowedSet.has(value) ? value : undefined;
+};
 
 const picksSchema = z.object({
   champion:           z.string().optional().nullable(),
@@ -95,6 +105,34 @@ const savePicks = async (req, res) => {
   if (locked && reopen) {
     finalUpdate = pickOnly(updateData, BRACKET_REOPEN_FIELDS);
     finalCreate = pickOnly(parsed.data, BRACKET_REOPEN_FIELDS);
+
+    if (existing) {
+      if (Array.isArray(finalUpdate.round16Teams)) {
+        finalUpdate.round16Teams = filterAllowed(finalUpdate.round16Teams, existing.round32Teams);
+      }
+
+      const round16Base = Array.isArray(finalUpdate.round16Teams) ? finalUpdate.round16Teams : existing.round16Teams;
+      if (Array.isArray(finalUpdate.quarterfinalists)) {
+        finalUpdate.quarterfinalists = filterAllowed(finalUpdate.quarterfinalists, round16Base);
+      }
+
+      const quarterfinalBase = Array.isArray(finalUpdate.quarterfinalists) ? finalUpdate.quarterfinalists : existing.quarterfinalists;
+      if (Array.isArray(finalUpdate.semifinalists)) {
+        finalUpdate.semifinalists = filterAllowed(finalUpdate.semifinalists, quarterfinalBase);
+      }
+
+      const semifinalBase = Array.isArray(finalUpdate.semifinalists) ? finalUpdate.semifinalists : existing.semifinalists;
+      if ('finalist1' in finalUpdate) {
+        const finalist = keepFinalistIfAllowed(finalUpdate.finalist1, semifinalBase);
+        if (finalist === undefined) delete finalUpdate.finalist1;
+        else finalUpdate.finalist1 = finalist;
+      }
+      if ('finalist2' in finalUpdate) {
+        const finalist = keepFinalistIfAllowed(finalUpdate.finalist2, semifinalBase);
+        if (finalist === undefined) delete finalUpdate.finalist2;
+        else finalUpdate.finalist2 = finalist;
+      }
+    }
 
     if (existing?.champion) {
       if (existing.finalist1 === existing.champion) {
