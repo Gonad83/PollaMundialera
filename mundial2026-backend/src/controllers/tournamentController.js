@@ -9,7 +9,7 @@ const {
 } = require('../utils/tournamentDeadlineStore');
 
 // Únicos campos editables durante la reapertura acotada de cruces (nada más).
-const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists'];
+const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists', 'round16Teams'];
 const pickOnly = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => keys.includes(k)));
 
 const picksSchema = z.object({
@@ -89,7 +89,7 @@ const savePicks = async (req, res) => {
   }
 
   // Reapertura acotada: aunque el torneo esté cerrado, SOLO se aplican los campos de
-  // cruces (4tos/semis/finalistas). El resto se ignora aquí, pase lo que pase en el front.
+  // cruces (8vos/4tos/semis/finalistas). El resto se ignora aquí, pase lo que pase en el front.
   let finalUpdate = updateData;
   let finalCreate = parsed.data;
   if (locked && reopen) {

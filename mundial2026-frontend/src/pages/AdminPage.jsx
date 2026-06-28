@@ -215,7 +215,7 @@ export default function AdminPage() {
     onError: (err) => showFeedback(err.response?.data?.error || 'Error al consultar cambios', 'error'),
   })
 
-  // Reapertura acotada de cruces (4tos/semis/finalistas)
+  // Reapertura acotada de cruces (8vos/4tos/semis/finalistas)
   const { data: bracketReopen, refetch: refetchReopen } = useQuery({
     queryKey: ['admin-bracket-reopen'],
     queryFn: () => adminApi.getBracketReopen().then(r => r.data),
@@ -832,12 +832,12 @@ export default function AdminPage() {
                       )}
                     </div>
 
-                    {/* Reapertura ACOTADA de cruces (4tos/semis/finalistas) */}
+                    {/* Reapertura ACOTADA de cruces (8vos/4tos/semis/finalistas) */}
                     <div className="flex flex-col gap-3 border-t border-white/5 pt-5">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="text-[10px] uppercase tracking-widest font-black text-zinc-500">Rectificación de cruces</p>
-                          <p className="text-xs text-zinc-300">Reabrir SOLO 4tos, semis y finalistas (no campeón ni premios)</p>
+                          <p className="text-xs text-zinc-300">Reabrir SOLO 8vos, 4tos, semis y finalistas (no campeón ni premios)</p>
                         </div>
                         <div className={`w-3 h-3 rounded-full shrink-0 ${bracketReopen?.active ? 'bg-amber-400 animate-pulse' : 'bg-zinc-600'}`} />
                       </div>
@@ -850,7 +850,7 @@ export default function AdminPage() {
 
                       <div className="grid grid-cols-2 gap-3">
                         <button
-                          onClick={() => { if (confirm('¿Reabrir SOLO 4tos/semis/finalistas por 24h?\nNadie podrá cambiar campeón, premios ni nada más.')) reopenMut.mutate({ action: 'open', hours: 24 }) }}
+                          onClick={() => { if (confirm('¿Reabrir SOLO 8vos/4tos/semis/finalistas por 24h?\nNadie podrá cambiar campeón, premios ni nada más.')) reopenMut.mutate({ action: 'open', hours: 24 }) }}
                           disabled={reopenMut.isPending}
                           className="py-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50"
                         >
