@@ -214,6 +214,7 @@ const getGroupCompare = async (req, res) => {
           status: true,
           scoreHome: true,
           scoreAway: true,
+          winnerId: true,
           groupLetter: true,
           phase: true,
           teamHome: { select: { id: true, name: true, flagUrl: true, code: true } },

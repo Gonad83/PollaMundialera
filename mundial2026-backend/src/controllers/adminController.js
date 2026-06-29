@@ -59,24 +59,37 @@ const getWinnerIds = async (phase) => {
   return unique(matches.map((m) => m.winnerId));
 };
 
+const getWinnerIdsIfPhaseComplete = async (phase, expectedMatches) => {
+  const matches = await prisma.match.findMany({
+    where: { phase },
+    select: { status: true, winnerId: true },
+  });
+
+  if (matches.length < expectedMatches) return [];
+  if (matches.some((match) => match.status !== 'FINISHED' || !match.winnerId)) return [];
+
+  return unique(matches.map((match) => match.winnerId));
+};
+
 const getRound32TeamIds = async () => {
   const matches = await prisma.match.findMany({
     where: { phase: 'R32' },
     select: { teamHomeId: true, teamAwayId: true },
   });
+  if (matches.length < 16) return [];
   return unique(matches.flatMap((m) => [m.teamHomeId, m.teamAwayId]));
 };
 
 const getTournamentActuals = async (overrides = {}) => ({
-  championId: overrides.championId ?? (await getWinnerIds('FINAL'))[0],
+  championId: overrides.championId ?? (await getWinnerIdsIfPhaseComplete('FINAL', 1))[0],
   finalistIds: hasArray(overrides.finalistIds)
     ? unique(overrides.finalistIds)
     : unique([overrides.finalist1Id, overrides.finalist2Id].filter(Boolean).length
         ? [overrides.finalist1Id, overrides.finalist2Id]
-        : await getWinnerIds('SF')),
-  semifinalistIds: hasArray(overrides.semifinalistIds) ? unique(overrides.semifinalistIds) : await getWinnerIds('QF'),
-  quarterfinalistIds: hasArray(overrides.quarterfinalistIds) ? unique(overrides.quarterfinalistIds) : await getWinnerIds('R16'),
-  round16TeamIds: hasArray(overrides.round16TeamIds) ? unique(overrides.round16TeamIds) : await getWinnerIds('R32'),
+        : await getWinnerIdsIfPhaseComplete('SF', 2)),
+  semifinalistIds: hasArray(overrides.semifinalistIds) ? unique(overrides.semifinalistIds) : await getWinnerIdsIfPhaseComplete('QF', 4),
+  quarterfinalistIds: hasArray(overrides.quarterfinalistIds) ? unique(overrides.quarterfinalistIds) : await getWinnerIdsIfPhaseComplete('R16', 8),
+  round16TeamIds: hasArray(overrides.round16TeamIds) ? unique(overrides.round16TeamIds) : await getWinnerIdsIfPhaseComplete('R32', 16),
   round32TeamIds: hasArray(overrides.round32TeamIds) ? unique(overrides.round32TeamIds) : await getRound32TeamIds(),
   groupQualifierIds: hasArray(overrides.groupQualifierIds) ? unique(overrides.groupQualifierIds) : null,
   topScorerId: overrides.topScorerId,
@@ -92,6 +105,14 @@ const getTournamentActuals = async (overrides = {}) => ({
 const calculateTournamentPoints = async (pick, actuals) => {
   const pts = {};
   for (const field of TOURNAMENT_POINT_FIELDS) pts[field] = pick[field] || 0;
+
+  pts.ptsChampion = 0;
+  pts.ptsFinalists = 0;
+  pts.ptsSemifinals = 0;
+  pts.ptsQuarters = 0;
+  pts.ptsRound16 = 0;
+  pts.ptsRound32 = 0;
+  pts.ptsGroups = 0;
 
   if (actuals.championId) pts.ptsChampion = pick.champion === actuals.championId ? 30 : 0;
   if (actuals.finalistIds?.length) {

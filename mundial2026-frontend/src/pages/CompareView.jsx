@@ -58,7 +58,7 @@ function PointsBadge({ pred, match }) {
   )
 }
 
-function TournamentPointsBadge({ picks, isLoading }) {
+function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen }) {
   if (isLoading) {
     return (
       <div className="flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
@@ -69,7 +69,7 @@ function TournamentPointsBadge({ picks, isLoading }) {
   }
 
   const round32Pts = picks?.ptsRound32 || 0
-  const round16Pts = picks?.ptsRound16 || 0
+  const round16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const hasPts = round32Pts > 0 || round16Pts > 0
 
   return (
@@ -134,6 +134,10 @@ export default function CompareView({ groupId, members = [] }) {
 
   const finishedMatches = useMemo(() => matches.filter(m => m.status === 'FINISHED'), [matches])
   const pendingMatches  = useMemo(() => matches.filter(m => m.status !== 'FINISHED'), [matches])
+  const round16ScoringOpen = useMemo(() => {
+    const r32 = matches.filter(match => match.phase === 'R32')
+    return r32.length >= 16 && r32.every(match => match.status === 'FINISHED' && match.winnerId)
+  }, [matches])
 
   // Filtrar SUPER_ADMIN y ordenar por puntos totales en el comparativo
   const visibleMembers = useMemo(() => {
@@ -203,7 +207,8 @@ export default function CompareView({ groupId, members = [] }) {
   const displayMembers = useMemo(() => (
     visibleMembers.map(member => {
       const picks = tournamentByUser.get(member.userId)
-      const tournamentPts = picks?.pointsTotal || 0
+      const blockedRound16Pts = round16ScoringOpen ? 0 : (picks?.ptsRound16 || 0)
+      const tournamentPts = Math.max((picks?.pointsTotal || 0) - blockedRound16Pts, 0)
       return {
         ...member,
         tournamentPts,
@@ -212,13 +217,17 @@ export default function CompareView({ groupId, members = [] }) {
         totalCompPts: member.matchCompPts + tournamentPts,
       }
     }).sort((a, b) => b.totalCompPts - a.totalCompPts)
-  ), [visibleMembers, tournamentByUser])
+  ), [visibleMembers, tournamentByUser, round16ScoringOpen])
 
   const tournamentRows = useMemo(() => (
     (tournamentCompare.data || [])
       .slice()
-      .sort((a, b) => (b.picks?.pointsTotal || 0) - (a.picks?.pointsTotal || 0))
-  ), [tournamentCompare.data])
+      .sort((a, b) => {
+        const aBlocked = round16ScoringOpen ? 0 : (a.picks?.ptsRound16 || 0)
+        const bBlocked = round16ScoringOpen ? 0 : (b.picks?.ptsRound16 || 0)
+        return Math.max((b.picks?.pointsTotal || 0) - bBlocked, 0) - Math.max((a.picks?.pointsTotal || 0) - aBlocked, 0)
+      })
+  ), [tournamentCompare.data, round16ScoringOpen])
 
   const tableColumns = useMemo(() => {
     const columns = matches.map(match => ({ type: 'match', id: match.id, match }))
@@ -272,7 +281,7 @@ export default function CompareView({ groupId, members = [] }) {
       </div>
 
       {mode === 'tournament' && (
-        <TournamentCompare rows={tournamentRows} isLoading={tournamentCompare.isLoading} teamById={teamById} />
+        <TournamentCompare rows={tournamentRows} isLoading={tournamentCompare.isLoading} teamById={teamById} round16ScoringOpen={round16ScoringOpen} />
       )}
 
       {mode === 'matches' && matches.length === 0 && (
@@ -404,7 +413,7 @@ export default function CompareView({ groupId, members = [] }) {
                         return (
                           <td key={column.id} className="px-1.5 py-2 text-center border-r border-mundial-gold/15 bg-mundial-gold/[0.025]">
                             <div className="flex justify-center">
-                              <TournamentPointsBadge picks={picks} isLoading={tournamentCompare.isLoading} />
+                              <TournamentPointsBadge picks={picks} isLoading={tournamentCompare.isLoading} round16ScoringOpen={round16ScoringOpen} />
                             </div>
                           </td>
                         )
@@ -518,7 +527,7 @@ function MatchProgressSummary({ finished, pending, total, members }) {
   )
 }
 
-function TournamentCompare({ rows, isLoading, teamById }) {
+function TournamentCompare({ rows, isLoading, teamById, round16ScoringOpen }) {
   if (isLoading) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -567,15 +576,18 @@ function TournamentCompare({ rows, isLoading, teamById }) {
           picks={picks}
           error={error}
           teamById={teamById}
+          round16ScoringOpen={round16ScoringOpen}
         />
       ))}
     </div>
   )
 }
 
-function TournamentOpponentCard({ member, picks, error, teamById }) {
+function TournamentOpponentCard({ member, picks, error, teamById, round16ScoringOpen }) {
   const byId = (id) => teamById.get(id)
   const list = (ids = []) => ids.map(byId).filter(Boolean)
+  const blockedRound16Pts = round16ScoringOpen ? 0 : (picks?.ptsRound16 || 0)
+  const effectiveTournamentPts = Math.max((picks?.pointsTotal || 0) - blockedRound16Pts, 0)
 
   return (
     <article className="card overflow-hidden bg-white/5 border border-white/5">
@@ -589,9 +601,9 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
             <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Pronóstico torneo</p>
           </div>
         </div>
-        {picks?.pointsTotal > 0 && (
+        {effectiveTournamentPts > 0 && (
           <span className="w-fit rounded-xl border border-mundial-gold/25 bg-mundial-gold/10 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-mundial-gold">
-            {picks.pointsTotal} pts
+            {effectiveTournamentPts} pts
           </span>
         )}
       </div>
@@ -600,7 +612,7 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
         <div className="p-6 text-xs font-bold uppercase tracking-widest text-zinc-600">{error || 'Sin pronóstico registrado'}</div>
       ) : (
         <div className="space-y-4 p-4">
-          <TournamentScoreSummary picks={picks} />
+          <TournamentScoreSummary picks={picks} round16ScoringOpen={round16ScoringOpen} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CompareBlock title="Copa y final">
             <CompareLine label="Campeón" team={byId(picks.champion)} highlight />
@@ -638,11 +650,14 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
   )
 }
 
-function TournamentScoreSummary({ picks }) {
+function TournamentScoreSummary({ picks, round16ScoringOpen }) {
+  const effectiveRound16Pts = round16ScoringOpen ? (picks.ptsRound16 || 0) : 0
+  const blockedRound16Pts = round16ScoringOpen ? 0 : (picks.ptsRound16 || 0)
+  const effectiveTotal = Math.max((picks.pointsTotal || 0) - blockedRound16Pts, 0)
   const rows = [
-    { label: 'Total torneo', value: picks.pointsTotal || 0, strong: true },
+    { label: 'Total torneo', value: effectiveTotal, strong: true },
     { label: '16avos', value: picks.ptsRound32 || 0 },
-    { label: '8vos', value: picks.ptsRound16 || 0 },
+    { label: '8vos', value: effectiveRound16Pts },
     { label: '4tos', value: picks.ptsQuarters || 0 },
     { label: 'Semis', value: picks.ptsSemifinals || 0 },
     { label: 'Finalistas', value: picks.ptsFinalists || 0 },
@@ -657,9 +672,14 @@ function TournamentScoreSummary({ picks }) {
           <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">Aciertos reales cargados hasta ahora</p>
         </div>
         <span className="rounded-xl border border-mundial-gold/30 bg-mundial-gold/10 px-3 py-1.5 font-display text-xl text-mundial-gold">
-          {picks.pointsTotal || 0}
+          {effectiveTotal}
         </span>
       </div>
+      {!round16ScoringOpen && blockedRound16Pts > 0 && (
+        <p className="mb-2 rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-200">
+          8vos bloqueado hasta que terminen todos los 16avos
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {rows.map(row => (
           <div key={row.label} className={`rounded-xl border px-2 py-2 text-center ${
