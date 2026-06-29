@@ -5,6 +5,13 @@ import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy } from 'lucide
 import { matchApi, predictionApi, tournamentApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
 
+// Mundial 2026: 104 partidos en total (72 grupos + 16avos + 8vos + 4tos + semis + 3°/4° + final)
+const WORLD_CUP_TOTAL_MATCHES = 104
+// Excluir amistosos / partidos de prueba de clubes (mismo criterio que la página de Partidos)
+const isNonWorldCupMatch = (m) =>
+  (m?.phase === 'GROUP' && !m?.groupLetter && m?.city !== 'World') ||
+  ['PSG', 'ARS'].includes(m?.teamHome?.code) || ['PSG', 'ARS'].includes(m?.teamAway?.code)
+
 // Determina el color de la celda según el estado del partido y los puntos
 function cellStyle(pred, matchFinished) {
   if (!pred) return { bg: 'bg-white/3', text: 'text-zinc-700', border: 'border-white/5' }
@@ -114,6 +121,19 @@ export default function CompareView({ groupId, members = [] }) {
     staleTime: Infinity,
     gcTime: 24 * 60 * 60 * 1000,
   })
+
+  // Todos los partidos del torneo (para mostrar cuántos quedan por jugar de verdad,
+  // no solo los de la comparativa). Reusa la caché de la página de Partidos.
+  const { data: allWcMatches = [] } = useQuery({
+    queryKey: ['matches-all'],
+    queryFn: () => matchApi.list({}).then(r => r.data),
+    staleTime: 3 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  })
+  const tournamentFinished = useMemo(
+    () => allWcMatches.filter(m => m.status === 'FINISHED' && !isNonWorldCupMatch(m)).length,
+    [allWcMatches]
+  )
 
   // Deduplicar partidos y ordenarlos por fecha
   const matches = useMemo(() => {
@@ -300,6 +320,8 @@ export default function CompareView({ groupId, members = [] }) {
         pending={pendingMatches.length}
         total={matches.length}
         members={displayMembers}
+        tournamentFinished={tournamentFinished}
+        tournamentTotal={WORLD_CUP_TOTAL_MATCHES}
       />
 
       {/* Leyenda */}
@@ -451,38 +473,42 @@ export default function CompareView({ groupId, members = [] }) {
   )
 }
 
-function MatchProgressSummary({ finished, pending, total, members }) {
-  const pct = total > 0 ? Math.round((finished / total) * 100) : 0
+function MatchProgressSummary({ finished, pending, total, members, tournamentFinished = 0, tournamentTotal = 0 }) {
+  // Usa el total real del torneo si está disponible; si no, cae a los datos de la comparativa.
+  const played    = tournamentTotal ? tournamentFinished : finished
+  const totalAll  = tournamentTotal || total
+  const remaining = Math.max(totalAll - played, 0)
+  const pct = totalAll > 0 ? Math.round((played / totalAll) * 100) : 0
   const leader = members[0]
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-3">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 space-y-3">
       {/* Fila de stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-mundial-gold/20 bg-mundial-gold/8 px-3 py-2.5">
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-mundial-gold/25 bg-mundial-gold/10 px-3 py-2.5">
           <CheckCircle2 size={14} className="text-mundial-gold" />
-          <span className="font-display text-2xl leading-none text-mundial-gold">{finished}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Jugados</span>
+          <span className="font-display text-2xl leading-none text-mundial-gold">{played}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">Jugados</span>
         </div>
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
-          <Clock size={14} className="text-amber-500/70" />
-          <span className="font-display text-2xl leading-none text-amber-400/80">{pending}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Por jugar</span>
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5">
+          <Clock size={14} className="text-amber-300" />
+          <span className="font-display text-2xl leading-none text-amber-300">{remaining}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">Por jugar</span>
         </div>
-        <div className="flex flex-col items-center gap-1 rounded-xl border border-white/8 bg-white/5 px-3 py-2.5">
-          <BarChart3 size={14} className="text-zinc-500" />
-          <span className="font-display text-2xl leading-none text-zinc-300">{total}</span>
-          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Total apuestas</span>
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-white/12 bg-white/5 px-3 py-2.5">
+          <BarChart3 size={14} className="text-zinc-300" />
+          <span className="font-display text-2xl leading-none text-white">{totalAll}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">Total partidos</span>
         </div>
       </div>
 
       {/* Barra de progreso */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Progreso del torneo</span>
-          <span className="text-[9px] font-black text-mundial-gold">{pct}%</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300">Progreso del torneo</span>
+          <span className="text-[10px] font-black text-mundial-gold">{pct}% · faltan {remaining}</span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-white/8 overflow-hidden">
+        <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-mundial-gold"
             initial={{ width: 0 }}
@@ -492,13 +518,13 @@ function MatchProgressSummary({ finished, pending, total, members }) {
         </div>
       </div>
 
-      {/* Líder actual (si hay partidos jugados) */}
-      {finished > 0 && leader && (
-        <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-3 py-2">
+      {/* Líder actual */}
+      {played > 0 && leader && (
+        <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Va ganando</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Va ganando</span>
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-md bg-mundial-gold/15 flex items-center justify-center text-[9px] font-black text-mundial-gold">
+              <div className="w-5 h-5 rounded-md bg-mundial-gold/20 flex items-center justify-center text-[9px] font-black text-mundial-gold">
                 {leader.user?.username?.[0]?.toUpperCase()}
               </div>
               <span className="text-[11px] font-black text-white">{leader.user?.username}</span>
@@ -506,18 +532,18 @@ function MatchProgressSummary({ finished, pending, total, members }) {
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 block">pts actuales</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 block">pts actuales</span>
               <span className="font-display text-base text-mundial-gold leading-none">{leader.totalCompPts}</span>
               {leader.tournamentPts > 0 && (
-                <span className="mt-0.5 block text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                <span className="mt-0.5 block text-[8px] font-black uppercase tracking-widest text-zinc-400">
                   {leader.matchCompPts} partidos + {leader.tournamentPts} torneo
                 </span>
               )}
             </div>
             {leader.pendingPredCount > 0 && (
               <div className="text-right">
-                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 block">apuestas abiertas</span>
-                <span className="font-display text-base text-amber-400/80 leading-none">{leader.pendingPredCount}</span>
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400 block">apuestas abiertas</span>
+                <span className="font-display text-base text-amber-300 leading-none">{leader.pendingPredCount}</span>
               </div>
             )}
           </div>
