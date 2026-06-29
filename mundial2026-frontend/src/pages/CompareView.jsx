@@ -58,6 +58,35 @@ function PointsBadge({ pred, match }) {
   )
 }
 
+function TournamentPointsBadge({ picks, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
+        <span className="text-[10px] font-black text-mundial-gold/40">...</span>
+        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-700">16avos</span>
+      </div>
+    )
+  }
+
+  const round32Pts = picks?.ptsRound32 || 0
+  const round16Pts = picks?.ptsRound16 || 0
+  const hasPts = round32Pts > 0 || round16Pts > 0
+
+  return (
+    <div className={`flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border px-2 py-1.5 ${
+      hasPts ? 'border-mundial-gold/30 bg-mundial-gold/10' : 'border-white/8 bg-white/5'
+    }`}>
+      <span className={`font-display text-sm leading-none ${hasPts ? 'text-mundial-gold' : 'text-zinc-700'}`}>
+        +{round32Pts}
+      </span>
+      <span className="text-[8px] font-black uppercase tracking-widest leading-none text-zinc-500">16avos</span>
+      {round16Pts > 0 && (
+        <span className="text-[8px] font-black uppercase tracking-widest leading-none text-emerald-300">8vos +{round16Pts}</span>
+      )}
+    </div>
+  )
+}
+
 function TeamFlag({ team, size = 'sm' }) {
   const cls = size === 'sm' ? 'w-5 h-3.5' : 'w-7 h-5'
   const flag = team?.flagUrl
@@ -116,6 +145,7 @@ export default function CompareView({ groupId, members = [] }) {
       const noPickPts = Math.max(finishedMatchCount - finishedPredCount, 0)
       return {
         ...m,
+        matchCompPts: predPts + noPickPts,
         totalCompPts: predPts + noPickPts,
         noPickPts,
         pendingPredCount: pendingMatches.filter(match => predMap[m.userId]?.[match.id]).length,
@@ -143,7 +173,7 @@ export default function CompareView({ groupId, members = [] }) {
 
   const tournamentCompare = useQuery({
     queryKey: ['tournament-compare', groupId, visibleMembers.map(m => m.userId).join('|')],
-    enabled: mode === 'tournament' && !!groupId && visibleMembers.length > 0,
+    enabled: !!groupId && visibleMembers.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
       const results = await Promise.allSettled(
@@ -161,6 +191,45 @@ export default function CompareView({ groupId, members = [] }) {
       })
     },
   })
+
+  const tournamentByUser = useMemo(() => {
+    const map = new Map()
+    ;(tournamentCompare.data || []).forEach(row => {
+      if (row.member?.userId && row.picks) map.set(row.member.userId, row.picks)
+    })
+    return map
+  }, [tournamentCompare.data])
+
+  const displayMembers = useMemo(() => (
+    visibleMembers.map(member => {
+      const picks = tournamentByUser.get(member.userId)
+      const tournamentPts = picks?.pointsTotal || 0
+      return {
+        ...member,
+        tournamentPts,
+        round32Pts: picks?.ptsRound32 || 0,
+        round16Pts: picks?.ptsRound16 || 0,
+        totalCompPts: member.matchCompPts + tournamentPts,
+      }
+    }).sort((a, b) => b.totalCompPts - a.totalCompPts)
+  ), [visibleMembers, tournamentByUser])
+
+  const tournamentRows = useMemo(() => (
+    (tournamentCompare.data || [])
+      .slice()
+      .sort((a, b) => (b.picks?.pointsTotal || 0) - (a.picks?.pointsTotal || 0))
+  ), [tournamentCompare.data])
+
+  const tableColumns = useMemo(() => {
+    const columns = matches.map(match => ({ type: 'match', id: match.id, match }))
+    const tournamentColumn = { type: 'tournament', id: 'tournament-round32' }
+    const canRsaIndex = columns.findIndex(({ match }) => {
+      const codes = [match.teamHome?.code, match.teamAway?.code].map(code => code?.toUpperCase())
+      return codes.includes('CAN') && codes.includes('RSA')
+    })
+    columns.splice(canRsaIndex >= 0 ? canRsaIndex : columns.length, 0, tournamentColumn)
+    return columns
+  }, [matches])
 
   if (isLoading) {
     return (
@@ -203,7 +272,7 @@ export default function CompareView({ groupId, members = [] }) {
       </div>
 
       {mode === 'tournament' && (
-        <TournamentCompare rows={tournamentCompare.data || []} isLoading={tournamentCompare.isLoading} teamById={teamById} />
+        <TournamentCompare rows={tournamentRows} isLoading={tournamentCompare.isLoading} teamById={teamById} />
       )}
 
       {mode === 'matches' && matches.length === 0 && (
@@ -221,7 +290,7 @@ export default function CompareView({ groupId, members = [] }) {
         finished={finishedMatches.length}
         pending={pendingMatches.length}
         total={matches.length}
-        members={visibleMembers}
+        members={displayMembers}
       />
 
       {/* Leyenda */}
@@ -233,6 +302,7 @@ export default function CompareView({ groupId, members = [] }) {
           { bg: 'bg-mundial-red/8',   border: 'border-mundial-red/15',  text: 'text-red-400/70',      label: 'Fallo',       icon: null },
           { bg: 'bg-white/5',         border: 'border-white/10',        text: 'text-zinc-400',        label: 'Pendiente',   icon: <Clock size={9} /> },
           { bg: 'bg-amber-500/8',     border: 'border-amber-500/20',    text: 'text-amber-500/80',    label: 'Sin resultado', icon: null },
+          { bg: 'bg-mundial-gold/10', border: 'border-mundial-gold/30', text: 'text-mundial-gold',    label: 'Torneo 16avos', icon: <Trophy size={9} /> },
         ].map(({ bg, border, text, label, icon }) => (
           <span key={label} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border ${bg} ${border} text-[9px] font-black uppercase tracking-widest ${text}`}>
             {icon}{label}
@@ -251,7 +321,19 @@ export default function CompareView({ groupId, members = [] }) {
                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Jugador</span>
                 </th>
                 {/* Una col por partido */}
-                {matches.map(match => {
+                {tableColumns.map(column => {
+                  if (column.type === 'tournament') {
+                    return (
+                      <th key={column.id} className="px-2 py-2 min-w-[82px] text-center border-r border-mundial-gold/15 bg-mundial-gold/6">
+                        <div className="flex flex-col items-center gap-1">
+                          <Trophy size={13} className="text-mundial-gold" />
+                          <span className="text-[8px] font-black uppercase tracking-widest text-mundial-gold">Torneo</span>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">16avos</span>
+                        </div>
+                      </th>
+                    )
+                  }
+                  const match = column.match
                   const homeCode = match.teamHome?.code?.toUpperCase() || '?'
                   const awayCode = match.teamAway?.code?.toUpperCase() || '?'
                   const isFinished = match.status === 'FINISHED'
@@ -294,8 +376,9 @@ export default function CompareView({ groupId, members = [] }) {
               </tr>
             </thead>
             <tbody>
-              {visibleMembers.map((member, idx) => {
+              {displayMembers.map((member, idx) => {
                 const userPreds = predMap[member.userId] || {}
+                const picks = tournamentByUser.get(member.userId)
                 return (
                   <motion.tr
                     key={member.userId}
@@ -316,16 +399,28 @@ export default function CompareView({ groupId, members = [] }) {
                       </div>
                     </td>
                     {/* Predicciones */}
-                    {matches.map(match => (
-                      <td key={match.id} className="px-1.5 py-2 text-center border-r border-white/5 last:border-r-0">
-                        <div className="flex justify-center">
-                          <PointsBadge
-                            pred={userPreds[match.id]}
-                            match={match}
-                          />
-                        </div>
-                      </td>
-                    ))}
+                    {tableColumns.map(column => {
+                      if (column.type === 'tournament') {
+                        return (
+                          <td key={column.id} className="px-1.5 py-2 text-center border-r border-mundial-gold/15 bg-mundial-gold/[0.025]">
+                            <div className="flex justify-center">
+                              <TournamentPointsBadge picks={picks} isLoading={tournamentCompare.isLoading} />
+                            </div>
+                          </td>
+                        )
+                      }
+                      const match = column.match
+                      return (
+                        <td key={match.id} className="px-1.5 py-2 text-center border-r border-white/5 last:border-r-0">
+                          <div className="flex justify-center">
+                            <PointsBadge
+                              pred={userPreds[match.id]}
+                              match={match}
+                            />
+                          </div>
+                        </td>
+                      )
+                    })}
                     {/* Total */}
                     <td className="sticky right-0 z-10 bg-mundial-navy px-3 py-2 text-center border-l border-white/8">
                       <span className="font-display text-base text-mundial-gold">{member.totalCompPts}</span>
@@ -339,7 +434,7 @@ export default function CompareView({ groupId, members = [] }) {
       </div>
 
       <p className="text-[9px] text-zinc-700 font-mono text-center px-2">
-        Se muestran pronósticos de partidos con apuesta cerrada · "Pend." = partido sin resultado aún · Los puntos se calculan cuando el admin ingresa el resultado final
+        Se muestran pronosticos de partidos con apuesta cerrada · Torneo 16avos se suma al total antes de CAN-RSA · "Pend." = partido sin resultado aun
       </p>
         </>
       )}
@@ -404,6 +499,11 @@ function MatchProgressSummary({ finished, pending, total, members }) {
             <div className="text-right">
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600 block">pts actuales</span>
               <span className="font-display text-base text-mundial-gold leading-none">{leader.totalCompPts}</span>
+              {leader.tournamentPts > 0 && (
+                <span className="mt-0.5 block text-[8px] font-black uppercase tracking-widest text-zinc-600">
+                  {leader.matchCompPts} partidos + {leader.tournamentPts} torneo
+                </span>
+              )}
             </div>
             {leader.pendingPredCount > 0 && (
               <div className="text-right">
@@ -499,7 +599,9 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
       {error || !picks ? (
         <div className="p-6 text-xs font-bold uppercase tracking-widest text-zinc-600">{error || 'Sin pronóstico registrado'}</div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
+        <div className="space-y-4 p-4">
+          <TournamentScoreSummary picks={picks} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CompareBlock title="Copa y final">
             <CompareLine label="Campeón" team={byId(picks.champion)} highlight />
             <CompareLine label="Finalista 1" team={byId(picks.finalist1)} />
@@ -530,8 +632,51 @@ function TournamentOpponentCard({ member, picks, error, teamById }) {
             <CompareChips label="16avos" teams={list(picks.round32Teams)} />
           </CompareBlock>
         </div>
+        </div>
       )}
     </article>
+  )
+}
+
+function TournamentScoreSummary({ picks }) {
+  const rows = [
+    { label: 'Total torneo', value: picks.pointsTotal || 0, strong: true },
+    { label: '16avos', value: picks.ptsRound32 || 0 },
+    { label: '8vos', value: picks.ptsRound16 || 0 },
+    { label: '4tos', value: picks.ptsQuarters || 0 },
+    { label: 'Semis', value: picks.ptsSemifinals || 0 },
+    { label: 'Finalistas', value: picks.ptsFinalists || 0 },
+    { label: 'Campeon', value: picks.ptsChampion || 0 },
+  ]
+
+  return (
+    <div className="rounded-2xl border border-mundial-gold/20 bg-mundial-gold/[0.06] p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[9px] font-black uppercase tracking-[0.18em] text-mundial-gold">Puntaje calculado</p>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-600">Aciertos reales cargados hasta ahora</p>
+        </div>
+        <span className="rounded-xl border border-mundial-gold/30 bg-mundial-gold/10 px-3 py-1.5 font-display text-xl text-mundial-gold">
+          {picks.pointsTotal || 0}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+        {rows.map(row => (
+          <div key={row.label} className={`rounded-xl border px-2 py-2 text-center ${
+            row.strong
+              ? 'border-mundial-gold/30 bg-mundial-gold/10'
+              : row.value > 0
+                ? 'border-emerald-400/20 bg-emerald-400/10'
+                : 'border-white/8 bg-white/5'
+          }`}>
+            <span className={`block font-display text-lg leading-none ${row.value > 0 || row.strong ? 'text-mundial-gold' : 'text-zinc-700'}`}>
+              {row.value}
+            </span>
+            <span className="mt-1 block text-[8px] font-black uppercase tracking-widest text-zinc-600">{row.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
