@@ -1,6 +1,51 @@
 const prisma = require('../utils/prisma');
 
-// GET /api/leaderboard/global — Ranking global paginado
+const isRound16ScoringOpen = async () => {
+  const r32Matches = await prisma.match.findMany({
+    where: { phase: 'R32' },
+    select: { status: true, winnerId: true },
+  });
+
+  return r32Matches.length >= 16 && r32Matches.every((match) => match.status === 'FINISHED' && match.winnerId);
+};
+
+const applyTournamentScoreGate = async (entries, groupId = null, rerank = false) => {
+  if (await isRound16ScoringOpen()) return entries;
+
+  const userIds = entries.map((entry) => entry.userId);
+  if (userIds.length === 0) return entries;
+
+  const picks = await prisma.tournamentPicks.findMany({
+    where: {
+      userId: { in: userIds },
+      ...(groupId ? { groupId } : {}),
+    },
+    select: { userId: true, ptsRound16: true },
+  });
+
+  const blockedByUser = new Map();
+  for (const pick of picks) {
+    blockedByUser.set(pick.userId, (blockedByUser.get(pick.userId) || 0) + (pick.ptsRound16 || 0));
+  }
+
+  const effectiveEntries = entries.map((entry) => {
+      const blocked = blockedByUser.get(entry.userId) || 0;
+      if (!blocked) return entry;
+
+      return {
+        ...entry,
+        totalPoints: Math.max((entry.totalPoints || 0) - blocked, 0),
+        tournamentPoints: Math.max((entry.tournamentPoints || 0) - blocked, 0),
+      };
+    });
+
+  if (!rerank) return effectiveEntries;
+
+  return effectiveEntries
+    .sort((a, b) => (b.totalPoints || 0) - (a.totalPoints || 0))
+    .map((entry, index) => ({ ...entry, rank: index + 1 }));
+};
+
 const getGlobal = async (req, res) => {
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const limit = Math.min(50, parseInt(req.query.limit) || 20);
@@ -19,17 +64,17 @@ const getGlobal = async (req, res) => {
     prisma.leaderboardEntry.count({ where: { groupId: null } }),
   ]);
 
+  const effectiveEntries = await applyTournamentScoreGate(entries, null);
+
   return res.json({
-    entries,
+    entries: effectiveEntries,
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
   });
 };
 
-// GET /api/leaderboard/group/:groupId — Ranking de un grupo
 const getGroup = async (req, res) => {
   const { groupId } = req.params;
 
-  // Verificar que el usuario es miembro
   const isMember = await prisma.groupMember.findUnique({
     where: { userId_groupId: { userId: req.user.id, groupId } },
   });
@@ -45,20 +90,22 @@ const getGroup = async (req, res) => {
     },
   });
 
-  return res.json(entries);
+  const effectiveEntries = await applyTournamentScoreGate(entries, groupId, true);
+
+  return res.json(effectiveEntries);
 };
 
-// GET /api/leaderboard/me — Mi posición en el ranking global
 const getMyRank = async (req, res) => {
   const entry = await prisma.leaderboardEntry.findFirst({
     where: { userId: req.user.id, groupId: null },
   });
 
-  if (!entry) return res.status(404).json({ error: 'Sin posición en el ranking' });
+  if (!entry) return res.status(404).json({ error: 'Sin posicion en el ranking' });
 
   const total = await prisma.leaderboardEntry.count({ where: { groupId: null } });
+  const [effectiveEntry] = await applyTournamentScoreGate([entry], null);
 
-  return res.json({ ...entry, totalPlayers: total });
+  return res.json({ ...effectiveEntry, totalPlayers: total });
 };
 
 module.exports = { getGlobal, getGroup, getMyRank };
