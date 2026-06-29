@@ -854,7 +854,7 @@ export default function AdminPage() {
                           disabled={reopenMut.isPending}
                           className="py-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-[10px] uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all disabled:opacity-50"
                         >
-                          Probar 24h
+                          Abrir hasta BRA-JPN
                         </button>
                         <button
                           onClick={() => reopenMut.mutate({ action: 'close' })}

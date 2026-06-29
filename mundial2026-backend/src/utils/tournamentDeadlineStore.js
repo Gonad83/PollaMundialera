@@ -17,6 +17,9 @@ const REOPEN_ALLOWED_EMAILS_KEY = 'bracket_reopen_allowed_emails';
 const REOPEN_ALLOWED_GROUP_NAMES_KEY = 'bracket_reopen_allowed_group_names';
 const DEFAULT_BRACKET_REOPEN_EMAILS = ['garaosd@gmail.com'];
 const DEFAULT_BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo'];
+// Brasil vs Japon aparece en el fixture el 29/06/2026 13:00 hora Chile (UTC-4).
+// La reapertura debe cerrar 5 minutos antes. Si la BD trae el partido, se usa esa fecha real.
+const BRAZIL_JAPAN_FALLBACK_CUTOFF = '2026-06-29T16:55:00.000Z';
 let _bracketReopenUntil = null;
 let _bracketReopenAllowedEmails = [];
 let _bracketReopenAllowedGroupNames = [];
@@ -58,6 +61,34 @@ const parseAllowedGroupNames = (raw) => {
   } catch {
     return normalizeGroupNames(String(raw).split(','));
   }
+};
+
+const getBrazilJapanReopenCutoff = async () => {
+  try {
+    const match = await prisma.match.findFirst({
+      where: {
+        OR: [
+          { teamHome: { code: 'BRA' }, teamAway: { code: 'JPN' } },
+          { teamHome: { code: 'JPN' }, teamAway: { code: 'BRA' } },
+        ],
+      },
+      select: { dateUtc: true },
+      orderBy: { dateUtc: 'asc' },
+    });
+
+    if (match?.dateUtc) {
+      return new Date(match.dateUtc.getTime() - 5 * 60 * 1000).toISOString();
+    }
+  } catch (e) {
+    console.error('[bracketReopen] cutoff lookup error:', e.message);
+  }
+  return BRAZIL_JAPAN_FALLBACK_CUTOFF;
+};
+
+const clampBracketReopenUntil = async (untilIsoOrNull) => {
+  if (!untilIsoOrNull) return null;
+  const cutoff = await getBrazilJapanReopenCutoff();
+  return new Date(untilIsoOrNull) > new Date(cutoff) ? cutoff : untilIsoOrNull;
 };
 
 const isBracketReopenForUser = async (user, groupId = null) => {
@@ -103,6 +134,15 @@ async function loadDeadlineFromDb() {
 
     const rr = await prisma.$queryRaw`SELECT "value" FROM "Setting" WHERE "key" = ${REOPEN_KEY} LIMIT 1`;
     _bracketReopenUntil = (Array.isArray(rr) && rr[0] && rr[0].value) ? rr[0].value : null;
+    const unclampedBracketReopenUntil = _bracketReopenUntil;
+    _bracketReopenUntil = await clampBracketReopenUntil(_bracketReopenUntil);
+    if (_bracketReopenUntil && _bracketReopenUntil !== unclampedBracketReopenUntil) {
+      await prisma.$executeRaw`
+        INSERT INTO "Setting" ("key", "value", "updatedAt")
+        VALUES (${REOPEN_KEY}, ${_bracketReopenUntil}, now())
+        ON CONFLICT ("key") DO UPDATE SET "value" = ${_bracketReopenUntil}, "updatedAt" = now()
+      `;
+    }
 
     const allowed = await prisma.$queryRaw`SELECT "value" FROM "Setting" WHERE "key" = ${REOPEN_ALLOWED_EMAILS_KEY} LIMIT 1`;
     const allowedRaw = Array.isArray(allowed) && allowed[0] ? allowed[0].value : null;
@@ -142,7 +182,7 @@ async function loadDeadlineFromDb() {
 }
 
 async function setBracketReopen(untilIsoOrNull, allowedEmails = [], allowedGroupNames = []) {
-  _bracketReopenUntil = untilIsoOrNull || null;
+  _bracketReopenUntil = await clampBracketReopenUntil(untilIsoOrNull || null);
   _bracketReopenAllowedEmails = _bracketReopenUntil ? normalizeEmails(allowedEmails) : [];
   _bracketReopenAllowedGroupNames = _bracketReopenUntil ? normalizeGroupNames(allowedGroupNames) : [];
 
