@@ -26,6 +26,158 @@ const BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo'];
 const STREAK_BONUS = 5;  // Puntos por racha de 3 exactos seguidos
 const PERFECT_DAY_BONUS = 10; // Todos los partidos de una jornada
 
+const TOURNAMENT_POINT_FIELDS = [
+  'ptsChampion',
+  'ptsFinalists',
+  'ptsRound32',
+  'ptsRound16',
+  'ptsSemifinals',
+  'ptsQuarters',
+  'ptsGroups',
+  'ptsTopScorer',
+  'ptsBestPlayer',
+  'ptsBestKeeper',
+  'ptsBestYoung',
+  'ptsTotalGoals',
+  'ptsTeamStats',
+  'ptsHostFurthest',
+];
+
+const unique = (items) => [...new Set((items || []).filter(Boolean))];
+const countHits = (picked, actual) => {
+  const actualSet = new Set(actual || []);
+  return (picked || []).filter((id) => actualSet.has(id)).length;
+};
+const hasArray = (value) => Array.isArray(value);
+const pointTotal = (pts) => TOURNAMENT_POINT_FIELDS.reduce((sum, field) => sum + (pts[field] || 0), 0);
+
+const getWinnerIds = async (phase) => {
+  const matches = await prisma.match.findMany({
+    where: { phase, status: 'FINISHED', winnerId: { not: null } },
+    select: { winnerId: true },
+  });
+  return unique(matches.map((m) => m.winnerId));
+};
+
+const getRound32TeamIds = async () => {
+  const matches = await prisma.match.findMany({
+    where: { phase: 'R32' },
+    select: { teamHomeId: true, teamAwayId: true },
+  });
+  return unique(matches.flatMap((m) => [m.teamHomeId, m.teamAwayId]));
+};
+
+const getTournamentActuals = async (overrides = {}) => ({
+  championId: overrides.championId ?? (await getWinnerIds('FINAL'))[0],
+  finalistIds: hasArray(overrides.finalistIds)
+    ? unique(overrides.finalistIds)
+    : unique([overrides.finalist1Id, overrides.finalist2Id].filter(Boolean).length
+        ? [overrides.finalist1Id, overrides.finalist2Id]
+        : await getWinnerIds('SF')),
+  semifinalistIds: hasArray(overrides.semifinalistIds) ? unique(overrides.semifinalistIds) : await getWinnerIds('QF'),
+  quarterfinalistIds: hasArray(overrides.quarterfinalistIds) ? unique(overrides.quarterfinalistIds) : await getWinnerIds('R16'),
+  round16TeamIds: hasArray(overrides.round16TeamIds) ? unique(overrides.round16TeamIds) : await getWinnerIds('R32'),
+  round32TeamIds: hasArray(overrides.round32TeamIds) ? unique(overrides.round32TeamIds) : await getRound32TeamIds(),
+  groupQualifierIds: hasArray(overrides.groupQualifierIds) ? unique(overrides.groupQualifierIds) : null,
+  topScorerId: overrides.topScorerId,
+  bestPlayerId: overrides.bestPlayerId,
+  bestKeeperId: overrides.bestKeeperId,
+  bestYoungId: overrides.bestYoungId,
+  totalGoals: overrides.totalGoals,
+  mostGoalsTeamId: overrides.mostGoalsTeamId,
+  leastGoalsTeamId: overrides.leastGoalsTeamId,
+  hostFurthestId: overrides.hostFurthestId,
+});
+
+const calculateTournamentPoints = async (pick, actuals) => {
+  const pts = {};
+  for (const field of TOURNAMENT_POINT_FIELDS) pts[field] = pick[field] || 0;
+
+  if (actuals.championId) pts.ptsChampion = pick.champion === actuals.championId ? 30 : 0;
+  if (actuals.finalistIds?.length) {
+    pts.ptsFinalists = [pick.finalist1, pick.finalist2].filter((id) => actuals.finalistIds.includes(id)).length * 15;
+  }
+  if (actuals.semifinalistIds?.length) pts.ptsSemifinals = countHits(pick.semifinalists, actuals.semifinalistIds) * 8;
+  if (actuals.quarterfinalistIds?.length) pts.ptsQuarters = countHits(pick.quarterfinalists, actuals.quarterfinalistIds) * 4;
+  if (actuals.round16TeamIds?.length) pts.ptsRound16 = countHits(pick.round16Teams, actuals.round16TeamIds) * 2;
+  if (actuals.round32TeamIds?.length) pts.ptsRound32 = countHits(pick.round32Teams, actuals.round32TeamIds) * 1;
+  if (actuals.groupQualifierIds?.length) pts.ptsGroups = countHits(pick.groupQualifiers, actuals.groupQualifierIds) * 1;
+
+  if (actuals.topScorerId) {
+    pts.ptsTopScorer = pick.topScorerId === actuals.topScorerId ? 20
+      : (await sameTeam(pick.topScorerId, actuals.topScorerId)) ? 3 : 0;
+  }
+  if (actuals.bestPlayerId) {
+    pts.ptsBestPlayer = pick.bestPlayerId === actuals.bestPlayerId ? 15
+      : (await sameTeam(pick.bestPlayerId, actuals.bestPlayerId)) ? 4 : 0;
+  }
+  if (actuals.bestKeeperId) {
+    pts.ptsBestKeeper = pick.bestKeeperId === actuals.bestKeeperId ? 12
+      : (await sameTeam(pick.bestKeeperId, actuals.bestKeeperId)) ? 3 : 0;
+  }
+  if (actuals.bestYoungId) {
+    pts.ptsBestYoung = pick.bestYoungId === actuals.bestYoungId ? 10
+      : (await sameTeam(pick.bestYoungId, actuals.bestYoungId)) ? 3 : 0;
+  }
+  if (actuals.totalGoals !== undefined && actuals.totalGoals !== null) {
+    const goalDiff = Math.abs((pick.totalGoals || 0) - actuals.totalGoals);
+    pts.ptsTotalGoals = goalDiff === 0 ? 8 : goalDiff <= 3 ? 4 : goalDiff <= 10 ? 1 : 0;
+  }
+  if (actuals.mostGoalsTeamId || actuals.leastGoalsTeamId) {
+    pts.ptsTeamStats = (pick.mostGoalsTeamId === actuals.mostGoalsTeamId ? 6 : 0)
+      + (pick.leastGoalsTeamId === actuals.leastGoalsTeamId ? 6 : 0);
+  }
+  if (actuals.hostFurthestId) pts.ptsHostFurthest = pick.hostFurthest === actuals.hostFurthestId ? 5 : 0;
+
+  pts.pointsTotal = pointTotal(pts);
+  return pts;
+};
+
+const recalculateTournamentPicks = async (overrides = {}) => {
+  const actuals = await getTournamentActuals(overrides);
+  const allPicks = await prisma.tournamentPicks.findMany();
+  const userIds = unique(allPicks.map((pick) => pick.userId));
+  const oldTournamentByUser = new Map();
+  const newTournamentByUser = new Map();
+
+  for (const pick of allPicks) {
+    oldTournamentByUser.set(pick.userId, (oldTournamentByUser.get(pick.userId) || 0) + (pick.pointsTotal || 0));
+  }
+
+  for (const pick of allPicks) {
+    const pts = await calculateTournamentPoints(pick, actuals);
+    await prisma.tournamentPicks.update({ where: { id: pick.id }, data: pts });
+    newTournamentByUser.set(pick.userId, (newTournamentByUser.get(pick.userId) || 0) + (pts.pointsTotal || 0));
+  }
+
+  for (const userId of userIds) {
+    const [user, predictions] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId }, select: { totalPoints: true } }),
+      prisma.prediction.aggregate({ where: { userId }, _sum: { pointsTotal: true } }),
+    ]);
+    const matchPoints = predictions._sum.pointsTotal || 0;
+    const previousTournament = oldTournamentByUser.get(userId) || 0;
+    const preservedBonus = Math.max((user?.totalPoints || 0) - matchPoints - previousTournament, 0);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { totalPoints: matchPoints + (newTournamentByUser.get(userId) || 0) + preservedBonus },
+    });
+  }
+
+  return {
+    picksUpdated: allPicks.length,
+    actuals: {
+      round32: actuals.round32TeamIds?.length || 0,
+      round16: actuals.round16TeamIds?.length || 0,
+      quarters: actuals.quarterfinalistIds?.length || 0,
+      semis: actuals.semifinalistIds?.length || 0,
+      finalists: actuals.finalistIds?.length || 0,
+      champion: actuals.championId ? 1 : 0,
+    },
+  };
+};
+
 const recalculateUserTotals = async (tx, userIds) => {
   for (const userId of userIds) {
     const predictions = await tx.prediction.aggregate({
@@ -168,7 +320,11 @@ const processBonuses = async (matchId) => {
 
 const NO_PICK_BONUS = 1; // 1 punto por partido finalizado sin pronóstico
 
-const rebuildLeaderboard = async () => {
+const rebuildLeaderboard = async ({ recalculateTournament = true } = {}) => {
+  if (recalculateTournament) {
+    await recalculateTournamentPicks();
+  }
+
   // Contar partidos finalizados para calcular el bono por no-apuesta
   const finishedMatchCount = await prisma.match.count({ where: { status: 'FINISHED' } });
 
@@ -350,6 +506,14 @@ const setMatchStatus = async (req, res) => {
 
 // POST /api/admin/tournament/awards — Cargar premios especiales del torneo
 const setTournamentAwards = async (req, res) => {
+  const result = await recalculateTournamentPicks(req.body || {});
+  await rebuildLeaderboard({ recalculateTournament: false });
+
+  return res.json({
+    message: `Premios del torneo calculados para ${result.picksUpdated} usuarios`,
+    ...result,
+  });
+
   const {
     championId,
     finalist1Id,
@@ -486,8 +650,7 @@ const syncMatches = async (req, res) => {
     }
 
     // 5. Reconstruir el leaderboard si hubo cambios
-    if (newlyFinishedMatches.length > 0) {
-      await rebuildLeaderboard();
+    await rebuildLeaderboard();
 
       // Emitir actualización por Socket.io si existe
       const io = req.app.get('io');
@@ -495,7 +658,6 @@ const syncMatches = async (req, res) => {
         const topPlayers = await getTopN(10);
         io.to('global').emit('leaderboard:update', { topPlayers });
       }
-    }
 
     return res.json({ message: `Sincronización completa`, ...result, newlyFinished: newlyFinishedMatches.length });
   } catch (err) {
@@ -651,6 +813,20 @@ const manualRebuildLeaderboard = async (req, res) => {
 };
 
 // POST /api/admin/broadcast — Enviar mensaje a todos los conectados
+const manualRecalculateTournament = async (req, res) => {
+  try {
+    const result = await recalculateTournamentPicks(req.body || {});
+    await rebuildLeaderboard({ recalculateTournament: false });
+    return res.json({
+      message: `Puntaje de torneo recalculado para ${result.picksUpdated} pronosticos`,
+      ...result,
+    });
+  } catch (err) {
+    console.error('Tournament recalc error:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
 const sendBroadcast = async (req, res) => {
   const { message, type = 'info' } = req.body;
   if (!message) return res.status(400).json({ error: 'Mensaje requerido' });
@@ -778,6 +954,7 @@ module.exports = {
   getDashboard,
   rebuildLeaderboard,
   manualRebuildLeaderboard,
+  manualRecalculateTournament,
   syncMatches,
   getUsers,
   setUserPlan,

@@ -113,6 +113,7 @@ export const adminApi = {
   setResult:       (id, data)  => api.post(`/admin/matches/${id}/result`, data),
   setStatus:       (id, status) => api.put(`/admin/matches/${id}/status`, { status }),
   setAwards:       (data)      => api.post('/admin/tournament/awards', data),
+  recalculateTournament: (data = {}) => api.post('/admin/tournament/recalculate', data),
   syncMatches:     (params)    => api.post('/admin/sync', null, { params }),
   rebuildLeaderboard: ()         => api.post('/admin/leaderboard/rebuild'),
   tournamentCompletion: ()       => api.get('/admin/tournament/completion'),

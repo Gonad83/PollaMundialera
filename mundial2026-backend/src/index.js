@@ -108,7 +108,7 @@ app.post('/sync-matches', async (req, res) => {
     // ranking de grupo (LeaderboardEntry) quedaba congelado porque solo se reconstruía
     // en el sync de admin. Esto recalcula desde las predicciones existentes (no borra ni
     // modifica puntos ni pronósticos), manteniendo Ranking, Comparativa y header alineados.
-    if ((result.finished || 0) > 0 || (result.scoredPredictions || 0) > 0) {
+    if ((result.created || 0) > 0 || (result.updated || 0) > 0 || (result.finished || 0) > 0 || (result.scoredPredictions || 0) > 0) {
       try {
         const { rebuildLeaderboard } = require('./controllers/adminController');
         await rebuildLeaderboard();

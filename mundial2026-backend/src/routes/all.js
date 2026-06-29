@@ -77,6 +77,7 @@ adminRouter.get('/dashboard',                    ac.getDashboard);
 adminRouter.post('/matches/:matchId/result',     ac.setMatchResult);
 adminRouter.put('/matches/:matchId/status',      ac.setMatchStatus);
 adminRouter.post('/tournament/awards',           ac.setTournamentAwards);
+adminRouter.post('/tournament/recalculate',      ac.manualRecalculateTournament);
 adminRouter.post('/sync',                        ac.syncMatches);
 adminRouter.post('/leaderboard/rebuild',         ac.manualRebuildLeaderboard);
 adminRouter.get('/tournament/completion',        ac.getTournamentCompletion);

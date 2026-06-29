@@ -198,6 +198,18 @@ export default function AdminPage() {
     onSuccess: () => showFeedback('Ranking reconstruido ✓ — Puntos por partidos no apostados aplicados a todos'),
   })
 
+  const recalcTournamentMut = useMutation({
+    mutationFn: () => adminApi.recalculateTournament(),
+    onSuccess: (res) => {
+      const actuals = res.data.actuals
+      const scope = actuals ? `16avos: ${actuals.round32}, 8vos: ${actuals.round16}` : 'torneo'
+      showFeedback(`Puntaje torneo recalculado - ${scope}`)
+      qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['group-compare'] })
+    },
+    onError: (err) => showFeedback(err.response?.data?.error || 'Error al recalcular torneo', 'error'),
+  })
+
   const deadlineMut = useMutation({
     mutationFn: (deadline) => adminApi.setTournamentDeadline(deadline),
     onSuccess: (res) => {
@@ -701,9 +713,24 @@ export default function AdminPage() {
                        </button>
                      </div>
                   </div>
-               </PickSection>
+                </PickSection>
 
-               <PickSection title="Reconstruir Ranking" subtitle="Aplica la regla de 1 pto por partido no apostado a todos los usuarios" icon={BarChart3}>
+                <PickSection title="Puntaje Torneo" subtitle="Calcula los aciertos contra clasificados reales" icon={Trophy}>
+                   <div className="flex flex-col gap-4">
+                      <p className="text-sm text-zinc-500 leading-relaxed font-bold uppercase tracking-widest bg-white/5 p-6 rounded-3xl border border-white/5">
+                        Compara los 16avos reales ya formados contra los pronosticos de torneo y actualiza el ranking.
+                      </p>
+                      <button
+                        onClick={() => { if (confirm('Recalcular puntaje de torneo con los clasificados reales actuales?')) recalcTournamentMut.mutate() }}
+                        disabled={recalcTournamentMut.isPending}
+                        className="py-5 rounded-[2rem] bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-emerald-400 hover:text-mundial-navy hover:border-emerald-400 transition-all disabled:opacity-50"
+                      >
+                        {recalcTournamentMut.isPending ? 'Calculando...' : 'Recalcular Torneo Ahora'}
+                      </button>
+                   </div>
+                </PickSection>
+
+                <PickSection title="Reconstruir Ranking" subtitle="Aplica la regla de 1 pto por partido no apostado a todos los usuarios" icon={BarChart3}>
                   <div className="flex flex-col gap-4">
                      <p className="text-sm text-zinc-500 leading-relaxed font-bold uppercase tracking-widest bg-white/5 p-6 rounded-3xl border border-white/5">
                        Recalcula el ranking completo (global y por grupos) aplicando <span className="text-mundial-gold">+1 punto</span> por cada partido finalizado que el usuario no apostó.
