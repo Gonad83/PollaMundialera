@@ -99,7 +99,7 @@ export const tournamentApi = {
   myPicks:   (params) => api.get('/tournament/picks', { params }),
   savePicks: (data) => api.put('/tournament/picks', data),
   userPicks: (id, params) => api.get(`/tournament/picks/${id}`, { params }),
-  deadline:  () => api.get('/tournament/deadline'),
+  deadline:  (params) => api.get('/tournament/deadline', { params }),
 }
 
 export const leaderboardApi = {
@@ -120,7 +120,7 @@ export const adminApi = {
   setTournamentDeadline: (d)     => api.post('/admin/tournament/deadline', { deadline: d }),
   tournamentChanges: (since)     => api.get('/admin/tournament/changes', { params: since ? { since } : {} }),
   getBracketReopen:  ()          => api.get('/admin/tournament/bracket-reopen'),
-  setBracketReopen:  (action, hours, allowedEmails) => api.post('/admin/tournament/bracket-reopen', { action, hours, allowedEmails }),
+  setBracketReopen:  (action, hours, allowedEmails, allowedGroupNames) => api.post('/admin/tournament/bracket-reopen', { action, hours, allowedEmails, allowedGroupNames }),
   getUsers:        ()          => api.get('/admin/users'),
   sendBroadcast:   (data)      => api.post('/admin/broadcast', data),
   setPremium:      (id, data)  => api.patch(`/admin/groups/${id}/premium`, data),

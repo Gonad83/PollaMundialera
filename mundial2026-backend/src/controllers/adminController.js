@@ -8,6 +8,7 @@ const {
   isBracketReopen,
   getBracketReopenUntil,
   getBracketReopenAllowedEmails,
+  getBracketReopenAllowedGroupNames,
   setBracketReopen,
 } = require('../utils/tournamentDeadlineStore');
 
@@ -20,7 +21,7 @@ const matchResultSchema = z.object({
   winnerId: z.string().optional().nullable(),
 });
 
-const BRACKET_REOPEN_TEST_EMAILS = ['garaosd@gmail.com'];
+const BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo'];
 
 const STREAK_BONUS = 5;  // Puntos por racha de 3 exactos seguidos
 const PERFECT_DAY_BONUS = 10; // Todos los partidos de una jornada
@@ -740,19 +741,24 @@ const getBracketReopenStatus = (req, res) => {
     active: isBracketReopen(),
     until: getBracketReopenUntil(),
     allowedEmails: getBracketReopenAllowedEmails(),
+    allowedGroupNames: getBracketReopenAllowedGroupNames(),
   });
 };
 
 // POST /api/admin/tournament/bracket-reopen — { action: 'open' | 'close', hours? }
 // Abre SOLO la edición de 4tos/semis/finalistas por una ventana (default 24h, auto-expira).
 const setBracketReopenStatus = async (req, res) => {
-  const { action, hours, allowedEmails } = req.body || {};
+  const { action, hours, allowedEmails, allowedGroupNames } = req.body || {};
   if (action === 'close') {
     await setBracketReopen(null);
   } else if (action === 'open') {
     const h = Number(hours) > 0 ? Number(hours) : 24;
     const until = new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
-    await setBracketReopen(until, allowedEmails === undefined ? BRACKET_REOPEN_TEST_EMAILS : allowedEmails);
+    await setBracketReopen(
+      until,
+      allowedEmails === undefined ? [] : allowedEmails,
+      allowedGroupNames === undefined ? BRACKET_REOPEN_GROUP_NAMES : allowedGroupNames
+    );
   } else {
     return res.status(400).json({ error: 'action debe ser "open" o "close"' });
   }
@@ -760,6 +766,7 @@ const setBracketReopenStatus = async (req, res) => {
     active: isBracketReopen(),
     until: getBracketReopenUntil(),
     allowedEmails: getBracketReopenAllowedEmails(),
+    allowedGroupNames: getBracketReopenAllowedGroupNames(),
   });
 };
 

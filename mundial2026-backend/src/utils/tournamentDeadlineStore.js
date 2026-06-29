@@ -14,13 +14,19 @@ const isLocked = () => new Date() > new Date(_deadline);
 // Reapertura acotada de cruces: 4tos/semis/finalistas solamente.
 const REOPEN_KEY = 'bracket_reopen_until';
 const REOPEN_ALLOWED_EMAILS_KEY = 'bracket_reopen_allowed_emails';
+const REOPEN_ALLOWED_GROUP_NAMES_KEY = 'bracket_reopen_allowed_group_names';
 const DEFAULT_BRACKET_REOPEN_EMAILS = ['garaosd@gmail.com'];
+const DEFAULT_BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo'];
 let _bracketReopenUntil = null;
 let _bracketReopenAllowedEmails = [];
+let _bracketReopenAllowedGroupNames = [];
 
 const getBracketReopenUntil = () => _bracketReopenUntil;
 const isBracketReopen = () => !!_bracketReopenUntil && new Date() < new Date(_bracketReopenUntil);
 const getBracketReopenAllowedEmails = () => [..._bracketReopenAllowedEmails];
+const getBracketReopenAllowedGroupNames = () => [..._bracketReopenAllowedGroupNames];
+
+const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
 const normalizeEmails = (emails) => {
   if (!Array.isArray(emails)) return [];
@@ -29,6 +35,11 @@ const normalizeEmails = (emails) => {
       .map((email) => String(email || '').trim().toLowerCase())
       .filter(Boolean)
   )];
+};
+
+const normalizeGroupNames = (names) => {
+  if (!Array.isArray(names)) return [];
+  return [...new Set(names.map(normalizeText).filter(Boolean))];
 };
 
 const parseAllowedEmails = (raw) => {
@@ -40,11 +51,31 @@ const parseAllowedEmails = (raw) => {
   }
 };
 
-const isBracketReopenForUser = (user) => {
+const parseAllowedGroupNames = (raw) => {
+  if (!raw) return [];
+  try {
+    return normalizeGroupNames(JSON.parse(raw));
+  } catch {
+    return normalizeGroupNames(String(raw).split(','));
+  }
+};
+
+const isBracketReopenForUser = async (user, groupId = null) => {
   if (!isBracketReopen()) return false;
-  if (_bracketReopenAllowedEmails.length === 0) return true;
-  const email = String(user?.email || '').trim().toLowerCase();
-  return !!email && _bracketReopenAllowedEmails.includes(email);
+  if (_bracketReopenAllowedEmails.length === 0 && _bracketReopenAllowedGroupNames.length === 0) return true;
+
+  const email = normalizeText(user?.email);
+  if (email && _bracketReopenAllowedEmails.includes(email)) return true;
+
+  if (user?.id && groupId && _bracketReopenAllowedGroupNames.length > 0) {
+    const group = await prisma.group.findFirst({
+      where: { id: groupId, members: { some: { userId: user.id } } },
+      select: { name: true },
+    });
+    return !!group && _bracketReopenAllowedGroupNames.includes(normalizeText(group.name));
+  }
+
+  return false;
 };
 
 async function persistDeadline(isoString) {
@@ -79,6 +110,12 @@ async function loadDeadlineFromDb() {
       ? DEFAULT_BRACKET_REOPEN_EMAILS
       : parseAllowedEmails(allowedRaw);
 
+    const allowedGroups = await prisma.$queryRaw`SELECT "value" FROM "Setting" WHERE "key" = ${REOPEN_ALLOWED_GROUP_NAMES_KEY} LIMIT 1`;
+    const allowedGroupsRaw = Array.isArray(allowedGroups) && allowedGroups[0] ? allowedGroups[0].value : null;
+    _bracketReopenAllowedGroupNames = allowedGroupsRaw === null && _bracketReopenUntil
+      ? normalizeGroupNames(DEFAULT_BRACKET_REOPEN_GROUP_NAMES)
+      : parseAllowedGroupNames(allowedGroupsRaw);
+
     if (allowedRaw === null && _bracketReopenUntil) {
       const emailsJson = JSON.stringify(_bracketReopenAllowedEmails);
       await prisma.$executeRaw`
@@ -87,22 +124,32 @@ async function loadDeadlineFromDb() {
         ON CONFLICT ("key") DO UPDATE SET "value" = ${emailsJson}, "updatedAt" = now()
       `;
     }
+    if (allowedGroupsRaw === null && _bracketReopenUntil) {
+      const groupNamesJson = JSON.stringify(_bracketReopenAllowedGroupNames);
+      await prisma.$executeRaw`
+        INSERT INTO "Setting" ("key", "value", "updatedAt")
+        VALUES (${REOPEN_ALLOWED_GROUP_NAMES_KEY}, ${groupNamesJson}, now())
+        ON CONFLICT ("key") DO UPDATE SET "value" = ${groupNamesJson}, "updatedAt" = now()
+      `;
+    }
 
     console.log(
-      `Deadline torneo: ${_deadline} | cerrado=${isLocked()} | reaperturaCruces=${isBracketReopen()} | permitidos=${_bracketReopenAllowedEmails.join(',') || 'todos'}`
+      `Deadline torneo: ${_deadline} | cerrado=${isLocked()} | reaperturaCruces=${isBracketReopen()} | emails=${_bracketReopenAllowedEmails.join(',') || '-'} | grupos=${_bracketReopenAllowedGroupNames.join(',') || '-'}`
     );
   } catch (e) {
     console.error('[tournamentDeadline] loadFromDb error:', e.message);
   }
 }
 
-async function setBracketReopen(untilIsoOrNull, allowedEmails = []) {
+async function setBracketReopen(untilIsoOrNull, allowedEmails = [], allowedGroupNames = []) {
   _bracketReopenUntil = untilIsoOrNull || null;
   _bracketReopenAllowedEmails = _bracketReopenUntil ? normalizeEmails(allowedEmails) : [];
+  _bracketReopenAllowedGroupNames = _bracketReopenUntil ? normalizeGroupNames(allowedGroupNames) : [];
 
   try {
     if (_bracketReopenUntil) {
       const emailsJson = JSON.stringify(_bracketReopenAllowedEmails);
+      const groupNamesJson = JSON.stringify(_bracketReopenAllowedGroupNames);
       await prisma.$executeRaw`
         INSERT INTO "Setting" ("key", "value", "updatedAt")
         VALUES (${REOPEN_KEY}, ${_bracketReopenUntil}, now())
@@ -113,9 +160,15 @@ async function setBracketReopen(untilIsoOrNull, allowedEmails = []) {
         VALUES (${REOPEN_ALLOWED_EMAILS_KEY}, ${emailsJson}, now())
         ON CONFLICT ("key") DO UPDATE SET "value" = ${emailsJson}, "updatedAt" = now()
       `;
+      await prisma.$executeRaw`
+        INSERT INTO "Setting" ("key", "value", "updatedAt")
+        VALUES (${REOPEN_ALLOWED_GROUP_NAMES_KEY}, ${groupNamesJson}, now())
+        ON CONFLICT ("key") DO UPDATE SET "value" = ${groupNamesJson}, "updatedAt" = now()
+      `;
     } else {
       await prisma.$executeRaw`DELETE FROM "Setting" WHERE "key" = ${REOPEN_KEY}`;
       await prisma.$executeRaw`DELETE FROM "Setting" WHERE "key" = ${REOPEN_ALLOWED_EMAILS_KEY}`;
+      await prisma.$executeRaw`DELETE FROM "Setting" WHERE "key" = ${REOPEN_ALLOWED_GROUP_NAMES_KEY}`;
     }
   } catch (e) {
     console.error('[bracketReopen] persist error:', e.message);
@@ -140,5 +193,6 @@ module.exports = {
   isBracketReopenForUser,
   getBracketReopenUntil,
   getBracketReopenAllowedEmails,
+  getBracketReopenAllowedGroupNames,
   setBracketReopen,
 };

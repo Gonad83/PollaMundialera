@@ -6,6 +6,7 @@ const {
   isBracketReopenForUser,
   getBracketReopenUntil,
   getBracketReopenAllowedEmails,
+  getBracketReopenAllowedGroupNames,
 } = require('../utils/tournamentDeadlineStore');
 
 // Únicos campos editables durante la reapertura acotada de cruces (nada más).
@@ -62,7 +63,7 @@ const savePicks = async (req, res) => {
   if (!groupId) return res.status(400).json({ error: 'groupId es requerido' });
 
   const locked = isTournamentLocked();
-  const reopen = isBracketReopenForUser(req.user);
+  const reopen = await isBracketReopenForUser(req.user, groupId);
   // Cerrado y sin reapertura → bloqueado del todo.
   if (locked && !reopen) {
     return res.status(403).json({
@@ -174,14 +175,16 @@ const getUserPicks = async (req, res) => {
 };
 
 // GET /api/tournament/deadline — Deadline actual (público)
-const getDeadlineInfo = (req, res) => {
-  const bracketReopen = isBracketReopenForUser(req.user);
+const getDeadlineInfo = async (req, res) => {
+  const { groupId } = req.query;
+  const bracketReopen = await isBracketReopenForUser(req.user, groupId);
   res.json({
     deadline: getDeadline(),
     locked: isTournamentLocked(),
     bracketReopen,
     bracketReopenUntil: getBracketReopenUntil(),
     bracketReopenAllowedEmails: req.user?.role === 'SUPER_ADMIN' ? getBracketReopenAllowedEmails() : undefined,
+    bracketReopenAllowedGroupNames: req.user?.role === 'SUPER_ADMIN' ? getBracketReopenAllowedGroupNames() : undefined,
   });
 };
 

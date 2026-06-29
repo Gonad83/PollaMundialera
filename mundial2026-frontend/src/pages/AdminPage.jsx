@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 
 const TZ = 'America/Santiago'
-const BRACKET_REOPEN_TEST_EMAILS = ['garaosd@gmail.com']
+const BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo']
 const fmtChileDateTime = (date, options = {}) =>
   new Intl.DateTimeFormat('es-CL', {
     day: 'numeric',
@@ -221,9 +221,9 @@ export default function AdminPage() {
     queryFn: () => adminApi.getBracketReopen().then(r => r.data),
   })
   const reopenMut = useMutation({
-    mutationFn: ({ action, hours, allowedEmails }) => {
-      const scope = allowedEmails ?? (action === 'open' ? BRACKET_REOPEN_TEST_EMAILS : undefined)
-      return adminApi.setBracketReopen(action, hours, scope).then(r => r.data)
+    mutationFn: ({ action, hours, allowedEmails, allowedGroupNames }) => {
+      const groupScope = allowedGroupNames ?? (action === 'open' ? BRACKET_REOPEN_GROUP_NAMES : undefined)
+      return adminApi.setBracketReopen(action, hours, allowedEmails, groupScope).then(r => r.data)
     },
     onSuccess: (data) => {
       showFeedback(data.active ? 'Rectificación de cruces ABIERTA' : 'Rectificación de cruces CERRADA')

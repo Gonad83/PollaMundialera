@@ -46,8 +46,9 @@ export default function TournamentPage({ groupId, members = [] }) {
   const [saved, setSaved] = useState(false)
 
   const { data: deadlineData } = useQuery({
-    queryKey: ['tournament-deadline'],
-    queryFn: () => tournamentApi.deadline().then(r => r.data),
+    queryKey: ['tournament-deadline', groupId],
+    queryFn: () => tournamentApi.deadline({ groupId }).then(r => r.data),
+    enabled: !!groupId,
     staleTime: 30_000,
     refetchInterval: 60_000,
   })
