@@ -17,9 +17,11 @@ const REOPEN_ALLOWED_EMAILS_KEY = 'bracket_reopen_allowed_emails';
 const REOPEN_ALLOWED_GROUP_NAMES_KEY = 'bracket_reopen_allowed_group_names';
 const DEFAULT_BRACKET_REOPEN_EMAILS = ['garaosd@gmail.com'];
 const DEFAULT_BRACKET_REOPEN_GROUP_NAMES = ['Real Ebolo'];
-// Brasil vs Japon aparece en el fixture el 29/06/2026 13:00 hora Chile (UTC-4).
-// La reapertura debe cerrar 5 minutos antes. Si la BD trae el partido, se usa esa fecha real.
-const BRAZIL_JAPAN_FALLBACK_CUTOFF = '2026-06-29T16:55:00.000Z';
+// Brasil vs Japón: 29/06/2026 13:00 hora Chile (UTC-4) = 17:00 UTC.
+// La reapertura dura hasta el FIN de ese partido (~2h30: tiempo regular + alargue + penales).
+// Si la BD trae el partido, se usa su fecha real + esa duración.
+const MATCH_DURATION_MS = 2.5 * 60 * 60 * 1000;
+const BRAZIL_JAPAN_FALLBACK_CUTOFF = '2026-06-29T19:30:00.000Z';
 let _bracketReopenUntil = null;
 let _bracketReopenAllowedEmails = [];
 let _bracketReopenAllowedGroupNames = [];
@@ -77,7 +79,7 @@ const getBrazilJapanReopenCutoff = async () => {
     });
 
     if (match?.dateUtc) {
-      return new Date(match.dateUtc.getTime() - 5 * 60 * 1000).toISOString();
+      return new Date(match.dateUtc.getTime() + MATCH_DURATION_MS).toISOString();
     }
   } catch (e) {
     console.error('[bracketReopen] cutoff lookup error:', e.message);
@@ -85,10 +87,11 @@ const getBrazilJapanReopenCutoff = async () => {
   return BRAZIL_JAPAN_FALLBACK_CUTOFF;
 };
 
+// La reapertura, mientras esté activa, dura hasta el FIN del partido Brasil–Japón.
+// Cualquier ventana activa se ancla a ese cierre (extiende la actual y limita futuras).
 const clampBracketReopenUntil = async (untilIsoOrNull) => {
   if (!untilIsoOrNull) return null;
-  const cutoff = await getBrazilJapanReopenCutoff();
-  return new Date(untilIsoOrNull) > new Date(cutoff) ? cutoff : untilIsoOrNull;
+  return await getBrazilJapanReopenCutoff();
 };
 
 const isBracketReopenForUser = async (user, groupId = null) => {
