@@ -454,7 +454,7 @@ function MatchesSkeleton() {
 }
 
 function MatchRow({ match, pred, groupId, apostado = false }) {
-  const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc } = match
+  const { teamHome, teamAway, scoreHome, scoreAway, status, dateUtc, wentToPenalties, penaltyHome, penaltyAway } = match
   const isLive     = status === 'LIVE'
   const isFinished = status === 'FINISHED'
   const isFriendly = isFriendlyMatch(match)
@@ -519,6 +519,9 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
                     <span className="text-zinc-600 font-bold text-sm">:</span>
                     <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center font-display text-lg text-white">{scoreAway ?? 0}</div>
                   </div>
+                  {wentToPenalties && penaltyHome != null && penaltyAway != null && (
+                    <span className="text-[9px] font-black uppercase tracking-widest text-amber-300">pen {penaltyHome}-{penaltyAway}</span>
+                  )}
                   {/* Apuesta del usuario */}
                   {showResult && pred && (
                     <div className="flex items-center gap-1.5 mt-0.5">

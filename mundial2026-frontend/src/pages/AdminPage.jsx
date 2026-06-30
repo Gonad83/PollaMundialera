@@ -64,7 +64,7 @@ export default function AdminPage() {
 
   // States para Formularios
   const [activeMatch, setActiveMatch] = useState(null)
-  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false, winnerId: null })
+  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false, penaltyHome: 0, penaltyAway: 0, winnerId: null })
   const [broadcastMsg, setBroadcastMsg] = useState('')
   const [userSearch, setUserSearch] = useState('')
 
@@ -947,6 +947,8 @@ function MatchesTab({
       scoreHome: m.scoreHome ?? 0,
       scoreAway: m.scoreAway ?? 0,
       wentToPenalties: m.wentToPenalties ?? false,
+      penaltyHome: m.penaltyHome ?? 0,
+      penaltyAway: m.penaltyAway ?? 0,
       winnerId: m.winnerId ?? null,
     })
   }
@@ -1184,6 +1186,24 @@ function MatchesTab({
 
                 {resultForm.wentToPenalties && resultForm.scoreHome === resultForm.scoreAway && (
                   <div className="p-3 rounded-xl bg-mundial-gold/5 border border-mundial-gold/15 space-y-3">
+                    <p className="text-[9px] text-mundial-gold font-black uppercase tracking-widest">Marcador de penales</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-[9px] font-black text-zinc-400 uppercase truncate max-w-[64px]">{activeMatch.teamHome?.code || activeMatch.teamHome?.name}</span>
+                      <input
+                        type="number" min="0" max="50"
+                        className="w-12 bg-mundial-navy border border-mundial-gold/30 rounded-lg text-center text-xl font-display text-mundial-gold outline-none focus:border-mundial-gold py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        value={resultForm.penaltyHome}
+                        onChange={e => { const ph = Math.max(0, parseInt(e.target.value) || 0); setResultForm(f => ({ ...f, penaltyHome: ph, winnerId: ph === f.penaltyAway ? f.winnerId : (ph > f.penaltyAway ? activeMatch.teamHomeId : activeMatch.teamAwayId) })) }}
+                      />
+                      <span className="text-zinc-600 font-black">-</span>
+                      <input
+                        type="number" min="0" max="50"
+                        className="w-12 bg-mundial-navy border border-mundial-gold/30 rounded-lg text-center text-xl font-display text-mundial-gold outline-none focus:border-mundial-gold py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        value={resultForm.penaltyAway}
+                        onChange={e => { const pa = Math.max(0, parseInt(e.target.value) || 0); setResultForm(f => ({ ...f, penaltyAway: pa, winnerId: pa === f.penaltyHome ? f.winnerId : (pa > f.penaltyHome ? activeMatch.teamAwayId : activeMatch.teamHomeId) })) }}
+                      />
+                      <span className="text-[9px] font-black text-zinc-400 uppercase truncate max-w-[64px]">{activeMatch.teamAway?.code || activeMatch.teamAway?.name}</span>
+                    </div>
                     <p className="text-[9px] text-mundial-gold font-black uppercase tracking-widest">Ganador de la tanda</p>
                     <div className="grid grid-cols-2 gap-2">
                       {[activeMatch.teamHome, activeMatch.teamAway].map(team => (

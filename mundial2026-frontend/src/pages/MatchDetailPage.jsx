@@ -179,7 +179,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   if (isLoading) return <Skeleton />
   if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
 
-  const { dateUtc, status, scoreHome, scoreAway, phase } = match
+  const { dateUtc, status, scoreHome, scoreAway, phase, wentToPenalties, penaltyHome, penaltyAway } = match
   const isFriendly = isFriendlyMatch(match)
   const pointBreakdown = buildPointBreakdown(myPred, match)
 
@@ -250,9 +250,14 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
           {/* Results / Time */}
           <div className="space-y-2 text-center min-w-[120px]">
              {isFinished || status === 'LIVE' ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="score-box text-3xl w-16 h-16">{scoreHome}</div>
-                  <div className="score-box text-3xl w-16 h-16">{scoreAway}</div>
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="score-box text-3xl w-16 h-16">{scoreHome}</div>
+                    <div className="score-box text-3xl w-16 h-16">{scoreAway}</div>
+                  </div>
+                  {wentToPenalties && penaltyHome != null && penaltyAway != null && (
+                    <span className="text-xs font-black uppercase tracking-widest text-amber-300">pen {penaltyHome}-{penaltyAway}</span>
+                  )}
                 </div>
              ) : (
                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
