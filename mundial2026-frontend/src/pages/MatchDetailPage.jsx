@@ -58,7 +58,7 @@ function buildPointBreakdown(pred, match) {
   }
   if (pred.predPenalties !== null && pred.predPenalties !== undefined) {
     const correct = pred.predPenalties === !!match.wentToPenalties
-    bonusDetails.push(`${correct ? '+3' : '0'} penales: elegiste ${pred.predPenalties ? 'si' : 'no'}, real ${match.wentToPenalties ? 'si' : 'no'}`)
+    bonusDetails.push(`${correct ? '+1' : '0'} penales: elegiste ${pred.predPenalties ? 'si' : 'no'}, real ${match.wentToPenalties ? 'si' : 'no'}`)
   }
   if ((pred.pointsBonus || 0) > 0 || bonusDetails.length > 0) {
     rows.push({
