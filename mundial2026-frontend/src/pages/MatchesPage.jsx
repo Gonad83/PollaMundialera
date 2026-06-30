@@ -35,6 +35,18 @@ const isClubTestMatch = (match) => {
 
 const isNonWorldCupMatch = (match) => isFriendlyMatch(match) || isClubTestMatch(match)
 
+const REAL_R32_FIXTURE_ORDER = [
+  ['GER', 'PAR'], ['FRA', 'SWE'], ['RSA', 'CAN'], ['NED', 'MAR'],
+  ['POR', 'CRO'], ['ESP', 'AUT'], ['USA', 'BIH'], ['BEL', 'SEN'],
+  ['BRA', 'JPN'], ['CIV', 'NOR'], ['MEX', 'ECU'], ['ENG', 'COD'],
+  ['ARG', 'CPV'], ['AUS', 'EGY'], ['SUI', 'ALG'], ['COL', 'GHA'],
+]
+
+const r32PairKey = (codes) => codes.filter(Boolean).map(code => code.toUpperCase()).sort().join('-')
+const REAL_R32_FIXTURE_INDEX = new Map(
+  REAL_R32_FIXTURE_ORDER.map((pair, index) => [r32PairKey(pair), index])
+)
+
 const STATUS_ORDER = { LIVE: 0, SCHEDULED: 1, FINISHED: 2 }
 
 const STATUS_COLORS = {
@@ -642,19 +654,23 @@ function FixtureBracketSports({ matches }) {
           ((m.teamHomeId === a.id && m.teamAwayId === b.id) || (m.teamHomeId === b.id && m.teamAwayId === a.id))) || null)
       : null
 
-  const officialR32Order = [
-    'P74', 'P77', 'P73', 'P75',
-    'P83', 'P84', 'P81', 'P82',
-    'P76', 'P78', 'P79', 'P80',
-    'P86', 'P88', 'P85', 'P87',
-  ]
   const fixtureOrder = (m) => {
-    const venueNumber = Number(m.venue)
-    const officialIndex = officialR32Order.indexOf(`P${venueNumber}`)
+    const officialIndex = REAL_R32_FIXTURE_INDEX.get(r32PairKey([m.teamHome?.code, m.teamAway?.code]))
     if (officialIndex >= 0) return officialIndex
     return new Date(m.dateUtc).getTime() || 0
   }
-  const leaf = (m) => ({ teamA: m?.teamHome || null, teamB: m?.teamAway || null, match: m || null, winner: teamWinner(m) })
+  const leaf = (m) => {
+    if (!m) return { teamA: null, teamB: null, match: null, winner: null }
+
+    const officialIndex = REAL_R32_FIXTURE_INDEX.get(r32PairKey([m.teamHome?.code, m.teamAway?.code]))
+    const [firstCode, secondCode] = REAL_R32_FIXTURE_ORDER[officialIndex] || []
+    const homeCode = m.teamHome?.code?.toUpperCase()
+    const awayCode = m.teamAway?.code?.toUpperCase()
+    const teamA = homeCode === firstCode ? m.teamHome : awayCode === firstCode ? m.teamAway : m.teamHome
+    const teamB = homeCode === secondCode ? m.teamHome : awayCode === secondCode ? m.teamAway : m.teamAway
+
+    return { teamA, teamB, match: m, winner: teamWinner(m) }
+  }
   const node = (round, a, b) => {
     const teamA = a?.winner || null
     const teamB = b?.winner || null
