@@ -170,7 +170,11 @@ const OFFICIAL_R32_ORDER = [
   'P76', 'P78', 'P79', 'P80',
   'P86', 'P88', 'P85', 'P87',
 ]
-const OFFICIAL_R16_CODES = [89, 90, 93, 94, 91, 92, 95, 96]
+// Match codes in the same visual order as OFFICIAL_R32_ORDER.
+// Official R16: M89(73-75), M90(74-77), M91(76-78), M92(79-80),
+//               M93(83-84), M94(81-82), M95(86-88), M96(85-87).
+const VISUAL_R16_CODES = [90, 89, 93, 94, 91, 92, 95, 96]
+const VISUAL_QF_SOURCE_INDEXES = [[1, 0], [2, 3], [4, 5], [6, 7]]
 
 const initScores = () =>
   Object.fromEntries(
@@ -698,7 +702,7 @@ function VisualBracket({ bracketTeams, bracketScores, penaltyWinners, bracket, o
   const gm = (num) => `GM${num}`
   const r32Code = (i) => (bracket.r32labels?.[i] || gm(73 + i)).replace(/^P/, 'GM')
   // Octavos: el orden del array de R16 sigue el cuadro oficial → códigos no consecutivos
-  const R16_CODES = OFFICIAL_R16_CODES
+  const R16_CODES = VISUAL_R16_CODES
   const roundCode = (round, i) => {
     if (round === 'r32') return r32Code(i)
     if (round === 'r16') return gm(R16_CODES[i] ?? 89 + i)
@@ -963,7 +967,7 @@ export default function SimulatorPage() {
     const r32w = r32pairs.map(([a, b], i) => resolve(a, b, bracketScores.r32[i][0], bracketScores.r32[i][1], pw[`r32-${i}`]))
     const r16pairs = Array.from({ length: 8 }, (_, i) => [r32w[i*2], r32w[i*2+1]])
     const r16w = r16pairs.map(([a, b], i) => resolve(a, b, bracketScores.r16[i][0], bracketScores.r16[i][1], pw[`r16-${i}`]))
-    const qfPairs = Array.from({ length: 4 }, (_, i) => [r16w[i*2], r16w[i*2+1]])
+    const qfPairs = VISUAL_QF_SOURCE_INDEXES.map(([a, b]) => [r16w[a], r16w[b]])
     const qfW = qfPairs.map(([a, b], i) => resolve(a, b, bracketScores.qf[i][0], bracketScores.qf[i][1], pw[`qf-${i}`]))
     const sfPairs = [[qfW[0], qfW[1]], [qfW[2], qfW[3]]]
     const sfW = sfPairs.map(([a, b], i) => resolve(a, b, bracketScores.sf[i][0], bracketScores.sf[i][1], pw[`sf-${i}`]))
