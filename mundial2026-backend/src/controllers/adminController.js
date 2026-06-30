@@ -18,6 +18,8 @@ const matchResultSchema = z.object({
   scoreHome: z.number().int().min(0).max(20),
   scoreAway: z.number().int().min(0).max(20),
   wentToPenalties: z.boolean().default(false),
+  penaltyHome: z.number().int().min(0).max(50).optional().nullable(),
+  penaltyAway: z.number().int().min(0).max(50).optional().nullable(),
   winnerId: z.string().optional().nullable(),
 });
 
@@ -240,16 +242,39 @@ const setMatchResult = async (req, res) => {
 
   if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
 
-  const { scoreHome, scoreAway, wentToPenalties, winnerId } = parsed.data;
+  const { scoreHome, scoreAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
   const isDraw = scoreHome === scoreAway;
-  const resolvedWinnerId = isDraw
-    ? (wentToPenalties ? winnerId : null)
-    : (scoreHome > scoreAway ? match.teamHomeId : match.teamAwayId);
 
-  if (wentToPenalties && isDraw && !resolvedWinnerId) {
-    return res.status(400).json({ error: 'Selecciona el ganador por penales' });
+  // Un partido a penales SOLO ocurre tras un empate: el marcador de los 90′/prórroga
+  // debe ser empate y los penales van en sus propios campos (no en score), que es lo
+  // que puntúa. Esto evita el bug de guardar el marcador de penales como resultado.
+  if (wentToPenalties && !isDraw) {
+    return res.status(400).json({
+      error: 'Si el partido fue a penales, el marcador de los 90′ debe ser empate. Carga el empate y el resultado de penales aparte.',
+    });
   }
 
+  let resolvedWinnerId;
+  if (!isDraw) {
+    resolvedWinnerId = scoreHome > scoreAway ? match.teamHomeId : match.teamAwayId;
+  } else if (wentToPenalties) {
+    // Ganador por penales: del marcador de penales si viene, si no del winnerId explícito.
+    resolvedWinnerId = (penaltyHome != null && penaltyAway != null && penaltyHome !== penaltyAway)
+      ? (penaltyHome > penaltyAway ? match.teamHomeId : match.teamAwayId)
+      : (winnerId || null);
+  } else {
+    resolvedWinnerId = null; // empate sin penales (fase de grupos)
+  }
+
+  if (wentToPenalties && !resolvedWinnerId) {
+    return res.status(400).json({ error: 'Indica el marcador de penales (o el ganador por penales).' });
+  }
+
+  // Penales solo si corresponde; si no fue a penales se limpian.
+  const penH = wentToPenalties ? (penaltyHome ?? null) : null;
+  const penA = wentToPenalties ? (penaltyAway ?? null) : null;
+
+  // El cálculo de puntos usa scoreHome/scoreAway (los 90′); los penales NO puntúan.
   const matchForScoring = { ...match, scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId };
 
   // ─── Transacción: actualizar partido + calcular todos los puntos ──────────
@@ -257,7 +282,7 @@ const setMatchResult = async (req, res) => {
     // 1. Actualizar el partido
     await tx.match.update({
       where: { id: matchId },
-      data: { scoreHome, scoreAway, wentToPenalties, winnerId: resolvedWinnerId, status: 'FINISHED' },
+      data: { scoreHome, scoreAway, wentToPenalties, penaltyHome: penH, penaltyAway: penA, winnerId: resolvedWinnerId, status: 'FINISHED' },
     });
 
     // 2. Calcular puntos para cada predicción

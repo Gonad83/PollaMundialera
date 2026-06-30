@@ -173,6 +173,9 @@ async function startServer() {
     await prisma.$executeRaw`
       CREATE INDEX IF NOT EXISTS "Match_winnerId_idx" ON "Match"("winnerId")
     `;
+    // Match: marcador de penales (separado del marcador de los 90′)
+    await prisma.$executeRaw`ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "penaltyHome" INTEGER`;
+    await prisma.$executeRaw`ALTER TABLE "Match" ADD COLUMN IF NOT EXISTS "penaltyAway" INTEGER`;
     // TournamentPicks.groupId migration
     await prisma.$executeRaw`ALTER TABLE "TournamentPicks" ADD COLUMN IF NOT EXISTS "groupId" TEXT`;
     await prisma.$executeRaw`

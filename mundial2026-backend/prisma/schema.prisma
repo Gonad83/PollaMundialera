@@ -168,6 +168,8 @@ model Match {
   scoreHome    Int?
   scoreAway    Int?
   wentToPenalties Boolean  @default(false)
+  penaltyHome  Int?
+  penaltyAway  Int?
   venue        String?
   city         String?
   dateUtc      DateTime

@@ -126,6 +126,9 @@ async function syncMatches() {
     const dateUtc       = new Date(m.utcDate);
     const scoreHome     = m.score?.fullTime?.home ?? null;
     const scoreAway     = m.score?.fullTime?.away ?? null;
+    // Penales: marcador del shootout, aparte del marcador de los 90′/prórroga que puntúa.
+    const penaltyHome   = m.score?.penalties?.home ?? null;
+    const penaltyAway   = m.score?.penalties?.away ?? null;
     const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
 
     let winnerId = null;
@@ -157,6 +160,8 @@ async function syncMatches() {
       scoreHome,
       scoreAway,
       wentToPenalties,
+      penaltyHome,
+      penaltyAway,
       winnerId,
     };
 

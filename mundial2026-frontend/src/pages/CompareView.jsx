@@ -370,15 +370,22 @@ export default function CompareView({ groupId, members = [] }) {
                   const isFinished = match.status === 'FINISHED'
                   const awaiting = isAwaitingResult(match)
                   return (
-                    <th key={match.id} className="px-2 py-2 min-w-[70px] text-center border-r border-white/5 last:border-r-0">
-                      <div className="flex flex-col items-center gap-1">
+                    <th key={match.id} className="px-2 py-2.5 min-w-[84px] text-center border-r border-white/5 last:border-r-0">
+                      <div className="flex flex-col items-center gap-1.5">
                         <div className="flex items-center gap-1">
                           <TeamFlag team={match.teamHome} />
                           <span className="text-[8px] font-black text-white/80">{homeCode}</span>
                         </div>
                         {isFinished ? (
-                          <span className="text-[10px] font-display text-mundial-gold leading-none">
-                            {match.scoreHome}–{match.scoreAway}
+                          <span className="flex flex-col items-center leading-none gap-0.5">
+                            <span className="text-[11px] font-display text-mundial-gold">
+                              {match.scoreHome}–{match.scoreAway}
+                            </span>
+                            {match.wentToPenalties && match.penaltyHome != null && match.penaltyAway != null && (
+                              <span className="text-[7px] font-black uppercase tracking-wide text-amber-300 whitespace-nowrap">
+                                pen {match.penaltyHome}-{match.penaltyAway}
+                              </span>
+                            )}
                           </span>
                         ) : awaiting ? (
                           <span className="text-[9px] text-amber-500/80 flex items-center gap-0.5 leading-none font-black">
