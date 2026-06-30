@@ -11,7 +11,7 @@ const TZ = 'America/Santiago'
 const fmtChileTime = (d) => new Date(d).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false })
 const fmtChileDay  = (d) => new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short', timeZone: TZ }).format(new Date(d))
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, CheckCircle2, Target, Wifi, Star, Flame, Check, X } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Star, Flame, Check, X } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -264,17 +264,20 @@ export default function MatchesPage({ groupId }) {
               <Target size={12} /> Pronósticos
             </button>
             <button
-              onClick={() => setViewMode('real')}
+              onClick={() => setViewMode('fixture')}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                viewMode === 'real'
+                viewMode === 'fixture'
                   ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
-              <Wifi size={12} /> Real
+              <Trophy size={12} /> Fixture
             </button>
           </div>
 
+          {/* En modo Fixture no aplican los filtros de fase (el bracket muestra todas) */}
+          {viewMode !== 'fixture' && (
+            <>
           {/* Separador en desktop */}
           <span className="hidden sm:block w-px h-7 bg-white/10 shrink-0" aria-hidden="true" />
 
@@ -297,6 +300,8 @@ export default function MatchesPage({ groupId }) {
               </button>
             ))}
           </div>
+            </>
+          )}
         </div>
 
         {/* Hint de pronósticos registrados */}
@@ -310,6 +315,8 @@ export default function MatchesPage({ groupId }) {
 
       {isLoading ? (
         <MatchesSkeleton />
+      ) : viewMode === 'fixture' ? (
+        <FixtureBracket matches={worldCupMatches} />
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
         <div className="space-y-16">
@@ -614,6 +621,89 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
         {isLive && <div className="absolute top-0 right-0 w-32 h-32 bg-mundial-red/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />}
       </div>
     </Wrapper>
+  )
+}
+
+// Fixture real del Mundial: bracket por rondas (16vos → Final) que se llena con los
+// resultados reales. El equipo que avanza queda resaltado; lo que falta, "por definir".
+function FixtureBracket({ matches }) {
+  const ROUNDS = [
+    { phase: 'R32', label: '16vos' },
+    { phase: 'R16', label: '8vos' },
+    { phase: 'QF', label: '4tos' },
+    { phase: 'SF', label: 'Semis' },
+    { phase: 'FINAL', label: 'Final' },
+  ]
+  const byPhase = (ph) =>
+    matches
+      .filter(m => m.phase === ph && !isFriendlyMatch(m))
+      .sort((a, b) => new Date(a.dateUtc) - new Date(b.dateUtc))
+
+  const finalMatch = byPhase('FINAL')[0]
+  const champion = finalMatch && finalMatch.status === 'FINISHED'
+    ? (finalMatch.winnerId === finalMatch.teamHomeId ? finalMatch.teamHome
+      : finalMatch.winnerId === finalMatch.teamAwayId ? finalMatch.teamAway : null)
+    : null
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto no-scrollbar -mx-4 px-4 pb-3">
+      <div className="flex gap-3 min-w-max">
+        {ROUNDS.map(({ phase, label }) => {
+          const ms = byPhase(phase)
+          return (
+            <div key={phase} className="flex min-w-[156px] flex-col justify-start gap-2.5">
+              <div className="rounded-lg border border-mundial-gold/20 bg-mundial-gold/10 py-1.5 text-center text-[10px] font-black uppercase tracking-widest text-mundial-gold">
+                {label}
+              </div>
+              {ms.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-white/10 py-5 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                  por definir
+                </div>
+              ) : ms.map(m => <BracketMatch key={m.id} match={m} />)}
+            </div>
+          )
+        })}
+        {/* Campeón */}
+        <div className="flex min-w-[120px] flex-col items-center justify-start gap-2 px-2 pt-10">
+          <Trophy size={26} className="text-mundial-gold" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-mundial-gold">Campeón</span>
+          {champion ? (
+            <div className="flex flex-col items-center gap-1.5">
+              <TeamFlag team={champion} size="md" />
+              <span className="text-xs font-black text-white">{champion.code?.toUpperCase()}</span>
+            </div>
+          ) : (
+            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">por definir</span>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function BracketMatch({ match }) {
+  const { teamHome, teamAway, scoreHome, scoreAway, winnerId, status, wentToPenalties, penaltyHome, penaltyAway } = match
+  const finished = status === 'FINISHED'
+  const row = (team, score, pen, won) => (
+    <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${won ? 'bg-mundial-gold/10' : ''}`}>
+      <div className="flex min-w-0 items-center gap-1.5">
+        {team && <TeamFlag team={team} size="sm" />}
+        <span className={`text-[11px] font-black ${won ? 'text-mundial-gold' : finished ? 'text-zinc-500' : 'text-zinc-300'}`}>
+          {team?.code?.toUpperCase() || '—'}
+        </span>
+      </div>
+      <span className={`font-display text-[11px] ${won ? 'text-mundial-gold' : 'text-zinc-500'}`}>
+        {finished ? (score ?? 0) : '–'}
+        {finished && wentToPenalties && pen != null && <span className="text-[8px]"> ({pen})</span>}
+      </span>
+    </div>
+  )
+  return (
+    <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.02]">
+      {row(teamHome, scoreHome, penaltyHome, finished && winnerId === match.teamHomeId)}
+      <div className="h-px bg-white/5" />
+      {row(teamAway, scoreAway, penaltyAway, finished && winnerId === match.teamAwayId)}
+    </div>
   )
 }
 
