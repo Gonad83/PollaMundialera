@@ -119,6 +119,29 @@ export default function MatchesPage({ groupId }) {
     ? worldCupMatches.filter(m => m.phase === phase)
     : worldCupMatches
 
+  // Fase actual del Mundial: la primera (en orden) que todavía tiene partidos por jugar.
+  const currentPhase = useMemo(() => {
+    const order = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'FINAL']
+    const real = worldCupMatches.filter(m => !isFriendlyMatch(m))
+    for (const ph of order) {
+      const inPhase = real.filter(m => m.phase === ph)
+      if (inPhase.length && inPhase.some(m => m.status !== 'FINISHED')) return ph
+    }
+    for (let i = order.length - 1; i >= 0; i--) {
+      if (real.some(m => m.phase === order[i])) return order[i]
+    }
+    return ''
+  }, [worldCupMatches])
+
+  // Al entrar a Pronóstico Partidos, arrancar en la fase actual del torneo (no en "Todos").
+  const didInitPhase = useRef(false)
+  useEffect(() => {
+    if (!didInitPhase.current && worldCupMatches.length && currentPhase) {
+      didInitPhase.current = true
+      setPhase(currentPhase)
+    }
+  }, [worldCupMatches, currentPhase])
+
   const grouped = listMatches.reduce((acc, m) => {
     const day = fmtChileDay(m.dateUtc)
     if (!acc[day]) acc[day] = []
