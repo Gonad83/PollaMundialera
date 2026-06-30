@@ -11,7 +11,7 @@ const TZ = 'America/Santiago'
 const fmtChileTime = (d) => new Date(d).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', timeZone: TZ, hour12: false })
 const fmtChileDay  = (d) => new Intl.DateTimeFormat('es', { weekday: 'long', day: 'numeric', month: 'short', timeZone: TZ }).format(new Date(d))
 import { motion } from 'framer-motion'
-import { Calendar, Trophy, Filter, CheckCircle2, Target, Star, Flame, Check, X } from 'lucide-react'
+import { Calendar, Trophy, Filter, CheckCircle2, Target, Star, Flame, Check, X, Wifi } from 'lucide-react'
 
 // --- Constants & Utils ---
 
@@ -316,7 +316,7 @@ export default function MatchesPage({ groupId }) {
       {isLoading ? (
         <MatchesSkeleton />
       ) : viewMode === 'fixture' ? (
-        <FixtureBracket matches={worldCupMatches} />
+        <FixtureBracketSports matches={worldCupMatches} />
       ) : phase === 'GROUP' ? (
         /* ── GROUP STANDINGS VIEW ─────────────────────────────── */
         <div className="space-y-16">
@@ -634,6 +634,236 @@ function teamWinner(match) {
 // Se arma emparejando los partidos consecutivos por su id externo (= orden del bracket FIFA):
 // los primeros 8 de 16avos son el lado izquierdo, los últimos 8 el derecho; cada par consecutivo
 // alimenta el siguiente cruce. El que avanza queda resaltado; lo que falta, "—". Se llena solo.
+function FixtureBracketSports({ matches }) {
+  const real = matches.filter(m => !isFriendlyMatch(m))
+  const findMatch = (round, a, b) =>
+    (a && b)
+      ? (real.find(m => m.phase === round &&
+          ((m.teamHomeId === a.id && m.teamAwayId === b.id) || (m.teamHomeId === b.id && m.teamAwayId === a.id))) || null)
+      : null
+
+  const officialR32Order = [
+    'P74', 'P77', 'P73', 'P75',
+    'P83', 'P84', 'P81', 'P82',
+    'P76', 'P78', 'P79', 'P80',
+    'P86', 'P88', 'P85', 'P87',
+  ]
+  const fixtureOrder = (m) => {
+    const venueNumber = Number(m.venue)
+    const officialIndex = officialR32Order.indexOf(`P${venueNumber}`)
+    if (officialIndex >= 0) return officialIndex
+    return new Date(m.dateUtc).getTime() || 0
+  }
+  const leaf = (m) => ({ teamA: m?.teamHome || null, teamB: m?.teamAway || null, match: m || null, winner: teamWinner(m) })
+  const node = (round, a, b) => {
+    const teamA = a?.winner || null
+    const teamB = b?.winner || null
+    const match = findMatch(round, teamA, teamB)
+    return { teamA, teamB, match, winner: teamWinner(match) }
+  }
+
+  const r32 = real
+    .filter(m => m.phase === 'R32')
+    .sort((a, b) => fixtureOrder(a) - fixtureOrder(b))
+    .map(leaf)
+  while (r32.length < 16) r32.push(leaf(null))
+
+  const buildSide = (side) => {
+    const r16 = [node('R16', side[0], side[1]), node('R16', side[2], side[3]), node('R16', side[4], side[5]), node('R16', side[6], side[7])]
+    const qf = [node('QF', r16[0], r16[1]), node('QF', r16[2], r16[3])]
+    const sf = [node('SF', qf[0], qf[1])]
+    return { r32: side, r16, qf, sf }
+  }
+
+  const left = buildSide(r32.slice(0, 8))
+  const right = buildSide(r32.slice(8, 16))
+  const final = node('FINAL', left.sf[0], right.sf[0])
+  const champion = final.winner
+  const semifinalLoser = (n) => {
+    const match = n.match
+    if (!match || match.status !== 'FINISHED' || !match.winnerId) return null
+    return match.winnerId === match.teamHomeId ? match.teamAway : match.teamHome
+  }
+  const third = { teamA: semifinalLoser(left.sf[0]), teamB: semifinalLoser(right.sf[0]), match: null, winner: null }
+
+  const H = 620
+  const SLOT_W = 154
+  const CONN_W = 36
+  const CENTER_W = 172
+  const line = 'rgba(34,197,94,0.46)'
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="-mx-4 overflow-x-auto no-scrollbar px-4 pb-4">
+      <div className="relative min-w-max overflow-hidden rounded-2xl border border-white/10 bg-[#07171f] p-4 shadow-2xl shadow-black/30">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.12),transparent_34%),linear-gradient(90deg,rgba(34,197,94,0.07),transparent_22%,transparent_78%,rgba(34,197,94,0.07))]" />
+        <div className="relative mb-3 flex items-center text-center">
+          <BracketHead label="16vos" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="8vos" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="4tos" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="Semis" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="Final" width={CENTER_W} final />
+          <Spacer width={CONN_W} />
+          <BracketHead label="Semis" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="4tos" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="8vos" width={SLOT_W} />
+          <Spacer width={CONN_W} />
+          <BracketHead label="16vos" width={SLOT_W} />
+        </div>
+        <div className="relative flex items-stretch">
+          <BracketRoundColumn nodes={left.r32} count={8} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={8} toCount={4} height={H} width={CONN_W} dir="ltr" stroke={line} />
+          <BracketRoundColumn nodes={left.r16} count={4} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={4} toCount={2} height={H} width={CONN_W} dir="ltr" stroke={line} />
+          <BracketRoundColumn nodes={left.qf} count={2} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={2} toCount={1} height={H} width={CONN_W} dir="ltr" stroke={line} />
+          <BracketRoundColumn nodes={left.sf} count={1} height={H} width={SLOT_W} />
+          <CenterLine height={H} width={CONN_W} stroke={line} />
+          <BracketCenter final={final} third={third} champion={champion} height={H} width={CENTER_W} />
+          <CenterLine height={H} width={CONN_W} stroke={line} />
+          <BracketRoundColumn nodes={right.sf} count={1} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={2} toCount={1} height={H} width={CONN_W} dir="rtl" stroke={line} />
+          <BracketRoundColumn nodes={right.qf} count={2} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={4} toCount={2} height={H} width={CONN_W} dir="rtl" stroke={line} />
+          <BracketRoundColumn nodes={right.r16} count={4} height={H} width={SLOT_W} />
+          <BracketConnector fromCount={8} toCount={4} height={H} width={CONN_W} dir="rtl" stroke={line} />
+          <BracketRoundColumn nodes={right.r32} count={8} height={H} width={SLOT_W} />
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+function Spacer({ width }) {
+  return <div className="shrink-0" style={{ width }} />
+}
+
+function BracketHead({ label, width, final = false }) {
+  return (
+    <div className={`shrink-0 text-[10px] font-black uppercase tracking-[0.22em] ${final ? 'text-mundial-gold' : 'text-green-300'}`} style={{ width }}>
+      {label}
+    </div>
+  )
+}
+
+function BracketRoundColumn({ nodes, count, height, width }) {
+  const slotH = height / count
+  return (
+    <div className="relative shrink-0" style={{ height, width }}>
+      {Array(count).fill(null).map((_, i) => (
+        <div key={i} className="absolute flex items-center justify-center" style={{ top: i * slotH, height: slotH, width }}>
+          <BracketSlotSports node={nodes[i]} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function BracketConnector({ fromCount, toCount, height, width, dir, stroke }) {
+  const fH = height / fromCount
+  const tH = height / toCount
+  const mid = width / 2
+  return (
+    <svg width={width} height={height} className="shrink-0 overflow-visible">
+      {Array(toCount).fill(null).map((_, ti) => {
+        const y1 = (ti * 2 + 0.5) * fH
+        const y2 = (ti * 2 + 1.5) * fH
+        const ty = (ti + 0.5) * tH
+        return dir === 'ltr' ? (
+          <g key={ti}>
+            <line x1={0} y1={y1} x2={mid} y2={y1} stroke={stroke} strokeWidth={1.5} />
+            <line x1={0} y1={y2} x2={mid} y2={y2} stroke={stroke} strokeWidth={1.5} />
+            <line x1={mid} y1={y1} x2={mid} y2={y2} stroke={stroke} strokeWidth={1.5} />
+            <line x1={mid} y1={ty} x2={width} y2={ty} stroke={stroke} strokeWidth={1.5} />
+          </g>
+        ) : (
+          <g key={ti}>
+            <line x1={width} y1={y1} x2={mid} y2={y1} stroke={stroke} strokeWidth={1.5} />
+            <line x1={width} y1={y2} x2={mid} y2={y2} stroke={stroke} strokeWidth={1.5} />
+            <line x1={mid} y1={y1} x2={mid} y2={y2} stroke={stroke} strokeWidth={1.5} />
+            <line x1={mid} y1={ty} x2={0} y2={ty} stroke={stroke} strokeWidth={1.5} />
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
+function CenterLine({ height, width, stroke }) {
+  return (
+    <svg width={width} height={height} className="shrink-0">
+      <line x1={0} y1={height / 2} x2={width} y2={height / 2} stroke={stroke} strokeWidth={1.5} />
+    </svg>
+  )
+}
+
+function BracketCenter({ final, third, champion, height, width }) {
+  return (
+    <div className="flex shrink-0 flex-col items-center justify-center gap-5" style={{ height, width }}>
+      <div className="w-full">
+        <p className="mb-1.5 text-center text-[8px] font-black uppercase tracking-widest text-mundial-gold">Gran final</p>
+        <BracketSlotSports node={final} />
+      </div>
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-mundial-gold/30 bg-mundial-gold/10 shadow-[0_0_35px_rgba(255,215,0,0.16)]">
+          <Trophy size={36} className="text-mundial-gold" />
+        </div>
+        <span className="font-display text-2xl leading-none text-white">2026</span>
+        {champion ? (
+          <div className="mt-1 flex items-center gap-1.5 rounded-full border border-mundial-gold/25 bg-mundial-gold/10 px-2.5 py-1">
+            <TeamFlag team={champion} size="sm" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-mundial-gold">{champion.code}</span>
+          </div>
+        ) : (
+          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Campeón</span>
+        )}
+      </div>
+      <div className="w-full">
+        <p className="mb-1.5 text-center text-[8px] font-black uppercase tracking-widest text-zinc-500">Tercer puesto</p>
+        <BracketSlotSports node={third} />
+      </div>
+    </div>
+  )
+}
+
+function BracketSlotSports({ node }) {
+  const safeNode = node || { teamA: null, teamB: null, match: null, winner: null }
+  const m = safeNode.match
+  const finished = m && m.status === 'FINISHED'
+  const wentToPenalties = m && m.wentToPenalties
+  const hTeam = m ? m.teamHome : safeNode.teamA
+  const aTeam = m ? m.teamAway : safeNode.teamB
+  const active = hTeam && aTeam
+  const shortName = (team) => team ? teamEsp(team).replace(/^Estados Unidos$/i, 'EE.UU.') : 'Por definir'
+  const row = (team, score, pen, won) => (
+    <div className={`flex h-7 items-center justify-between gap-1.5 px-2 ${won ? 'bg-mundial-gold/10' : ''}`}>
+      <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+        {team && <TeamFlag team={team} size="sm" />}
+        <span className={`truncate text-[9px] font-black uppercase ${won ? 'text-mundial-gold' : team ? (finished ? 'text-zinc-400' : 'text-zinc-100') : 'text-zinc-600'}`}>
+          {team ? `${team.code?.toUpperCase()} · ${shortName(team)}` : 'Por definir'}
+        </span>
+      </div>
+      {m && (
+        <span className={`shrink-0 font-display text-[11px] ${won ? 'text-mundial-gold' : 'text-zinc-500'}`}>
+          {finished ? (score ?? 0) : '-'}{finished && wentToPenalties && pen != null && <span className="text-[8px]"> ({pen})</span>}
+        </span>
+      )}
+    </div>
+  )
+  return (
+    <div className={`w-full overflow-hidden rounded-lg border bg-zinc-950/75 shadow-lg shadow-black/20 ${active ? 'border-white/15' : 'border-dashed border-white/10 opacity-70'} ${finished ? 'border-mundial-gold/20' : ''}`}>
+      {row(hTeam, m ? m.scoreHome : null, m ? m.penaltyHome : null, finished && m.winnerId === m.teamHomeId)}
+      <div className="h-px bg-white/5" />
+      {row(aTeam, m ? m.scoreAway : null, m ? m.penaltyAway : null, finished && m.winnerId === m.teamAwayId)}
+    </div>
+  )
+}
+
 function FixtureBracket({ matches }) {
   const NAME = { R32: 'Dieciseisavos de final', R16: 'Octavos de final', QF: 'Cuartos de final', SF: 'Semifinal' }
   const real = matches.filter(m => !isFriendlyMatch(m))
@@ -674,49 +904,75 @@ function FixtureBracket({ matches }) {
   }
   const third = { teamA: sfLoser(Ls.sf[0]), teamB: sfLoser(Rs.sf[0]), match: null, winner: null }
 
-  const col = (label, nodes) => (
-    <div className="flex min-w-[150px] flex-col">
-      <div className="flex min-h-[34px] items-center justify-center rounded-lg border border-mundial-gold/20 bg-mundial-gold/10 px-1 text-center text-[9px] font-black uppercase leading-tight tracking-widest text-mundial-gold">
+  // ── Líneas conectoras (estilo árbol). Cada llave va en un wrapper flex-1: como todas las
+  // rondas reparten parejo en la misma altura, cada cruce queda exactamente centrado entre sus
+  // dos alimentadores, y los pseudo-elementos dibujan los codos que calzan con el siguiente.
+  const feeder = (side, i) => {
+    const horiz = side === 'L' ? 'after:left-full after:border-r-2' : 'after:right-full after:border-l-2'
+    const elbow = i % 2 === 0
+      ? 'after:top-1/2 after:h-1/2 after:border-t-2'   // arriba del par → la línea baja
+      : 'after:top-0 after:h-1/2 after:border-b-2'      // abajo del par → la línea sube
+    return `after:content-[''] after:absolute after:w-2 after:border-mundial-gold/30 ${horiz} ${elbow}`
+  }
+  const horizFeeder = (side) => // semifinal → final (1 vs 1): solo línea horizontal
+    `after:content-[''] after:absolute after:top-1/2 after:h-0 after:w-2 after:border-t-2 after:border-mundial-gold/30 ${side === 'L' ? 'after:left-full' : 'after:right-full'}`
+  const entry = (side) =>       // línea horizontal de entrada al cruce
+    `before:content-[''] before:absolute before:top-1/2 before:w-2 before:border-t-2 before:border-mundial-gold/30 ${side === 'L' ? 'before:right-full' : 'before:left-full'}`
+
+  const col = (label, nodes, side, kind) => (
+    <div className="flex h-[600px] w-[140px] shrink-0 flex-col">
+      <div className="mb-1 flex h-9 shrink-0 items-center justify-center rounded-lg border border-mundial-gold/20 bg-mundial-gold/10 px-1 text-center text-[9px] font-black uppercase leading-tight tracking-widest text-mundial-gold">
         {label}
       </div>
-      <div className="flex flex-1 flex-col justify-around gap-1.5 py-2">
-        {nodes.map((n, i) => <BracketSlot key={i} node={n} />)}
+      <div className="flex flex-1 flex-col">
+        {nodes.map((n, i) => {
+          const conn = `${kind !== 'R32' ? entry(side) : ''} ${kind === 'SF' ? horizFeeder(side) : feeder(side, i)}`
+          return (
+            <div key={i} className={`relative flex flex-1 items-center ${conn}`}>
+              <div className="w-full"><BracketSlot node={n} /></div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto no-scrollbar -mx-4 px-4 pb-3">
-      <div className="flex min-w-max items-stretch gap-2">
-        {col(NAME.R32, Ls.r32)}
-        {col(NAME.R16, Ls.r16)}
-        {col(NAME.QF, Ls.qf)}
-        {col(NAME.SF, Ls.sf)}
+      <div className="flex min-w-max items-stretch gap-3">
+        {col(NAME.R32, Ls.r32, 'L', 'R32')}
+        {col(NAME.R16, Ls.r16, 'L', 'R16')}
+        {col(NAME.QF, Ls.qf, 'L', 'QF')}
+        {col(NAME.SF, Ls.sf, 'L', 'SF')}
 
-        {/* Centro: Final + Campeón + 3er puesto */}
-        <div className="flex min-w-[156px] flex-col">
-          <div className="flex min-h-[34px] items-center justify-center rounded-lg border border-mundial-gold/40 bg-mundial-gold/15 text-center text-[10px] font-black uppercase tracking-widest text-mundial-gold">
+        {/* Centro: Final + emblema + Tercer puesto */}
+        <div className="flex h-[600px] w-[160px] shrink-0 flex-col">
+          <div className="mb-1 flex h-9 shrink-0 items-center justify-center rounded-lg border border-mundial-gold/40 bg-mundial-gold/15 text-center text-[10px] font-black uppercase tracking-widest text-mundial-gold">
             Final
           </div>
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-2">
-            <div className="w-full"><BracketSlot node={final} /></div>
-            <div className="flex flex-col items-center gap-1">
-              <Trophy size={22} className="text-mundial-gold" />
-              {champion
-                ? <><TeamFlag team={champion} size="sm" /><span className="text-[11px] font-black text-mundial-gold">{champion.code?.toUpperCase()}</span></>
-                : <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Campeón</span>}
+          <div className="flex flex-1 flex-col px-1">
+            <div className="flex-1" />
+            <div className="relative w-full before:absolute before:right-full before:top-1/2 before:w-2 before:border-t-2 before:border-mundial-gold/30 before:content-[''] after:absolute after:left-full after:top-1/2 after:w-2 after:border-t-2 after:border-mundial-gold/30 after:content-['']">
+              <BracketSlot node={final} />
             </div>
-            <div className="w-full">
-              <p className="mb-1 text-center text-[8px] font-black uppercase tracking-widest text-zinc-500">Tercer puesto</p>
-              <BracketSlot node={third} />
+            <div className="flex flex-1 flex-col items-center justify-start gap-0.5 pt-3">
+              <Trophy size={34} className="text-mundial-gold" />
+              <span className="font-display text-base leading-none text-mundial-gold">26</span>
+              {champion
+                ? <div className="mt-1 flex items-center gap-1.5"><TeamFlag team={champion} size="sm" /><span className="text-[11px] font-black text-mundial-gold">{champion.code?.toUpperCase()}</span></div>
+                : <span className="mt-0.5 text-[8px] font-black uppercase tracking-widest text-zinc-600">Campeón</span>}
+              <div className="mt-3 w-full">
+                <p className="mb-1 text-center text-[8px] font-black uppercase tracking-widest text-zinc-500">Tercer puesto</p>
+                <BracketSlot node={third} />
+              </div>
             </div>
           </div>
         </div>
 
-        {col(NAME.SF, Rs.sf)}
-        {col(NAME.QF, Rs.qf)}
-        {col(NAME.R16, Rs.r16)}
-        {col(NAME.R32, Rs.r32)}
+        {col(NAME.SF, Rs.sf, 'R', 'SF')}
+        {col(NAME.QF, Rs.qf, 'R', 'QF')}
+        {col(NAME.R16, Rs.r16, 'R', 'R16')}
+        {col(NAME.R32, Rs.r32, 'R', 'R32')}
       </div>
     </motion.div>
   )
