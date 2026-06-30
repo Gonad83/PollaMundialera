@@ -124,16 +124,38 @@ async function syncMatches() {
       ? (rawGroup.replace(/^GROUP_/i, '').replace(/^Group\s*/i, '').trim().charAt(0) || null)
       : null;
     const dateUtc       = new Date(m.utcDate);
-    const scoreHome     = m.score?.fullTime?.home ?? null;
-    const scoreAway     = m.score?.fullTime?.away ?? null;
-    // Penales: marcador del shootout, aparte del marcador de los 90′/prórroga que puntúa.
-    const penaltyHome   = m.score?.penalties?.home ?? null;
-    const penaltyAway   = m.score?.penalties?.away ?? null;
     const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
+    const isShootout    = m.score?.duration === 'PENALTY_SHOOTOUT';
+
+    // El marcador que PUNTÚA es el de los 90′ + prórroga. En un partido a penales eso es un
+    // empate (regularTime + extraTime), NO el fullTime (que trae la definición del shootout).
+    let scoreHome, scoreAway;
+    if (isShootout && m.score?.regularTime?.home != null && m.score?.regularTime?.away != null) {
+      scoreHome = m.score.regularTime.home + (m.score?.extraTime?.home ?? 0);
+      scoreAway = m.score.regularTime.away + (m.score?.extraTime?.away ?? 0);
+    } else {
+      scoreHome = m.score?.fullTime?.home ?? null;
+      scoreAway = m.score?.fullTime?.away ?? null;
+    }
+
+    // Definición por penales: usar el campo 'penalties' si trae ganador; si viene roto
+    // (empate o ausente), caer al fullTime, que en esta data trae el resultado del shootout.
+    let penaltyHome = null, penaltyAway = null;
+    if (isShootout) {
+      const ph = m.score?.penalties?.home, pa = m.score?.penalties?.away;
+      if (ph != null && pa != null && ph !== pa) {
+        penaltyHome = ph; penaltyAway = pa;
+      } else {
+        penaltyHome = m.score?.fullTime?.home ?? null;
+        penaltyAway = m.score?.fullTime?.away ?? null;
+      }
+    }
 
     let winnerId = null;
     if (status === 'FINISHED') {
-      if (m.score?.winner === 'HOME_TEAM') {
+      if (isShootout && penaltyHome != null && penaltyAway != null && penaltyHome !== penaltyAway) {
+        winnerId = penaltyHome > penaltyAway ? homeTeam.id : awayTeam.id; // ganador por penales
+      } else if (m.score?.winner === 'HOME_TEAM') {
         winnerId = homeTeam.id;
       } else if (m.score?.winner === 'AWAY_TEAM') {
         winnerId = awayTeam.id;
@@ -143,7 +165,7 @@ async function syncMatches() {
       }
     }
 
-    const wentToPenalties = m.score?.duration === 'PENALTY_SHOOTOUT' || m.score?.penalties !== undefined || false;
+    const wentToPenalties = isShootout;
 
     // Buscar si ya existe por externalId guardado en el venue field
     const existing = await prisma.match.findFirst({ where: { venue: externalId } });
