@@ -624,85 +624,130 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   )
 }
 
-// Fixture real del Mundial: bracket por rondas (16vos → Final) que se llena con los
-// resultados reales. El equipo que avanza queda resaltado; lo que falta, "por definir".
-function FixtureBracket({ matches }) {
-  const ROUNDS = [
-    { phase: 'R32', label: '16vos' },
-    { phase: 'R16', label: '8vos' },
-    { phase: 'QF', label: '4tos' },
-    { phase: 'SF', label: 'Semis' },
-    { phase: 'FINAL', label: 'Final' },
-  ]
-  const byPhase = (ph) =>
-    matches
-      .filter(m => m.phase === ph && !isFriendlyMatch(m))
-      .sort((a, b) => new Date(a.dateUtc) - new Date(b.dateUtc))
+function teamWinner(match) {
+  if (!match || match.status !== 'FINISHED' || !match.winnerId) return null
+  return match.winnerId === match.teamHomeId ? match.teamHome
+    : match.winnerId === match.teamAwayId ? match.teamAway : null
+}
 
-  const finalMatch = byPhase('FINAL')[0]
-  const champion = finalMatch && finalMatch.status === 'FINISHED'
-    ? (finalMatch.winnerId === finalMatch.teamHomeId ? finalMatch.teamHome
-      : finalMatch.winnerId === finalMatch.teamAwayId ? finalMatch.teamAway : null)
-    : null
+// Fixture real del Mundial: cuadro oficial de dos lados (Dieciseisavos → Final → Dieciseisavos).
+// Se arma emparejando los partidos consecutivos por su id externo (= orden del bracket FIFA):
+// los primeros 8 de 16avos son el lado izquierdo, los últimos 8 el derecho; cada par consecutivo
+// alimenta el siguiente cruce. El que avanza queda resaltado; lo que falta, "—". Se llena solo.
+function FixtureBracket({ matches }) {
+  const NAME = { R32: 'Dieciseisavos de final', R16: 'Octavos de final', QF: 'Cuartos de final', SF: 'Semifinal' }
+  const real = matches.filter(m => !isFriendlyMatch(m))
+  const findMatch = (round, a, b) =>
+    (a && b)
+      ? (real.find(m => m.phase === round &&
+          ((m.teamHomeId === a.id && m.teamAwayId === b.id) || (m.teamHomeId === b.id && m.teamAwayId === a.id))) || null)
+      : null
+
+  const r32node = (m) => ({ teamA: m?.teamHome || null, teamB: m?.teamAway || null, match: m || null, winner: teamWinner(m) })
+  const mkNode = (round, fA, fB) => {
+    const teamA = fA?.winner || null, teamB = fB?.winner || null
+    const m = findMatch(round, teamA, teamB)
+    return { teamA, teamB, match: m, winner: teamWinner(m) }
+  }
+
+  const r32 = real
+    .filter(m => m.phase === 'R32')
+    .sort((a, b) => (Number(a.venue) || 0) - (Number(b.venue) || 0))
+    .map(r32node)
+  while (r32.length < 16) r32.push(r32node(null))
+  const L = r32.slice(0, 8), R = r32.slice(8, 16)
+
+  const buildSide = (s) => {
+    const r16 = [mkNode('R16', s[0], s[1]), mkNode('R16', s[2], s[3]), mkNode('R16', s[4], s[5]), mkNode('R16', s[6], s[7])]
+    const qf = [mkNode('QF', r16[0], r16[1]), mkNode('QF', r16[2], r16[3])]
+    const sf = [mkNode('SF', qf[0], qf[1])]
+    return { r32: s, r16, qf, sf }
+  }
+  const Ls = buildSide(L), Rs = buildSide(R)
+  const final = mkNode('FINAL', Ls.sf[0], Rs.sf[0])
+  const champion = final.winner
+
+  const sfLoser = (n) => {
+    const m = n.match
+    if (!m || m.status !== 'FINISHED' || !m.winnerId) return null
+    return m.winnerId === m.teamHomeId ? m.teamAway : m.teamHome
+  }
+  const third = { teamA: sfLoser(Ls.sf[0]), teamB: sfLoser(Rs.sf[0]), match: null, winner: null }
+
+  const col = (label, nodes) => (
+    <div className="flex min-w-[150px] flex-col">
+      <div className="flex min-h-[34px] items-center justify-center rounded-lg border border-mundial-gold/20 bg-mundial-gold/10 px-1 text-center text-[9px] font-black uppercase leading-tight tracking-widest text-mundial-gold">
+        {label}
+      </div>
+      <div className="flex flex-1 flex-col justify-around gap-1.5 py-2">
+        {nodes.map((n, i) => <BracketSlot key={i} node={n} />)}
+      </div>
+    </div>
+  )
 
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="overflow-x-auto no-scrollbar -mx-4 px-4 pb-3">
-      <div className="flex gap-3 min-w-max">
-        {ROUNDS.map(({ phase, label }) => {
-          const ms = byPhase(phase)
-          return (
-            <div key={phase} className="flex min-w-[156px] flex-col justify-start gap-2.5">
-              <div className="rounded-lg border border-mundial-gold/20 bg-mundial-gold/10 py-1.5 text-center text-[10px] font-black uppercase tracking-widest text-mundial-gold">
-                {label}
-              </div>
-              {ms.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-white/10 py-5 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                  por definir
-                </div>
-              ) : ms.map(m => <BracketMatch key={m.id} match={m} />)}
+      <div className="flex min-w-max items-stretch gap-2">
+        {col(NAME.R32, Ls.r32)}
+        {col(NAME.R16, Ls.r16)}
+        {col(NAME.QF, Ls.qf)}
+        {col(NAME.SF, Ls.sf)}
+
+        {/* Centro: Final + Campeón + 3er puesto */}
+        <div className="flex min-w-[156px] flex-col">
+          <div className="flex min-h-[34px] items-center justify-center rounded-lg border border-mundial-gold/40 bg-mundial-gold/15 text-center text-[10px] font-black uppercase tracking-widest text-mundial-gold">
+            Final
+          </div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-2">
+            <div className="w-full"><BracketSlot node={final} /></div>
+            <div className="flex flex-col items-center gap-1">
+              <Trophy size={22} className="text-mundial-gold" />
+              {champion
+                ? <><TeamFlag team={champion} size="sm" /><span className="text-[11px] font-black text-mundial-gold">{champion.code?.toUpperCase()}</span></>
+                : <span className="text-[8px] font-black uppercase tracking-widest text-zinc-600">Campeón</span>}
             </div>
-          )
-        })}
-        {/* Campeón */}
-        <div className="flex min-w-[120px] flex-col items-center justify-start gap-2 px-2 pt-10">
-          <Trophy size={26} className="text-mundial-gold" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-mundial-gold">Campeón</span>
-          {champion ? (
-            <div className="flex flex-col items-center gap-1.5">
-              <TeamFlag team={champion} size="md" />
-              <span className="text-xs font-black text-white">{champion.code?.toUpperCase()}</span>
+            <div className="w-full">
+              <p className="mb-1 text-center text-[8px] font-black uppercase tracking-widest text-zinc-500">Tercer puesto</p>
+              <BracketSlot node={third} />
             </div>
-          ) : (
-            <span className="text-[9px] font-black uppercase tracking-widest text-zinc-600">por definir</span>
-          )}
+          </div>
         </div>
+
+        {col(NAME.SF, Rs.sf)}
+        {col(NAME.QF, Rs.qf)}
+        {col(NAME.R16, Rs.r16)}
+        {col(NAME.R32, Rs.r32)}
       </div>
     </motion.div>
   )
 }
 
-function BracketMatch({ match }) {
-  const { teamHome, teamAway, scoreHome, scoreAway, winnerId, status, wentToPenalties, penaltyHome, penaltyAway } = match
-  const finished = status === 'FINISHED'
-  const row = (team, score, pen, won) => (
-    <div className={`flex items-center justify-between gap-2 px-2.5 py-1.5 ${won ? 'bg-mundial-gold/10' : ''}`}>
+function BracketSlot({ node }) {
+  const m = node.match
+  const finished = m && m.status === 'FINISHED'
+  const wtp = m && m.wentToPenalties
+  const hTeam = m ? m.teamHome : node.teamA
+  const aTeam = m ? m.teamAway : node.teamB
+  const slotRow = (team, score, pen, won) => (
+    <div className={`flex items-center justify-between gap-1.5 px-2 py-1.5 ${won ? 'bg-mundial-gold/10' : ''}`}>
       <div className="flex min-w-0 items-center gap-1.5">
         {team && <TeamFlag team={team} size="sm" />}
-        <span className={`text-[11px] font-black ${won ? 'text-mundial-gold' : finished ? 'text-zinc-500' : 'text-zinc-300'}`}>
+        <span className={`text-[10px] font-black ${won ? 'text-mundial-gold' : team ? (finished ? 'text-zinc-500' : 'text-zinc-200') : 'text-zinc-600'}`}>
           {team?.code?.toUpperCase() || '—'}
         </span>
       </div>
-      <span className={`font-display text-[11px] ${won ? 'text-mundial-gold' : 'text-zinc-500'}`}>
-        {finished ? (score ?? 0) : '–'}
-        {finished && wentToPenalties && pen != null && <span className="text-[8px]"> ({pen})</span>}
-      </span>
+      {m && (
+        <span className={`font-display text-[10px] ${won ? 'text-mundial-gold' : 'text-zinc-500'}`}>
+          {finished ? (score ?? 0) : '–'}{finished && wtp && pen != null && <span className="text-[8px]"> ({pen})</span>}
+        </span>
+      )}
     </div>
   )
   return (
-    <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.02]">
-      {row(teamHome, scoreHome, penaltyHome, finished && winnerId === match.teamHomeId)}
+    <div className={`overflow-hidden rounded-lg border ${m ? 'border-white/10' : 'border-dashed border-white/10'} bg-white/[0.02]`}>
+      {slotRow(hTeam, m ? m.scoreHome : null, m ? m.penaltyHome : null, finished && m.winnerId === m.teamHomeId)}
       <div className="h-px bg-white/5" />
-      {row(teamAway, scoreAway, penaltyAway, finished && winnerId === match.teamAwayId)}
+      {slotRow(aTeam, m ? m.scoreAway : null, m ? m.penaltyAway : null, finished && m.winnerId === m.teamAwayId)}
     </div>
   )
 }
