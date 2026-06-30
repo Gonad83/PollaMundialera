@@ -9,8 +9,9 @@ const {
   getBracketReopenAllowedGroupNames,
 } = require('../utils/tournamentDeadlineStore');
 
-// Únicos campos editables durante la reapertura acotada de cruces (nada más).
-const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists', 'round16Teams'];
+// Únicos campos editables durante la reapertura acotada: de 4tos en adelante (nada más).
+// Los 8vos (round16Teams) NO se pueden cambiar.
+const BRACKET_REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists'];
 const pickOnly = (obj, keys) => Object.fromEntries(Object.entries(obj).filter(([k]) => keys.includes(k)));
 const filterAllowed = (items, allowed) => {
   if (!Array.isArray(items)) return items;
@@ -108,11 +109,8 @@ const savePicks = async (req, res) => {
     finalCreate = pickOnly(parsed.data, BRACKET_REOPEN_FIELDS);
 
     if (existing) {
-      if (Array.isArray(finalUpdate.round16Teams)) {
-        finalUpdate.round16Teams = filterAllowed(finalUpdate.round16Teams, existing.round32Teams);
-      }
-
-      const round16Base = Array.isArray(finalUpdate.round16Teams) ? finalUpdate.round16Teams : existing.round16Teams;
+      // 8vos NO es editable: los 4tos deben salir de los 8vos ya guardados.
+      const round16Base = existing.round16Teams;
       if (Array.isArray(finalUpdate.quarterfinalists)) {
         finalUpdate.quarterfinalists = filterAllowed(finalUpdate.quarterfinalists, round16Base);
       }

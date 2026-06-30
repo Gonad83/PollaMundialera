@@ -59,9 +59,9 @@ export default function TournamentPage({ groupId, members = [] }) {
     : 'DOMINGO 15 JUN 2026 · 15:00 HRS CHILE'
 
   // Reapertura ACOTADA de cruces: con el torneo cerrado, el admin puede habilitar
-  // editar SOLO 8vos/4tos/semis/finalistas. El resto (campeón, premios, etc.) sigue bloqueado.
+  // editar SOLO 4tos/semis/finalistas. El resto (8vos, campeón, premios, etc.) sigue bloqueado.
   const bracketReopen = !!deadlineData?.bracketReopen
-  const REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists', 'round16Teams']
+  const REOPEN_FIELDS = ['finalist1', 'finalist2', 'semifinalists', 'quarterfinalists']
   // ¿Bloqueado este campo? Abierto → nada bloqueado; cerrado → todo salvo cruces si hay reapertura.
   const lockedField = (key) => isTournamentLocked && !(bracketReopen && REOPEN_FIELDS.includes(key))
   // ¿Puede guardar? (torneo abierto, o reapertura activa)
