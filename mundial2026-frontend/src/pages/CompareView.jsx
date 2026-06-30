@@ -1,7 +1,7 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy, X, XCircle } from 'lucide-react'
 import { matchApi, predictionApi, tournamentApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
 
@@ -105,6 +105,7 @@ function TeamFlag({ team, size = 'sm' }) {
 
 export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
+  const [breakdown, setBreakdown] = useState(null) // celda clickeada → modal de desglose de puntos
 
   const { data: compareData, isLoading } = useQuery({
     queryKey: ['group-compare', groupId],
@@ -448,13 +449,23 @@ export default function CompareView({ groupId, members = [] }) {
                         )
                       }
                       const match = column.match
+                      const cellPred = userPreds[match.id]
+                      const canBreakdown = match.status === 'FINISHED' && cellPred
                       return (
                         <td key={match.id} className="px-1.5 py-2 text-center border-r border-white/5 last:border-r-0">
                           <div className="flex justify-center">
-                            <PointsBadge
-                              pred={userPreds[match.id]}
-                              match={match}
-                            />
+                            {canBreakdown ? (
+                              <button
+                                type="button"
+                                onClick={() => setBreakdown({ member, pred: cellPred, match })}
+                                title="Ver desglose de puntos"
+                                className="rounded-lg transition-transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-mundial-gold/40"
+                              >
+                                <PointsBadge pred={cellPred} match={match} />
+                              </button>
+                            ) : (
+                              <PointsBadge pred={cellPred} match={match} />
+                            )}
                           </div>
                         </td>
                       )
@@ -476,6 +487,117 @@ export default function CompareView({ groupId, members = [] }) {
       </p>
         </>
       )}
+
+      <AnimatePresence>
+        {breakdown && <BreakdownModal data={breakdown} onClose={() => setBreakdown(null)} />}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
+// Modal de desglose de puntos de un pronóstico (clic en una celda de la Comparativa).
+function BreakdownModal({ data, onClose }) {
+  const { member, pred, match } = data
+  const sh = match.scoreHome, sa = match.scoreAway
+  const homeCode = match.teamHome?.code?.toUpperCase() || '?'
+  const awayCode = match.teamAway?.code?.toUpperCase() || '?'
+  const isDraw = sh === sa
+  const total = pred.pointsTotal || 0
+
+  // Fila "Resultado": usa los puntos realmente otorgados (exacto 5 / ganador-empate 2 / 0).
+  const rows = []
+  if ((pred.pointsExact || 0) > 0) {
+    rows.push({ ok: true, pts: pred.pointsExact, max: '5', label: 'Marcador exacto', sub: `apostó ${pred.predHome}-${pred.predAway} · clavó el marcador` })
+  } else if ((pred.pointsWinner || 0) > 0) {
+    rows.push({ ok: true, pts: pred.pointsWinner, max: '2', label: isDraw ? 'Empate acertado' : 'Ganador acertado', sub: `apostó ${pred.predHome}-${pred.predAway} · fue ${sh}-${sa}` })
+  } else {
+    rows.push({ ok: false, pts: 0, max: '5 / 2', label: 'Resultado', sub: `apostó ${pred.predHome}-${pred.predAway} · fue ${sh}-${sa}${isDraw ? ' (empate)' : ''}` })
+  }
+  // Bonus: se recalculan del pronóstico vs el resultado real (misma fórmula que el backend).
+  if (pred.predBtts != null) {
+    const real = sh > 0 && sa > 0
+    rows.push({ ok: pred.predBtts === real, pts: 1, max: '1', label: 'Ambos marcan', sub: `apostó ${pred.predBtts ? 'sí' : 'no'} · real ${real ? 'sí' : 'no'}` })
+  }
+  if (pred.predOverUnder) {
+    const real = (sh + sa) > 2.5 ? 'over' : 'under'
+    rows.push({ ok: pred.predOverUnder === real, pts: 1, max: '1', label: 'Goles +2.5', sub: `apostó ${pred.predOverUnder === 'over' ? 'más' : 'menos'} · fueron ${sh + sa}` })
+  }
+  if (pred.predPenalties != null) {
+    const real = !!match.wentToPenalties
+    rows.push({ ok: pred.predPenalties === real, pts: 1, max: '1', label: '¿Va a penales?', sub: `apostó ${pred.predPenalties ? 'sí' : 'no'} · real ${real ? 'sí' : 'no'}` })
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-sm space-y-3 rounded-2xl border border-white/10 bg-mundial-navyLight p-4 shadow-2xl"
+      >
+        {/* Encabezado del partido */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{homeCode}</span>
+            <span className="font-display text-lg text-white">{sh}–{sa}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{awayCode}</span>
+            {match.wentToPenalties && match.penaltyHome != null && match.penaltyAway != null && (
+              <span className="text-[8px] font-black uppercase tracking-wider text-amber-300">pen {match.penaltyHome}-{match.penaltyAway}</span>
+            )}
+          </div>
+          <button onClick={onClose} className="text-zinc-500 transition-colors hover:text-white"><X size={16} /></button>
+        </div>
+
+        {/* Participante + total */}
+        <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mundial-gold/15 text-[11px] font-black text-mundial-gold">
+              {member.user?.username?.[0]?.toUpperCase()}
+            </div>
+            <div>
+              <p className="text-[11px] font-black leading-none text-white">{member.user?.username}</p>
+              <p className="mt-0.5 text-[9px] font-bold text-zinc-500">apostó {pred.predHome}-{pred.predAway}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500">ganó</span>
+            <span className={`font-display text-xl leading-none ${total > 0 ? 'text-mundial-gold' : 'text-zinc-600'}`}>
+              {total > 0 ? `+${total}` : '0'}
+            </span>
+          </div>
+        </div>
+
+        {/* Checklist */}
+        <div className="space-y-1.5">
+          {rows.map((r, i) => (
+            <div key={i} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${r.ok ? 'border-emerald-500/20 bg-emerald-500/[0.08]' : 'border-white/8 bg-white/[0.03]'}`}>
+              {r.ok
+                ? <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
+                : <XCircle size={16} className="shrink-0 text-red-400/70" />}
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-black leading-tight text-white">
+                  {r.label} <span className="text-zinc-600">· {r.max}</span>
+                </p>
+                <p className="text-[9px] font-bold leading-tight text-zinc-500">{r.sub}</p>
+              </div>
+              <span className={`shrink-0 font-display text-sm ${r.ok ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                {r.ok ? `+${r.pts}` : '0'}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Total */}
+        <div className="flex items-center justify-between border-t border-white/8 pt-2.5">
+          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Total</span>
+          <span className={`font-display text-lg ${total > 0 ? 'text-mundial-gold' : 'text-zinc-600'}`}>
+            {total > 0 ? `+${total}` : '0'} pts
+          </span>
+        </div>
+      </motion.div>
     </motion.div>
   )
 }

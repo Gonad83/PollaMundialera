@@ -205,6 +205,7 @@ const getGroupCompare = async (req, res) => {
       matchId: true,
       predBtts: true,
       predOverUnder: true,
+      predPenalties: true,
       predWinnerId: true,
       user: { select: { id: true, username: true } },
       match: {
