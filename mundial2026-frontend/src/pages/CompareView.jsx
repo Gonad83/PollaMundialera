@@ -1,9 +1,10 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy, X, XCircle } from 'lucide-react'
+import { BarChart3, CheckCircle2, Clock, Eye, LockKeyhole, Trophy, X } from 'lucide-react'
 import { matchApi, predictionApi, tournamentApi } from '../lib/api'
 import { teamEsp } from '../lib/teams'
+import PointsChecklist from '../components/PointsChecklist'
 
 // Mundial 2026: 104 partidos en total (72 grupos + 16avos + 8vos + 4tos + semis + 3°/4° + final)
 const WORLD_CUP_TOTAL_MATCHES = 104
@@ -501,31 +502,7 @@ function BreakdownModal({ data, onClose }) {
   const sh = match.scoreHome, sa = match.scoreAway
   const homeCode = match.teamHome?.code?.toUpperCase() || '?'
   const awayCode = match.teamAway?.code?.toUpperCase() || '?'
-  const isDraw = sh === sa
   const total = pred.pointsTotal || 0
-
-  // Fila "Resultado": usa los puntos realmente otorgados (exacto 5 / ganador-empate 2 / 0).
-  const rows = []
-  if ((pred.pointsExact || 0) > 0) {
-    rows.push({ ok: true, pts: pred.pointsExact, max: '5', label: 'Marcador exacto', sub: `apostó ${pred.predHome}-${pred.predAway} · clavó el marcador` })
-  } else if ((pred.pointsWinner || 0) > 0) {
-    rows.push({ ok: true, pts: pred.pointsWinner, max: '2', label: isDraw ? 'Empate acertado' : 'Ganador acertado', sub: `apostó ${pred.predHome}-${pred.predAway} · fue ${sh}-${sa}` })
-  } else {
-    rows.push({ ok: false, pts: 0, max: '5 / 2', label: 'Resultado', sub: `apostó ${pred.predHome}-${pred.predAway} · fue ${sh}-${sa}${isDraw ? ' (empate)' : ''}` })
-  }
-  // Bonus: se recalculan del pronóstico vs el resultado real (misma fórmula que el backend).
-  if (pred.predBtts != null) {
-    const real = sh > 0 && sa > 0
-    rows.push({ ok: pred.predBtts === real, pts: 1, max: '1', label: 'Ambos marcan', sub: `apostó ${pred.predBtts ? 'sí' : 'no'} · real ${real ? 'sí' : 'no'}` })
-  }
-  if (pred.predOverUnder) {
-    const real = (sh + sa) > 2.5 ? 'over' : 'under'
-    rows.push({ ok: pred.predOverUnder === real, pts: 1, max: '1', label: 'Goles +2.5', sub: `apostó ${pred.predOverUnder === 'over' ? 'más' : 'menos'} · fueron ${sh + sa}` })
-  }
-  if (pred.predPenalties != null) {
-    const real = !!match.wentToPenalties
-    rows.push({ ok: pred.predPenalties === real, pts: 1, max: '1', label: '¿Va a penales?', sub: `apostó ${pred.predPenalties ? 'sí' : 'no'} · real ${real ? 'sí' : 'no'}` })
-  }
 
   return (
     <motion.div
@@ -571,24 +548,7 @@ function BreakdownModal({ data, onClose }) {
         </div>
 
         {/* Checklist */}
-        <div className="space-y-1.5">
-          {rows.map((r, i) => (
-            <div key={i} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${r.ok ? 'border-emerald-500/20 bg-emerald-500/[0.08]' : 'border-white/8 bg-white/[0.03]'}`}>
-              {r.ok
-                ? <CheckCircle2 size={16} className="shrink-0 text-emerald-400" />
-                : <XCircle size={16} className="shrink-0 text-red-400/70" />}
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-black leading-tight text-white">
-                  {r.label} <span className="text-zinc-600">· {r.max}</span>
-                </p>
-                <p className="text-[9px] font-bold leading-tight text-zinc-500">{r.sub}</p>
-              </div>
-              <span className={`shrink-0 font-display text-sm ${r.ok ? 'text-emerald-400' : 'text-zinc-600'}`}>
-                {r.ok ? `+${r.pts}` : '0'}
-              </span>
-            </div>
-          ))}
-        </div>
+        <PointsChecklist pred={pred} match={match} />
 
         {/* Total */}
         <div className="flex items-center justify-between border-t border-white/8 pt-2.5">

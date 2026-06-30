@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { matchApi, predictionApi, groupApi } from '../lib/api'
+import PointsChecklist from '../components/PointsChecklist'
 import { teamFlagUrl } from '../lib/teams'
 import { format, isAfter } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -15,69 +16,6 @@ import toast from 'react-hot-toast'
 
 const isFriendlyMatch = (match) =>
   match?.phase === 'GROUP' && !match?.groupLetter && match?.city !== 'World'
-
-function buildPointBreakdown(pred, match) {
-  if (!pred || !match) return []
-
-  const rows = []
-  const baseBeforeMultiplier = (pred.pointsExact || 0) + (pred.pointsWinner || 0)
-
-  if ((pred.pointsExact || 0) >= 5) {
-    rows.push({
-      title: 'Marcador exacto',
-      detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway} y el resultado real fue el mismo.`,
-      points: pred.pointsExact,
-      tone: 'gold',
-    })
-  } else if ((pred.pointsWinner || 0) > 0) {
-    rows.push({
-      title: 'Ganador correcto',
-      detail: `Acertaste quien ganaba o que el partido terminaba empatado.`,
-      points: pred.pointsWinner,
-      tone: 'green',
-    })
-  } else {
-    rows.push({
-      title: 'Marcador y ganador',
-      detail: `Tu pronostico fue ${pred.predHome}-${pred.predAway}; el resultado real fue ${match.scoreHome}-${match.scoreAway}.`,
-      points: 0,
-      tone: 'muted',
-    })
-  }
-
-  const bonusDetails = []
-  if (pred.predBtts !== null && pred.predBtts !== undefined) {
-    const realBtts = match.scoreHome > 0 && match.scoreAway > 0
-    const correct = pred.predBtts === realBtts
-    bonusDetails.push(`${correct ? '+1' : '0'} ambos marcan: elegiste ${pred.predBtts ? 'si' : 'no'}, real ${realBtts ? 'si' : 'no'}`)
-  }
-  if (pred.predOverUnder) {
-    const realOverUnder = (match.scoreHome + match.scoreAway) > 2.5 ? 'over' : 'under'
-    const correct = pred.predOverUnder === realOverUnder
-    bonusDetails.push(`${correct ? '+1' : '0'} total +2.5: elegiste ${pred.predOverUnder === 'over' ? 'mas' : 'menos'}, real ${realOverUnder === 'over' ? 'mas' : 'menos'}`)
-  }
-  if (pred.predPenalties !== null && pred.predPenalties !== undefined) {
-    const correct = pred.predPenalties === !!match.wentToPenalties
-    bonusDetails.push(`${correct ? '+1' : '0'} penales: elegiste ${pred.predPenalties ? 'si' : 'no'}, real ${match.wentToPenalties ? 'si' : 'no'}`)
-  }
-  if ((pred.pointsBonus || 0) > 0 || bonusDetails.length > 0) {
-    rows.push({
-      title: 'Bonus opcionales',
-      detail: bonusDetails.length ? bonusDetails.join(' | ') : 'Bonus acumulados por opciones especiales.',
-      points: pred.pointsBonus || 0,
-      tone: (pred.pointsBonus || 0) > 0 ? 'red' : 'muted',
-    })
-  }
-
-  rows.push({
-    title: 'Total',
-    detail: `Base ${baseBeforeMultiplier} + bonus ${pred.pointsBonus || 0}.`,
-    points: pred.pointsTotal || 0,
-    tone: 'total',
-  })
-
-  return rows
-}
 
 export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupIdProp } = {}) {
   const { id: routeId } = useParams()
@@ -181,7 +119,6 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
 
   const { dateUtc, status, scoreHome, scoreAway, phase, wentToPenalties, penaltyHome, penaltyAway } = match
   const isFriendly = isFriendlyMatch(match)
-  const pointBreakdown = buildPointBreakdown(myPred, match)
 
   const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
   const minutesLeft = Math.max(0, Math.floor((msLeft % 3_600_000) / 60_000))
@@ -483,28 +420,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
               </p>
             </div>
 
-            {pointBreakdown.map((row) => {
-              const tones = {
-                gold: 'bg-mundial-gold/10 border-mundial-gold/30 text-mundial-gold',
-                blue: 'bg-blue-500/10 border-blue-500/30 text-blue-300',
-                green: 'bg-green-500/10 border-green-500/25 text-green-400',
-                red: 'bg-mundial-red/10 border-mundial-red/30 text-mundial-red',
-                muted: 'bg-white/5 border-white/10 text-zinc-500',
-                total: 'bg-gradient-to-r from-mundial-gold/20 to-white/5 border-mundial-gold/40 text-mundial-gold',
-              }
-              const cls = tones[row.tone] || tones.muted
-              return (
-                <div key={row.title} className={`flex items-start justify-between gap-4 p-4 rounded-xl border ${cls}`}>
-                  <div>
-                    <p className="text-sm font-bold text-white">{row.title}</p>
-                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{row.detail}</p>
-                  </div>
-                  <span className={`font-display ${row.tone === 'total' ? 'text-3xl' : 'text-2xl'} font-bold shrink-0`}>
-                    {row.points > 0 ? `+${row.points}` : row.points}
-                  </span>
-                </div>
-              )
-            })}
+            <PointsChecklist pred={myPred} match={match} />
           </div>
         </motion.div>
       )}
