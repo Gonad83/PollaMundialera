@@ -238,8 +238,8 @@ export default function GroupDetailPage() {
     // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
     if (!group) return
     const actions = [
+      { id: 'compare', icon: Star, label: 'Comparativa', featured: true, onClick: () => setSearchParams({ tab: 'comparar' }), isActive: activeTab === 'comparar' },
       { id: 'ranking', icon: BarChart3, label: 'Ranking', onClick: () => setSearchParams({ tab: 'ranking' }), isActive: activeTab === 'ranking' },
-      { id: 'compare', icon: Star, label: 'Comparativa', onClick: () => setSearchParams({ tab: 'comparar' }), isActive: activeTab === 'comparar' },
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', badge: unreadCount || null, onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
       ...(actingAsAdmin && !isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
