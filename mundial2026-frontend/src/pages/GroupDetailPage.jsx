@@ -432,6 +432,7 @@ export default function GroupDetailPage() {
   // shortLabel: versión corta para móvil (los 5 tabs deben caber sin scroll)
   // Comparativa va al centro y destacada: ahí los jugadores ven a los otros apostadores
   const tabs = [
+    { id: 'comparar',   label: 'Comparativa',         shortLabel: 'Comparar', icon: Star, featured: true, mobileOnly: true },
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
     { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
     { id: 'fixture',    label: 'Fixture',             shortLabel: 'Fixture',  icon: Trophy, featured: true },
@@ -442,16 +443,17 @@ export default function GroupDetailPage() {
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
     <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar rounded-2xl bg-white/5 border border-white/5 p-1 sm:overflow-visible">
-      {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
+      {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured, mobileOnly }) => {
         const active = activeTab === tabId
         return (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setSearchParams({ tab: tabId })}
             className={`relative shrink-0 rounded-xl py-2 sm:py-2.5 px-2 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
-              ${featured ? 'min-w-[88px] sm:flex-[1.6]' : 'min-w-[70px] sm:flex-1'}
+              ${mobileOnly ? 'sm:hidden' : ''}
+              ${featured ? 'min-w-[112px] sm:flex-[1.6]' : 'min-w-[70px] sm:flex-1'}
               ${active
                 ? `bg-mundial-gold text-mundial-navy shadow-lg${featured ? ' shadow-mundial-gold/40 ring-2 ring-mundial-gold/60' : ''}`
                 : featured
-                  ? 'bg-mundial-gold/[0.12] text-mundial-gold ring-1 ring-mundial-gold/40 shadow-[0_0_18px_rgba(255,215,0,0.12)] hover:bg-mundial-gold/20'
+                  ? 'bg-mundial-gold/[0.18] text-mundial-gold ring-1 ring-mundial-gold/60 shadow-[0_0_22px_rgba(255,215,0,0.18)] hover:bg-mundial-gold/25'
                   : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}
           >
             <Icon size={featured ? 17 : 15} className="sm:hidden" fill={featured ? 'currentColor' : 'none'} />

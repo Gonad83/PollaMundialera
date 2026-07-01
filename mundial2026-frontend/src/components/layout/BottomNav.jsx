@@ -12,11 +12,14 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
     ? filteredNav.filter(({ to }) => to === '/rules')
     : filteredNav
   const showTournamentPick = !!currentGroupId && !routeGroupId
-  const hasItems = primaryNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
+  const visibleHeaderActions = routeGroupId
+    ? headerActions.filter(action => action.id !== 'compare')
+    : headerActions
+  const hasItems = primaryNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || visibleHeaderActions.length > 0
   if (!hasItems) return null
-  const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !headerActions.some(a => a.id === 'config')
+  const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !visibleHeaderActions.some(a => a.id === 'config')
   const tabParam = new URLSearchParams(search).get('tab')
-  const anyGroupActionActive = headerActions.some(a => a.isActive)
+  const anyGroupActionActive = visibleHeaderActions.some(a => a.isActive)
 
   const openAdminPanel = () => {
     if (currentGroupId) {
@@ -85,11 +88,11 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
         )}
 
         {/* Divisor: separa navegación principal de las herramientas del grupo */}
-        {headerActions.length > 0 && (
+        {visibleHeaderActions.length > 0 && (
           <span className="self-center h-7 w-px bg-white/10 shrink-0 mx-0.5" aria-hidden="true" />
         )}
 
-        {headerActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
+        {visibleHeaderActions.map(({ id, icon: Icon, label, onClick, isActive, badge }) => (
           <button
             key={id}
             onClick={onClick}
