@@ -71,11 +71,11 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 }
 
-export default function MatchesPage({ groupId }) {
+export default function MatchesPage({ groupId, initialViewMode = 'apostado', hideViewModeSwitcher = false }) {
   const [searchParams] = useSearchParams()
   const matchParam = searchParams.get('match')
   const [phase, setPhase] = useState('')
-  const [viewMode, setViewMode] = useState('apostado') // 'apostado' | 'real'
+  const [viewMode, setViewMode] = useState(initialViewMode) // 'apostado' | 'fixture'
 
   const qc = useQueryClient()
 
@@ -88,6 +88,10 @@ export default function MatchesPage({ groupId }) {
     window.addEventListener('server:awake', handler)
     return () => window.removeEventListener('server:awake', handler)
   }, [qc, groupId])
+
+  useEffect(() => {
+    setViewMode(initialViewMode)
+  }, [initialViewMode])
 
   const { data: allMatches = [], isLoading, isFetching, dataUpdatedAt } = useQuery({
     queryKey: ['matches-all'],
@@ -223,6 +227,7 @@ export default function MatchesPage({ groupId }) {
   }, [realStandings, predStandings])
 
   const apostadoCount = Object.values(allPredMap).filter(p => worldCupMatchIds.has(p.matchId)).length
+  const showToolbar = !hideViewModeSwitcher || viewMode !== 'fixture'
 
   // Detalle de partido inline (mantiene GroupDetailPage montado → MENSAJES/AJUSTES visibles)
   if (matchParam && groupId) {
@@ -261,9 +266,11 @@ export default function MatchesPage({ groupId }) {
       </motion.div>
 
       {/* Toolbar unificado: modo de vista + filtros de fase en una sola fila */}
+      {showToolbar && (
       <motion.div variants={itemVariants} className="mb-8 border-b border-white/5 pb-5 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           {/* Modo de vista */}
+          {!hideViewModeSwitcher && (
           <div className="flex p-1 rounded-2xl bg-white/5 border border-white/10 shrink-0 w-full sm:w-auto">
             <button
               onClick={() => setViewMode('apostado')}
@@ -286,12 +293,13 @@ export default function MatchesPage({ groupId }) {
               <Trophy size={12} /> Fixture
             </button>
           </div>
+          )}
 
           {/* En modo Fixture no aplican los filtros de fase (el bracket muestra todas) */}
           {viewMode !== 'fixture' && (
             <>
           {/* Separador en desktop */}
-          <span className="hidden sm:block w-px h-7 bg-white/10 shrink-0" aria-hidden="true" />
+          {!hideViewModeSwitcher && <span className="hidden sm:block w-px h-7 bg-white/10 shrink-0" aria-hidden="true" />}
 
           {/* Filtros de fase */}
           <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -324,6 +332,7 @@ export default function MatchesPage({ groupId }) {
           </p>
         )}
       </motion.div>
+      )}
 
       {isLoading ? (
         <MatchesSkeleton />

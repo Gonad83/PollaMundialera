@@ -213,7 +213,7 @@ export default function GroupDetailPage() {
   // Sin activeTab en deps para evitar loop; cuando no hay tabParam siempre vuelve a resultados.
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['resultados', 'premios', 'ranking', 'comparar', 'liga', 'messages', 'config', 'reglas', 'simulador'].includes(tabParam)) {
+    if (tabParam && ['resultados', 'premios', 'fixture', 'ranking', 'comparar', 'liga', 'messages', 'config', 'reglas', 'simulador'].includes(tabParam)) {
       setActiveTab(tabParam)
     } else if (group) {
       setActiveTab('resultados')
@@ -434,13 +434,14 @@ export default function GroupDetailPage() {
   const tabs = [
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
     { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
+    { id: 'fixture',    label: 'Fixture',             shortLabel: 'Fixture',  icon: Trophy },
     { id: 'simulador',  label: 'Simular',             shortLabel: 'Simular',  icon: BarChart3 },
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
-    <div className="grid grid-cols-4 sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+    <div className="grid grid-cols-5 sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
       {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
         const active = activeTab === tabId
         return (
@@ -707,7 +708,14 @@ export default function GroupDetailPage() {
         {/* ── TAB: RESULTADOS ── */}
         {activeTab === 'resultados' && (
           <motion.div key="resultados" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <MatchesPage groupId={id} />
+            <MatchesPage groupId={id} initialViewMode="apostado" hideViewModeSwitcher />
+          </motion.div>
+        )}
+
+        {/* ── TAB: FIXTURE ── */}
+        {activeTab === 'fixture' && (
+          <motion.div key="fixture" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <MatchesPage groupId={id} initialViewMode="fixture" hideViewModeSwitcher />
           </motion.div>
         )}
 
