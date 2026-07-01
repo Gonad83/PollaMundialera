@@ -434,14 +434,14 @@ export default function GroupDetailPage() {
   const tabs = [
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
     { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
-    { id: 'fixture',    label: 'Fixture',             shortLabel: 'Fixture',  icon: Trophy },
+    { id: 'fixture',    label: 'Fixture',             shortLabel: 'Fixture',  icon: Trophy, featured: true },
     { id: 'simulador',  label: 'Simular',             shortLabel: 'Simular',  icon: BarChart3 },
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
-    <div className="grid grid-cols-5 sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+    <div className="grid grid-cols-[1fr_1fr_1.35fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
       {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
         const active = activeTab === tabId
         return (
