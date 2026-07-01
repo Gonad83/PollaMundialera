@@ -176,12 +176,15 @@ export default function RulesPage() {
           Para cada partido puedes pronosticar el marcador y opciones bonus. Puedes cambiarlos
           <strong className="text-white"> hasta 5 minutos antes del pitazo</strong>.
         </p>
+        <p className="text-[10px] text-mundial-gold font-black uppercase tracking-widest mb-4">
+          El marcador que suma puntos es solo el de los 90 min. Alargue no cuenta; penales van como bonus aparte.
+        </p>
         <div className="space-y-3">
           <ScoreRow pts={5} color="gold"  icon="🔥" title="Resultado Exacto"         desc="Aciertas el marcador exacto · ej: Argentina 2–1 Brasil" />
           <ScoreRow pts={2} color="green" icon="✓"  title="Ganador o Empate"         desc="Aciertas quién gana o si empata, pero no el marcador exacto" />
           <ScoreRow pts={1} color="blue"  icon="⚽" title="Ambos Anotan (BTTS)"      desc="Aciertas si ambos equipos marcan al menos un gol" />
           <ScoreRow pts={1} color="blue"  icon="📊" title="Over/Under 2.5 goles"     desc="Aciertas si habrá más o menos de 2.5 goles en el partido" />
-          <ScoreRow pts={1} color="blue"  icon="🥅" title="Penales (Eliminatoria)"   desc="Aciertas si el partido se definirá en tanda de penales" />
+          <ScoreRow pts={1} color="blue"  icon="🥅" title="Penales (Eliminatoria)"   desc="Aciertas si el partido se definirá en tanda de penales; no cambia el marcador de 90 min" />
         </div>
       </motion.section>
 
@@ -206,6 +209,7 @@ export default function RulesPage() {
           {[
             { icon: CheckCircle2, color: 'text-mundial-gold', text: 'Los pronósticos del torneo (campeón, goleador, etc.) debes hacerlos ANTES del primer partido del Mundial (11 Sep 2026).' },
             { icon: CheckCircle2, color: 'text-green-400',     text: 'Para cada partido, puedes registrar o cambiar tu pronóstico hasta 5 minutos antes del pitazo inicial.' },
+            { icon: CheckCircle2, color: 'text-mundial-gold',  text: 'Para puntuar partidos se usa el marcador de los 90 minutos. Si hay alargue o penales, eso no modifica el resultado base.' },
             { icon: CheckCircle2, color: 'text-blue-400',      text: 'Si no marcas un pronóstico antes del cierre, ese partido contará 0 puntos para ti.' },
             { icon: Lock,         color: 'text-zinc-500',      text: 'Una vez cerrado el mercado, no se puede modificar nada. ¡No te quedes sin pronosticar!' },
           ].map(({ icon: Icon, color, text }, i) => (

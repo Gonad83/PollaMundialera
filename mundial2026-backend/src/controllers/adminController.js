@@ -245,9 +245,8 @@ const setMatchResult = async (req, res) => {
   const { scoreHome, scoreAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
   const isDraw = scoreHome === scoreAway;
 
-  // Un partido a penales SOLO ocurre tras un empate: el marcador de los 90′/prórroga
-  // debe ser empate y los penales van en sus propios campos (no en score), que es lo
-  // que puntúa. Esto evita el bug de guardar el marcador de penales como resultado.
+  // Un partido a penales SOLO ocurre tras un empate: el marcador de los 90 min
+  // debe ser empate y los penales van en sus propios campos (no en score).
   if (wentToPenalties && !isDraw) {
     return res.status(400).json({
       error: 'Si el partido fue a penales, el marcador de los 90′ debe ser empate. Carga el empate y el resultado de penales aparte.',

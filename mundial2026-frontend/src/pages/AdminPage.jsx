@@ -1180,7 +1180,7 @@ function MatchesTab({
                   />
                   <div>
                     <p className="text-xs font-black text-white uppercase tracking-widest">Definido por penales</p>
-                    <p className="text-[9px] text-zinc-600 font-bold">El marcador debe ser el empate del partido; la tanda no se suma al marcador.</p>
+                    <p className="text-[9px] text-zinc-600 font-bold">El marcador debe ser el empate de los 90 min; alargue y tanda no se suman al marcador.</p>
                   </div>
                 </label>
 

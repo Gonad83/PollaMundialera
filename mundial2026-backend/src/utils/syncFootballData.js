@@ -127,12 +127,12 @@ async function syncMatches() {
     const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
     const isShootout    = m.score?.duration === 'PENALTY_SHOOTOUT';
 
-    // El marcador que PUNTÚA es el de los 90′ + prórroga. En un partido a penales eso es un
-    // empate (regularTime + extraTime), NO el fullTime (que trae la definición del shootout).
+    // El marcador que PUNTUA es el de los 90 minutos. Alargue y penales no suman
+    // al scoreHome/scoreAway: solo definen el winnerId si corresponde.
     let scoreHome, scoreAway;
-    if (isShootout && m.score?.regularTime?.home != null && m.score?.regularTime?.away != null) {
-      scoreHome = m.score.regularTime.home + (m.score?.extraTime?.home ?? 0);
-      scoreAway = m.score.regularTime.away + (m.score?.extraTime?.away ?? 0);
+    if (m.score?.regularTime?.home != null && m.score?.regularTime?.away != null) {
+      scoreHome = m.score.regularTime.home;
+      scoreAway = m.score.regularTime.away;
     } else {
       scoreHome = m.score?.fullTime?.home ?? null;
       scoreAway = m.score?.fullTime?.away ?? null;

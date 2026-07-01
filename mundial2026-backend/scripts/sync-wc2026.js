@@ -153,13 +153,16 @@ async function main() {
     const status = STATUS_MAP[m.status] || 'SCHEDULED';
     const externalId = `fd_${m.id}`;
 
+    const scoreHome = m.score?.regularTime?.home ?? m.score?.fullTime?.home ?? null;
+    const scoreAway = m.score?.regularTime?.away ?? m.score?.fullTime?.away ?? null;
+
     const matchData = {
       phase,
       groupLetter: m.group?.replace('GROUP_', '').replace('Group ', '') || null,
       teamHomeId: teamHome.id,
       teamAwayId: teamAway.id,
-      scoreHome: m.score?.fullTime?.home ?? null,
-      scoreAway: m.score?.fullTime?.away ?? null,
+      scoreHome,
+      scoreAway,
       venue: m.venue || null,
       city: null,
       dateUtc: new Date(m.utcDate),

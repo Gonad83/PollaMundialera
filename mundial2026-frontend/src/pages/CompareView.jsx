@@ -503,7 +503,7 @@ export default function CompareView({ groupId, members = [] }) {
       </div>
 
       <p className="text-[9px] text-zinc-700 font-mono text-center px-2">
-        Se muestran pronosticos de partidos con apuesta cerrada · Torneo 16avos se suma al total antes de CAN-RSA · "Pend." = partido sin resultado aun
+        Se muestran pronosticos de partidos con apuesta cerrada · El puntaje usa marcador de 90 min; alargue no suma · Torneo 16avos se suma al total antes de CAN-RSA · "Pend." = partido sin resultado aun
       </p>
         </>
       )}
