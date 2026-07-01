@@ -43,6 +43,29 @@ const STATUS_MAP = {
   'CANCELLED':  'CANCELLED',
 };
 
+function applyOfficialResultOverride(data, teamHome, teamAway) {
+  const homeCode = teamHome?.code;
+  const awayCode = teamAway?.code;
+
+  if (data.phase === 'R32' &&
+      ((homeCode === 'BEL' && awayCode === 'SEN') || (homeCode === 'SEN' && awayCode === 'BEL'))) {
+    const belgiumIsHome = homeCode === 'BEL';
+    return {
+      ...data,
+      scoreHome: 2,
+      scoreAway: 2,
+      extraTimeHome: belgiumIsHome ? 3 : 2,
+      extraTimeAway: belgiumIsHome ? 2 : 3,
+      wentToPenalties: false,
+      penaltyHome: null,
+      penaltyAway: null,
+      winnerId: belgiumIsHome ? teamHome.id : teamAway.id,
+    };
+  }
+
+  return data;
+}
+
 // ─── Flag URLs por código FIFA (3 letras) → ISO 2 letras ──────────────────────
 const FLAG_MAP = {
   ARG:'ar', BRA:'br', URU:'uy', COL:'co', ECU:'ec', CHI:'cl',
@@ -163,7 +186,7 @@ async function main() {
       ? m.score.regularTime.away + m.score.extraTime.away
       : (!isShootout && m.score?.duration === 'EXTRA_TIME' ? (m.score?.fullTime?.away ?? null) : null);
 
-    const matchData = {
+    const matchData = applyOfficialResultOverride({
       phase,
       groupLetter: m.group?.replace('GROUP_', '').replace('Group ', '') || null,
       teamHomeId: teamHome.id,
@@ -176,7 +199,7 @@ async function main() {
       city: null,
       dateUtc: new Date(m.utcDate),
       status,
-    };
+    }, teamHome, teamAway);
 
     // Buscar partido existente por ID externo en venue (workaround sin campo externalId)
     // Usamos teamHome+teamAway+date como clave única natural

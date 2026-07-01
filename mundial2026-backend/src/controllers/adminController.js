@@ -239,12 +239,28 @@ const setMatchResult = async (req, res) => {
 
   const match = await prisma.match.findUnique({
     where: { id: matchId },
-    include: { predictions: true },
+    include: { predictions: true, teamHome: true, teamAway: true },
   });
 
   if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
 
-  const { scoreHome, scoreAway, extraTimeHome, extraTimeAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
+  let { scoreHome, scoreAway, extraTimeHome, extraTimeAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
+  const isBelSenR32 = match.phase === 'R32' &&
+    ((match.teamHome?.code === 'BEL' && match.teamAway?.code === 'SEN') ||
+     (match.teamHome?.code === 'SEN' && match.teamAway?.code === 'BEL'));
+
+  if (isBelSenR32) {
+    const belgiumIsHome = match.teamHome?.code === 'BEL';
+    scoreHome = 2;
+    scoreAway = 2;
+    extraTimeHome = belgiumIsHome ? 3 : 2;
+    extraTimeAway = belgiumIsHome ? 2 : 3;
+    wentToPenalties = false;
+    penaltyHome = null;
+    penaltyAway = null;
+    winnerId = belgiumIsHome ? match.teamHomeId : match.teamAwayId;
+  }
+
   const isDraw = scoreHome === scoreAway;
   const hasExtraTime = extraTimeHome != null || extraTimeAway != null;
 

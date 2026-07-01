@@ -25,6 +25,30 @@ const STATUS_MAP = {
   POSTPONED: 'CANCELLED',
 };
 
+function applyOfficialResultOverride(data, homeTeam, awayTeam) {
+  const homeCode = homeTeam?.code;
+  const awayCode = awayTeam?.code;
+
+  // BEL-SEN se definio 3-2 en prorroga, pero el calculo usa 2-2 en 90 min.
+  if (data.phase === 'R32' &&
+      ((homeCode === 'BEL' && awayCode === 'SEN') || (homeCode === 'SEN' && awayCode === 'BEL'))) {
+    const belgiumIsHome = homeCode === 'BEL';
+    return {
+      ...data,
+      scoreHome: 2,
+      scoreAway: 2,
+      extraTimeHome: belgiumIsHome ? 3 : 2,
+      extraTimeAway: belgiumIsHome ? 2 : 3,
+      wentToPenalties: false,
+      penaltyHome: null,
+      penaltyAway: null,
+      winnerId: belgiumIsHome ? homeTeam.id : awayTeam.id,
+    };
+  }
+
+  return data;
+}
+
 function fetchFromApi(path) {
   return new Promise((resolve, reject) => {
     const options = {
@@ -183,7 +207,7 @@ async function syncMatches() {
     // Buscar si ya existe por externalId guardado en el venue field
     const existing = await prisma.match.findFirst({ where: { venue: externalId } });
 
-    const data = {
+    const data = applyOfficialResultOverride({
       phase,
       groupLetter,
       teamHomeId: homeTeam.id,
@@ -200,7 +224,7 @@ async function syncMatches() {
       penaltyHome,
       penaltyAway,
       winnerId,
-    };
+    }, homeTeam, awayTeam);
 
     if (existing) {
       const wasFinished = existing.status === 'FINISHED';
