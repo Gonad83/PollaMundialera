@@ -66,7 +66,7 @@ function PointsBadge({ pred, match }) {
   )
 }
 
-function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen }) {
+function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen, onClick }) {
   if (isLoading) {
     return (
       <div className="flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
@@ -79,11 +79,17 @@ function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen }) {
   const round32Pts = picks?.ptsRound32 || 0
   const round16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const hasPts = round32Pts > 0 || round16Pts > 0
+  const Wrapper = onClick ? 'button' : 'div'
 
   return (
-    <div className={`flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border px-2 py-1.5 ${
+    <Wrapper
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      title={onClick ? 'Ver equipos que sumaron puntos' : undefined}
+      className={`flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border px-2 py-1.5 transition-all ${
       hasPts ? 'border-mundial-gold/30 bg-mundial-gold/10' : 'border-white/8 bg-white/5'
-    }`}>
+    } ${onClick ? 'cursor-pointer hover:border-mundial-gold/60 hover:bg-mundial-gold/15 hover:shadow-[0_0_18px_rgba(255,215,0,0.10)]' : ''}`}
+    >
       <span className={`font-display text-sm leading-none ${hasPts ? 'text-mundial-gold' : 'text-zinc-700'}`}>
         +{round32Pts}
       </span>
@@ -91,7 +97,7 @@ function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen }) {
       {round16Pts > 0 && (
         <span className="text-[8px] font-black uppercase tracking-widest leading-none text-emerald-300">8vos +{round16Pts}</span>
       )}
-    </div>
+    </Wrapper>
   )
 }
 
@@ -107,6 +113,7 @@ function TeamFlag({ team, size = 'sm' }) {
 export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
   const [breakdown, setBreakdown] = useState(null) // celda clickeada → modal de desglose de puntos
+  const [tournamentBreakdown, setTournamentBreakdown] = useState(null)
 
   const { data: compareData, isLoading } = useQuery({
     queryKey: ['group-compare', groupId],
@@ -136,6 +143,13 @@ export default function CompareView({ groupId, members = [] }) {
     () => allWcMatches.filter(m => m.status === 'FINISHED' && !isNonWorldCupMatch(m)).length,
     [allWcMatches]
   )
+  const actualRound32TeamIds = useMemo(() => {
+    const ids = allWcMatches
+      .filter(m => m.phase === 'R32' && !isNonWorldCupMatch(m))
+      .flatMap(m => [m.teamHomeId, m.teamAwayId])
+      .filter(Boolean)
+    return [...new Set(ids)]
+  }, [allWcMatches])
 
   // Deduplicar partidos y ordenarlos por fecha
   const matches = useMemo(() => {
@@ -444,7 +458,12 @@ export default function CompareView({ groupId, members = [] }) {
                         return (
                           <td key={column.id} className="px-1.5 py-2 text-center border-r border-mundial-gold/15 bg-mundial-gold/[0.025]">
                             <div className="flex justify-center">
-                              <TournamentPointsBadge picks={picks} isLoading={tournamentCompare.isLoading} round16ScoringOpen={round16ScoringOpen} />
+                              <TournamentPointsBadge
+                                picks={picks}
+                                isLoading={tournamentCompare.isLoading}
+                                round16ScoringOpen={round16ScoringOpen}
+                                onClick={() => setTournamentBreakdown({ member, picks })}
+                              />
                             </div>
                           </td>
                         )
@@ -491,6 +510,15 @@ export default function CompareView({ groupId, members = [] }) {
 
       <AnimatePresence>
         {breakdown && <BreakdownModal data={breakdown} onClose={() => setBreakdown(null)} />}
+        {tournamentBreakdown && (
+          <TournamentBreakdownModal
+            data={tournamentBreakdown}
+            actualRound32TeamIds={actualRound32TeamIds}
+            teamById={teamById}
+            round16ScoringOpen={round16ScoringOpen}
+            onClose={() => setTournamentBreakdown(null)}
+          />
+        )}
       </AnimatePresence>
     </motion.div>
   )
@@ -559,6 +587,121 @@ function BreakdownModal({ data, onClose }) {
         </div>
       </motion.div>
     </motion.div>
+  )
+}
+
+function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round16ScoringOpen, onClose }) {
+  const { member, picks } = data
+  const actualSet = new Set(actualRound32TeamIds || [])
+  const pickedRound32 = picks?.round32Teams || []
+  const hitIds = pickedRound32.filter(id => actualSet.has(id))
+  const missIds = pickedRound32.filter(id => !actualSet.has(id))
+  const round32Pts = picks?.ptsRound32 || hitIds.length
+  const effectiveRound16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
+  const visibleMissIds = missIds.slice(0, 12)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+    >
+      <motion.div
+        initial={{ scale: 0.94, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.94, opacity: 0 }}
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-lg space-y-4 rounded-2xl border border-mundial-gold/20 bg-mundial-navyLight p-4 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[9px] font-black uppercase tracking-[0.22em] text-mundial-gold">Detalle torneo</p>
+            <h3 className="mt-1 font-display text-2xl uppercase leading-none text-white">16avos</h3>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 transition-colors hover:text-white"><X size={16} /></button>
+        </div>
+
+        <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/5 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-mundial-gold/15 text-[11px] font-black text-mundial-gold">
+              {member.user?.username?.[0]?.toUpperCase()}
+            </div>
+            <div>
+              <p className="text-[11px] font-black leading-none text-white">{member.user?.username}</p>
+              <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+                {hitIds.length} equipos acertados
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500">sumo</span>
+            <span className="font-display text-xl leading-none text-mundial-gold">+{round32Pts}</span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">Equipos que generaron puntos</span>
+            <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+1 c/u</span>
+          </div>
+          {hitIds.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {hitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
+            </div>
+          ) : (
+            <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
+              Sin equipos acertados cargados todavia
+            </p>
+          )}
+        </div>
+
+        {missIds.length > 0 && (
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Pronosticados sin punto</span>
+              <span className="text-[9px] font-black text-zinc-600">{missIds.length}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {visibleMissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
+            </div>
+            {missIds.length > visibleMissIds.length && (
+              <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                +{missIds.length - visibleMissIds.length} mas
+              </p>
+            )}
+          </div>
+        )}
+
+        {!round16ScoringOpen && (picks?.ptsRound16 || 0) > 0 && (
+          <p className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-200">
+            8vos bloqueado hasta que terminen todos los 16avos
+          </p>
+        )}
+        {effectiveRound16Pts > 0 && (
+          <div className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">8vos</span>
+            <span className="font-display text-lg text-emerald-200">+{effectiveRound16Pts}</span>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  )
+}
+
+function TournamentTeamChip({ team, tone }) {
+  const isHit = tone === 'hit'
+  return (
+    <div className={`flex min-w-0 items-center gap-2 rounded-xl border px-2 py-2 ${
+      isHit
+        ? 'border-emerald-400/20 bg-emerald-400/10'
+        : 'border-white/8 bg-white/5 opacity-75'
+    }`}>
+      <TeamFlag team={team} />
+      <span className={`truncate text-[10px] font-black uppercase tracking-tight ${
+        isHit ? 'text-emerald-100' : 'text-zinc-500'
+      }`}>
+        {team?.code || team?.name || '-'}
+      </span>
+      {isHit && <span className="ml-auto shrink-0 text-[9px] font-black text-emerald-300">+1</span>}
+    </div>
   )
 }
 
