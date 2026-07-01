@@ -275,12 +275,16 @@ export default function Layout() {
                     key={id}
                     onClick={onClick}
                     title={label}
-                    className={`relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                      ${isActive
-                        ? 'bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
-                        : featured
-                          ? 'border border-mundial-gold/35 bg-mundial-gold/10 text-mundial-gold shadow-[0_0_18px_rgba(255,215,0,0.10)] hover:bg-mundial-gold/18 hover:border-mundial-gold/55'
-                          : 'text-zinc-500 hover:text-white hover:bg-white/10'}`}
+                    className={`relative flex items-center gap-1.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                      ${featured
+                        ? `min-w-[220px] justify-center border px-8 text-mundial-gold shadow-[0_0_18px_rgba(255,215,0,0.12)] ${
+                            isActive
+                              ? 'border-mundial-gold/70 bg-mundial-gold/15'
+                              : 'border-mundial-gold/45 bg-mundial-gold/10 hover:bg-mundial-gold/18 hover:border-mundial-gold/65'
+                          }`
+                        : isActive
+                          ? 'px-3 bg-mundial-gold text-mundial-navy shadow-lg shadow-mundial-gold/20'
+                          : 'px-3 text-zinc-500 hover:text-white hover:bg-white/10'}`}
                   >
                     <Icon size={featured ? 14 : 13} fill={featured ? 'currentColor' : 'none'} /> {label}
                     {badge > 0 && (
