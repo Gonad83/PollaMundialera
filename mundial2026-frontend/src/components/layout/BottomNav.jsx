@@ -15,7 +15,13 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const visibleHeaderActions = routeGroupId
     ? headerActions.filter(action => action.id !== 'compare')
     : headerActions
-  const hasItems = primaryNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || visibleHeaderActions.length > 0
+  const groupBottomActions = routeGroupId
+    ? [
+        { id: 'simulador', label: 'Simular', tab: 'simulador', icon: Shuffle },
+        { id: 'liga', label: 'Liga', tab: 'liga', icon: Users },
+      ]
+    : []
+  const hasItems = primaryNav.length > 0 || showTournamentPick || groupBottomActions.length > 0 || user?.role === 'SUPER_ADMIN' || visibleHeaderActions.length > 0
   if (!hasItems) return null
   const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !visibleHeaderActions.some(a => a.id === 'config')
   const tabParam = new URLSearchParams(search).get('tab')
@@ -88,6 +94,28 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
         )}
 
         {/* Divisor: separa navegación principal de las herramientas del grupo */}
+        {groupBottomActions.map(({ id, label, tab, icon: Icon }) => {
+          const isActive = tabParam === tab
+          return (
+            <button
+              key={id}
+              onClick={() => navigate(`/groups/${routeGroupId}?tab=${tab}`)}
+              className={`relative min-w-[72px] flex flex-col items-center gap-1 px-2 py-2 transition-all shrink-0 ${
+                isActive ? 'text-mundial-gold' : 'text-zinc-500'
+              }`}
+            >
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="bottomTab"
+                  className="absolute -top-2 w-8 h-1 bg-mundial-gold rounded-full shadow-[0_0_15px_rgba(255,215,0,0.5)]"
+                />
+              )}
+            </button>
+          )
+        })}
+
         {visibleHeaderActions.length > 0 && (
           <span className="self-center h-7 w-px bg-white/10 shrink-0 mx-0.5" aria-hidden="true" />
         )}

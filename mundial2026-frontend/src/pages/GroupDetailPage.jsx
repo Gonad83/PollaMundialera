@@ -436,18 +436,18 @@ export default function GroupDetailPage() {
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
     { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
     { id: 'fixture',    label: 'Fixture',             shortLabel: 'Fixture',  icon: Trophy, featured: true },
-    { id: 'simulador',  label: 'Simular',             shortLabel: 'Simular',  icon: BarChart3 },
-    { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
+    { id: 'simulador',  label: 'Simular',             shortLabel: 'Simular',  icon: BarChart3, mobileBottomOnly: true },
+    { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users, mobileBottomOnly: true },
   ]
 
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
     <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar rounded-2xl bg-white/5 border border-white/5 p-1 sm:overflow-visible">
-      {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured, mobileOnly }) => {
+      {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured, mobileOnly, mobileBottomOnly }) => {
         const active = activeTab === tabId
         return (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setSearchParams({ tab: tabId })}
-            className={`relative shrink-0 rounded-xl py-2 sm:py-2.5 px-2 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
+            className={`relative ${mobileBottomOnly ? 'hidden sm:flex' : 'flex'} shrink-0 rounded-xl py-2 sm:py-2.5 px-2 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
               ${mobileOnly ? 'sm:hidden' : ''}
               ${featured ? 'min-w-[112px] sm:flex-[1.6]' : 'min-w-[70px] sm:flex-1'}
               ${active
