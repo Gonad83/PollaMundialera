@@ -364,14 +364,14 @@ export default function CompareView({ groupId, members = [] }) {
             <thead>
               <tr className="bg-white/5 border-b border-white/8">
                 {/* Col fija: jugador */}
-                <th className="sticky left-0 z-10 bg-mundial-navyLight px-4 py-3 text-left min-w-[130px] border-r border-white/8">
+                <th className="sticky left-0 z-10 bg-mundial-navyLight px-2 py-3 text-left min-w-[104px] border-r border-white/8 sm:min-w-[130px] sm:px-4">
                   <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">Jugador</span>
                 </th>
                 {/* Una col por partido */}
                 {tableColumns.map(column => {
                   if (column.type === 'tournament') {
                     return (
-                      <th key={column.id} className="px-2 py-2 min-w-[82px] text-center border-r border-mundial-gold/15 bg-mundial-gold/6">
+                      <th key={column.id} className="px-1.5 py-2 min-w-[72px] text-center border-r border-mundial-gold/15 bg-mundial-gold/6 sm:min-w-[82px] sm:px-2">
                         <div className="flex flex-col items-center gap-1">
                           <Trophy size={13} className="text-mundial-gold" />
                           <span className="text-[8px] font-black uppercase tracking-widest text-mundial-gold">Torneo</span>
@@ -386,7 +386,7 @@ export default function CompareView({ groupId, members = [] }) {
                   const isFinished = match.status === 'FINISHED'
                   const awaiting = isAwaitingResult(match)
                   return (
-                    <th key={match.id} className="px-2 py-2.5 min-w-[84px] text-center border-r border-white/5 last:border-r-0">
+                    <th key={match.id} className="px-1.5 py-2.5 min-w-[74px] text-center border-r border-white/5 last:border-r-0 sm:min-w-[84px] sm:px-2">
                       <div className="flex flex-col items-center gap-1.5">
                         <div className="flex items-center gap-1">
                           <TeamFlag team={match.teamHome} />
@@ -424,7 +424,7 @@ export default function CompareView({ groupId, members = [] }) {
                   )
                 })}
                 {/* Total */}
-                <th className="sticky right-0 z-10 bg-mundial-navyLight px-3 py-3 text-center min-w-[60px] border-l border-white/8">
+                <th className="sticky right-0 z-10 bg-mundial-navyLight px-2 py-3 text-center min-w-[52px] border-l border-white/8 sm:min-w-[60px] sm:px-3">
                   <span className="text-[9px] font-black text-mundial-gold uppercase tracking-widest">PTS</span>
                 </th>
               </tr>
@@ -442,7 +442,7 @@ export default function CompareView({ groupId, members = [] }) {
                     className="border-b border-white/5 last:border-b-0 hover:bg-white/3 transition-colors"
                   >
                     {/* Nombre */}
-                    <td className="sticky left-0 z-10 bg-mundial-navy px-4 py-2.5 border-r border-white/8">
+                    <td className="sticky left-0 z-10 bg-mundial-navy px-2 py-2.5 border-r border-white/8 sm:px-4">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center text-[10px] font-black text-mundial-gold shrink-0">
                           {member.user?.username?.[0]?.toUpperCase()}
@@ -491,7 +491,7 @@ export default function CompareView({ groupId, members = [] }) {
                       )
                     })}
                     {/* Total */}
-                    <td className="sticky right-0 z-10 bg-mundial-navy px-3 py-2 text-center border-l border-white/8">
+                    <td className="sticky right-0 z-10 bg-mundial-navy px-2 py-2 text-center border-l border-white/8 sm:px-3">
                       <span className="font-display text-base text-mundial-gold">{member.totalCompPts}</span>
                     </td>
                   </motion.tr>

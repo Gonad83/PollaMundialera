@@ -8,8 +8,11 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   const routeGroupId = pathname.match(/^\/groups\/([^/]+)/)?.[1]
   const storedGroupId = sessionStorage.getItem('lastGroupId') || localStorage.getItem('lastGroupId')
   const currentGroupId = routeGroupId || (pathname.startsWith('/profile') ? storedGroupId : null)
-  const showTournamentPick = !!currentGroupId
-  const hasItems = filteredNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
+  const primaryNav = routeGroupId
+    ? filteredNav.filter(({ to }) => to === '/rules')
+    : filteredNav
+  const showTournamentPick = !!currentGroupId && !routeGroupId
+  const hasItems = primaryNav.length > 0 || showTournamentPick || user?.role === 'SUPER_ADMIN' || headerActions.length > 0
   if (!hasItems) return null
   const showGlobalAdmin = user?.role === 'SUPER_ADMIN' && !headerActions.some(a => a.id === 'config')
   const tabParam = new URLSearchParams(search).get('tab')
@@ -26,7 +29,7 @@ export default function BottomNav({ user, filteredNav, headerActions = [] }) {
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 px-2 pb-6 pt-2 bg-mundial-navy/80 backdrop-blur-2xl border-t border-white/10 safe-area-bottom">
       <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-lg mx-auto">
-        {filteredNav.map(({ to, label }) => {
+        {primaryNav.map(({ to, label }) => {
           const Icon = getIcon(label)
           const isSim = to === '/simulator'
           const resolvedTo = (to === '/matches' && currentGroupId) ? `/groups/${currentGroupId}`

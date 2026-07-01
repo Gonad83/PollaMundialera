@@ -441,13 +441,13 @@ export default function GroupDetailPage() {
 
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
-    <div className="grid grid-cols-[1fr_1fr_1.35fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+    <div className="flex items-stretch gap-1 overflow-x-auto no-scrollbar rounded-2xl bg-white/5 border border-white/5 p-1 sm:overflow-visible">
       {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
         const active = activeTab === tabId
         return (
           <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setSearchParams({ tab: tabId })}
-            className={`relative rounded-xl py-2 sm:py-2.5 px-1 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
-              ${featured ? 'sm:flex-[1.6]' : 'sm:flex-1'}
+            className={`relative shrink-0 rounded-xl py-2 sm:py-2.5 px-2 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
+              ${featured ? 'min-w-[88px] sm:flex-[1.6]' : 'min-w-[70px] sm:flex-1'}
               ${active
                 ? `bg-mundial-gold text-mundial-navy shadow-lg${featured ? ' shadow-mundial-gold/40 ring-2 ring-mundial-gold/60' : ''}`
                 : featured
