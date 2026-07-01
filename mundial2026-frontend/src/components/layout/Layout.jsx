@@ -94,7 +94,8 @@ export default function Layout() {
   const currentGroupId = routeGroupId || ((isProfileRoute || isAdminRoute) ? storedGroupId : null)
   const fallbackHeaderActions = !isGroupDetail && isProfileRoute && currentGroupId
     ? [
-        { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => navigate(`/groups/${currentGroupId}?tab=simulador`), isActive: false },
+        { id: 'ranking', icon: BarChart3, label: 'Ranking', onClick: () => navigate(`/groups/${currentGroupId}?tab=ranking`), isActive: false },
+        { id: 'compare', icon: Star, label: 'Comparativa', onClick: () => navigate(`/groups/${currentGroupId}?tab=comparar`), isActive: false },
         { id: 'messages', icon: MessageSquare, label: 'Mensajes', onClick: () => navigate(`/groups/${currentGroupId}?tab=messages`), isActive: false },
         ...(storedCanManageGroup && !isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => navigate(`/groups/${currentGroupId}?tab=config`), isActive: false }] : []),
       ]

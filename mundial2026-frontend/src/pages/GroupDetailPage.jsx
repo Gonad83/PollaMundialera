@@ -238,12 +238,13 @@ export default function GroupDetailPage() {
     // Esperar a que group cargue para saber si es admin y mostrar Ajustes correctamente
     if (!group) return
     const actions = [
-      { id: 'simulator', icon: BarChart3, label: 'Simular', onClick: () => setActiveTab('simulador'), isActive: activeTab === 'simulador' },
+      { id: 'ranking', icon: BarChart3, label: 'Ranking', onClick: () => setSearchParams({ tab: 'ranking' }), isActive: activeTab === 'ranking' },
+      { id: 'compare', icon: Star, label: 'Comparativa', onClick: () => setSearchParams({ tab: 'comparar' }), isActive: activeTab === 'comparar' },
       { id: 'messages', icon: MessageSquare, label: 'Mensajes', badge: unreadCount || null, onClick: () => setSearchParams({ tab: 'messages' }), isActive: activeTab === 'messages' },
       ...(actingAsAdmin && !isSuperAdmin ? [{ id: 'config', icon: Settings, label: 'Ajustes', onClick: () => setSearchParams({ tab: 'config' }), isActive: activeTab === 'config' }] : []),
     ]
     setActions(actions)
-  }, [activeTab, actingAsAdmin, setActions, group, unreadCount])
+  }, [activeTab, actingAsAdmin, isSuperAdmin, setActions, setSearchParams, group, unreadCount])
 
   // Limpiar acciones del header solo al desmontar el grupo
   useEffect(() => () => setActions([]), [setActions])
@@ -432,19 +433,18 @@ export default function GroupDetailPage() {
   // Comparativa va al centro y destacada: ahí los jugadores ven a los otros apostadores
   const tabs = [
     { id: 'resultados', label: 'Pronóstico partidos', shortLabel: 'Partidos', icon: Calendar },
-    { id: 'ranking',    label: 'Ranking',             shortLabel: 'Ranking',  icon: BarChart3 },
-    { id: 'comparar',   label: 'Comparativa',         shortLabel: 'Comparar', icon: Star, featured: true },
     { id: 'premios',    label: 'Pronóstico torneo',   shortLabel: 'Torneo',   icon: Trophy },
+    { id: 'simulador',  label: 'Simular',             shortLabel: 'Simular',  icon: BarChart3 },
     { id: 'liga',       label: 'Participantes',       shortLabel: 'Liga',     icon: Users },
   ]
 
   // La barra de tabs queda SIEMPRE fija arriba (debajo del header), en todas las pestañas.
   const tabsPill = (
-    <div className="grid grid-cols-[1fr_1fr_1.4fr_1fr_1fr] sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
+    <div className="grid grid-cols-4 sm:flex items-stretch p-1 gap-0.5 sm:gap-1 rounded-2xl bg-white/5 border border-white/5">
       {tabs.map(({ id: tabId, label, shortLabel, icon: Icon, featured }) => {
         const active = activeTab === tabId
         return (
-          <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setActiveTab(tabId)}
+          <button key={tabId} id={`tour-tab-${tabId}`} onClick={() => setSearchParams({ tab: tabId })}
             className={`relative rounded-xl py-2 sm:py-2.5 px-1 sm:px-4 text-[8px] sm:text-[10px] font-black uppercase tracking-tight sm:tracking-widest transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2
               ${featured ? 'sm:flex-[1.6]' : 'sm:flex-1'}
               ${active
