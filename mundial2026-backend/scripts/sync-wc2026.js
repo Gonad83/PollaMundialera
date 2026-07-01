@@ -155,6 +155,13 @@ async function main() {
 
     const scoreHome = m.score?.regularTime?.home ?? m.score?.fullTime?.home ?? null;
     const scoreAway = m.score?.regularTime?.away ?? m.score?.fullTime?.away ?? null;
+    const isShootout = m.score?.duration === 'PENALTY_SHOOTOUT';
+    const extraTimeHome = m.score?.regularTime?.home != null && m.score?.extraTime?.home != null
+      ? m.score.regularTime.home + m.score.extraTime.home
+      : (!isShootout && m.score?.duration === 'EXTRA_TIME' ? (m.score?.fullTime?.home ?? null) : null);
+    const extraTimeAway = m.score?.regularTime?.away != null && m.score?.extraTime?.away != null
+      ? m.score.regularTime.away + m.score.extraTime.away
+      : (!isShootout && m.score?.duration === 'EXTRA_TIME' ? (m.score?.fullTime?.away ?? null) : null);
 
     const matchData = {
       phase,
@@ -163,6 +170,8 @@ async function main() {
       teamAwayId: teamAway.id,
       scoreHome,
       scoreAway,
+      extraTimeHome,
+      extraTimeAway,
       venue: m.venue || null,
       city: null,
       dateUtc: new Date(m.utcDate),

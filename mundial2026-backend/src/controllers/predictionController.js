@@ -215,6 +215,8 @@ const getGroupCompare = async (req, res) => {
           status: true,
           scoreHome: true,
           scoreAway: true,
+          extraTimeHome: true,
+          extraTimeAway: true,
           wentToPenalties: true,
           penaltyHome: true,
           penaltyAway: true,

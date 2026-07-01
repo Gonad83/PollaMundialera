@@ -17,6 +17,8 @@ const {
 const matchResultSchema = z.object({
   scoreHome: z.number().int().min(0).max(20),
   scoreAway: z.number().int().min(0).max(20),
+  extraTimeHome: z.number().int().min(0).max(30).optional().nullable(),
+  extraTimeAway: z.number().int().min(0).max(30).optional().nullable(),
   wentToPenalties: z.boolean().default(false),
   penaltyHome: z.number().int().min(0).max(50).optional().nullable(),
   penaltyAway: z.number().int().min(0).max(50).optional().nullable(),
@@ -242,20 +244,29 @@ const setMatchResult = async (req, res) => {
 
   if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
 
-  const { scoreHome, scoreAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
+  const { scoreHome, scoreAway, extraTimeHome, extraTimeAway, wentToPenalties, winnerId, penaltyHome, penaltyAway } = parsed.data;
   const isDraw = scoreHome === scoreAway;
+  const hasExtraTime = extraTimeHome != null || extraTimeAway != null;
 
-  // Un partido a penales SOLO ocurre tras un empate: el marcador de los 90 min
-  // debe ser empate y los penales van en sus propios campos (no en score).
-  if (wentToPenalties && !isDraw) {
+  // Prorroga/penales SOLO ocurren tras empate en los 90 min. El score base
+  // sigue siendo el marcador que puntua; prorroga y penales solo definen ganador.
+  if ((wentToPenalties || hasExtraTime) && !isDraw) {
     return res.status(400).json({
-      error: 'Si el partido fue a penales, el marcador de los 90′ debe ser empate. Carga el empate y el resultado de penales aparte.',
+      error: 'Si hubo prorroga o penales, el marcador de los 90 min debe ser empate. Carga el empate base y el desempate aparte.',
     });
+  }
+  if ((extraTimeHome == null) !== (extraTimeAway == null)) {
+    return res.status(400).json({ error: 'Carga ambos marcadores de prorroga o deja ambos vacios.' });
+  }
+  if (hasExtraTime && (extraTimeHome < scoreHome || extraTimeAway < scoreAway)) {
+    return res.status(400).json({ error: 'El marcador de prorroga no puede ser menor que el marcador de 90 min.' });
   }
 
   let resolvedWinnerId;
   if (!isDraw) {
     resolvedWinnerId = scoreHome > scoreAway ? match.teamHomeId : match.teamAwayId;
+  } else if (hasExtraTime && extraTimeHome !== extraTimeAway) {
+    resolvedWinnerId = extraTimeHome > extraTimeAway ? match.teamHomeId : match.teamAwayId;
   } else if (wentToPenalties) {
     // Ganador por penales: del marcador de penales si viene, si no del winnerId explícito.
     resolvedWinnerId = (penaltyHome != null && penaltyAway != null && penaltyHome !== penaltyAway)
@@ -269,7 +280,9 @@ const setMatchResult = async (req, res) => {
     return res.status(400).json({ error: 'Indica el marcador de penales (o el ganador por penales).' });
   }
 
-  // Penales solo si corresponde; si no fue a penales se limpian.
+  // Prorroga/penales solo si corresponde; si no se limpian.
+  const etH = hasExtraTime ? extraTimeHome : null;
+  const etA = hasExtraTime ? extraTimeAway : null;
   const penH = wentToPenalties ? (penaltyHome ?? null) : null;
   const penA = wentToPenalties ? (penaltyAway ?? null) : null;
 
@@ -281,7 +294,7 @@ const setMatchResult = async (req, res) => {
     // 1. Actualizar el partido
     await tx.match.update({
       where: { id: matchId },
-      data: { scoreHome, scoreAway, wentToPenalties, penaltyHome: penH, penaltyAway: penA, winnerId: resolvedWinnerId, status: 'FINISHED' },
+      data: { scoreHome, scoreAway, extraTimeHome: etH, extraTimeAway: etA, wentToPenalties, penaltyHome: penH, penaltyAway: penA, winnerId: resolvedWinnerId, status: 'FINISHED' },
     });
 
     // 2. Calcular puntos para cada predicción

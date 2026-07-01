@@ -167,6 +167,8 @@ model Match {
   winner       Team?       @relation("WinnerTeam", fields: [winnerId], references: [id])
   scoreHome    Int?
   scoreAway    Int?
+  extraTimeHome Int?
+  extraTimeAway Int?
   wentToPenalties Boolean  @default(false)
   penaltyHome  Int?
   penaltyAway  Int?

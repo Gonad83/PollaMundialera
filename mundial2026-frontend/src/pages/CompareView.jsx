@@ -397,6 +397,11 @@ export default function CompareView({ groupId, members = [] }) {
                             <span className="text-[11px] font-display text-mundial-gold">
                               {match.scoreHome}–{match.scoreAway}
                             </span>
+                            {match.extraTimeHome != null && match.extraTimeAway != null && (
+                              <span className="text-[7px] font-black uppercase tracking-wide text-amber-300 whitespace-nowrap">
+                                pro {match.extraTimeHome}-{match.extraTimeAway}
+                              </span>
+                            )}
                             {match.wentToPenalties && match.penaltyHome != null && match.penaltyAway != null && (
                               <span className="text-[7px] font-black uppercase tracking-wide text-amber-300 whitespace-nowrap">
                                 pen {match.penaltyHome}-{match.penaltyAway}
@@ -551,6 +556,9 @@ function BreakdownModal({ data, onClose }) {
             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{awayCode}</span>
             {match.wentToPenalties && match.penaltyHome != null && match.penaltyAway != null && (
               <span className="text-[8px] font-black uppercase tracking-wider text-amber-300">pen {match.penaltyHome}-{match.penaltyAway}</span>
+            )}
+            {match.extraTimeHome != null && match.extraTimeAway != null && (
+              <span className="text-[8px] font-black uppercase tracking-wider text-amber-300">pro {match.extraTimeHome}-{match.extraTimeAway}</span>
             )}
           </div>
           <button onClick={onClose} className="text-zinc-500 transition-colors hover:text-white"><X size={16} /></button>

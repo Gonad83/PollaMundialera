@@ -138,6 +138,17 @@ async function syncMatches() {
       scoreAway = m.score?.fullTime?.away ?? null;
     }
 
+    let extraTimeHome = null, extraTimeAway = null;
+    if (m.score?.regularTime?.home != null && m.score?.regularTime?.away != null &&
+        m.score?.extraTime?.home != null && m.score?.extraTime?.away != null) {
+      extraTimeHome = m.score.regularTime.home + m.score.extraTime.home;
+      extraTimeAway = m.score.regularTime.away + m.score.extraTime.away;
+    } else if (!isShootout && m.score?.duration === 'EXTRA_TIME' &&
+               m.score?.fullTime?.home != null && m.score?.fullTime?.away != null) {
+      extraTimeHome = m.score.fullTime.home;
+      extraTimeAway = m.score.fullTime.away;
+    }
+
     // Definición por penales: usar el campo 'penalties' si trae ganador; si viene roto
     // (empate o ausente), caer al fullTime, que en esta data trae el resultado del shootout.
     let penaltyHome = null, penaltyAway = null;
@@ -162,6 +173,8 @@ async function syncMatches() {
       } else if (scoreHome !== null && scoreAway !== null && scoreHome !== scoreAway) {
         // Inferir ganador del marcador cuando la API no devuelve el campo winner
         winnerId = scoreHome > scoreAway ? homeTeam.id : awayTeam.id;
+      } else if (extraTimeHome !== null && extraTimeAway !== null && extraTimeHome !== extraTimeAway) {
+        winnerId = extraTimeHome > extraTimeAway ? homeTeam.id : awayTeam.id;
       }
     }
 
@@ -181,6 +194,8 @@ async function syncMatches() {
       city: m.venue || m.area?.name || null,
       scoreHome,
       scoreAway,
+      extraTimeHome,
+      extraTimeAway,
       wentToPenalties,
       penaltyHome,
       penaltyAway,

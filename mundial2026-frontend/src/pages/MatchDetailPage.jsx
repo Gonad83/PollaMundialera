@@ -117,7 +117,7 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
   if (isLoading) return <Skeleton />
   if (!match) return <p className="text-zinc-500">Partido no encontrado</p>
 
-  const { dateUtc, status, scoreHome, scoreAway, phase, wentToPenalties, penaltyHome, penaltyAway } = match
+  const { dateUtc, status, scoreHome, scoreAway, extraTimeHome, extraTimeAway, phase, wentToPenalties, penaltyHome, penaltyAway } = match
   const isFriendly = isFriendlyMatch(match)
 
   const hoursLeft   = Math.max(0, Math.floor(msLeft / 3_600_000))
@@ -194,6 +194,9 @@ export default function MatchDetailPage({ matchId: matchIdProp, groupId: groupId
                   </div>
                   {wentToPenalties && penaltyHome != null && penaltyAway != null && (
                     <span className="text-xs font-black uppercase tracking-widest text-amber-300">pen {penaltyHome}-{penaltyAway}</span>
+                  )}
+                  {extraTimeHome != null && extraTimeAway != null && (
+                    <span className="text-xs font-black uppercase tracking-widest text-amber-300">pro {extraTimeHome}-{extraTimeAway}</span>
                   )}
                 </div>
              ) : (

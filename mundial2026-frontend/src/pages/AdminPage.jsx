@@ -64,7 +64,7 @@ export default function AdminPage() {
 
   // States para Formularios
   const [activeMatch, setActiveMatch] = useState(null)
-  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, wentToPenalties: false, penaltyHome: 0, penaltyAway: 0, winnerId: null })
+  const [resultForm, setResultForm] = useState({ scoreHome: 0, scoreAway: 0, extraTimeHome: null, extraTimeAway: null, wentToPenalties: false, penaltyHome: 0, penaltyAway: 0, winnerId: null })
   const [broadcastMsg, setBroadcastMsg] = useState('')
   const [userSearch, setUserSearch] = useState('')
 
@@ -946,6 +946,8 @@ function MatchesTab({
     setResultForm({
       scoreHome: m.scoreHome ?? 0,
       scoreAway: m.scoreAway ?? 0,
+      extraTimeHome: m.extraTimeHome ?? null,
+      extraTimeAway: m.extraTimeAway ?? null,
       wentToPenalties: m.wentToPenalties ?? false,
       penaltyHome: m.penaltyHome ?? 0,
       penaltyAway: m.penaltyAway ?? 0,
@@ -1040,10 +1042,16 @@ function MatchesTab({
                   </div>
                   {/* Score */}
                   <div className="shrink-0 text-center">
-                    {isDone || isLive
-                      ? <span className="font-display text-2xl text-white px-3">{m.scoreHome ?? 0} – {m.scoreAway ?? 0}</span>
-                      : <span className="font-display text-xl text-zinc-700 px-3">VS</span>
-                    }
+                    {isDone || isLive ? (
+                      <span className="flex flex-col items-center gap-0.5 px-3">
+                        <span className="font-display text-2xl text-white">{m.scoreHome ?? 0} – {m.scoreAway ?? 0}</span>
+                        {m.extraTimeHome != null && m.extraTimeAway != null && (
+                          <span className="text-[8px] font-black uppercase tracking-widest text-amber-300">PRO {m.extraTimeHome}-{m.extraTimeAway}</span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="font-display text-xl text-zinc-700 px-3">VS</span>
+                    )}
                   </div>
                   {/* Away */}
                   <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1102,7 +1110,7 @@ function MatchesTab({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="card max-w-lg w-full bg-mundial-navyLight border border-mundial-gold/20 overflow-hidden"
+              className="card max-w-lg w-full max-h-[90vh] bg-mundial-navyLight border border-mundial-gold/20 overflow-y-auto"
             >
               {/* Header del modal */}
               <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
@@ -1171,6 +1179,44 @@ function MatchesTab({
                 </div>
 
                 {/* Penales toggle */}
+                <label className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-400/15 cursor-pointer hover:border-amber-400/25 transition-all">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 rounded accent-mundial-gold"
+                    checked={resultForm.extraTimeHome != null && resultForm.extraTimeAway != null}
+                    onChange={e => setResultForm(f => e.target.checked
+                      ? { ...f, extraTimeHome: f.scoreHome, extraTimeAway: f.scoreAway }
+                      : { ...f, extraTimeHome: null, extraTimeAway: null })}
+                  />
+                  <div>
+                    <p className="text-xs font-black text-white uppercase tracking-widest">Definido en prorroga</p>
+                    <p className="text-[9px] text-zinc-600 font-bold">El marcador de arriba sigue siendo 90 min para calcular puntos.</p>
+                  </div>
+                </label>
+
+                {resultForm.extraTimeHome != null && resultForm.extraTimeAway != null && (
+                  <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-400/15 space-y-3">
+                    <p className="text-[9px] text-amber-300 font-black uppercase tracking-widest">Marcador tras prorroga</p>
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="text-[9px] font-black text-zinc-400 uppercase truncate max-w-[64px]">{activeMatch.teamHome?.code || activeMatch.teamHome?.name}</span>
+                      <input
+                        type="number" min="0" max="30"
+                        className="w-12 bg-mundial-navy border border-amber-400/30 rounded-lg text-center text-xl font-display text-amber-300 outline-none focus:border-amber-300 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        value={resultForm.extraTimeHome}
+                        onChange={e => setResultForm(f => ({ ...f, extraTimeHome: Math.max(0, parseInt(e.target.value) || 0) }))}
+                      />
+                      <span className="text-zinc-600 font-black">-</span>
+                      <input
+                        type="number" min="0" max="30"
+                        className="w-12 bg-mundial-navy border border-amber-400/30 rounded-lg text-center text-xl font-display text-amber-300 outline-none focus:border-amber-300 py-1 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+                        value={resultForm.extraTimeAway}
+                        onChange={e => setResultForm(f => ({ ...f, extraTimeAway: Math.max(0, parseInt(e.target.value) || 0) }))}
+                      />
+                      <span className="text-[9px] font-black text-zinc-400 uppercase truncate max-w-[64px]">{activeMatch.teamAway?.code || activeMatch.teamAway?.name}</span>
+                    </div>
+                  </div>
+                )}
+
                 <label className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/8 cursor-pointer hover:border-white/15 transition-all">
                   <input
                     type="checkbox"
@@ -1230,6 +1276,9 @@ function MatchesTab({
                     <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                     <p className="text-[10px] text-amber-400 font-bold">
                       Resultado actual: <span className="font-black">{activeMatch.scoreHome} – {activeMatch.scoreAway}</span>.
+                      {activeMatch.extraTimeHome != null && activeMatch.extraTimeAway != null && (
+                        <span className="font-black"> PRO {activeMatch.extraTimeHome}-{activeMatch.extraTimeAway}.</span>
+                      )}
                       Al confirmar se recalcularán los puntos de todos los participantes.
                     </p>
                   </div>
