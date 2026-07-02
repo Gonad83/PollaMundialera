@@ -237,7 +237,8 @@ POST /api/admin/matches/{matchId}/result
 | Finalistas | 15 pts c/u |
 | Semifinalistas | 8 pts c/u |
 | Cuartos de final | 4 pts c/u |
-| Clasificados a grupos | 1 pt c/u |
+| Clasificados a 8vos | 1 pt c/u |
+| Clasificados a 16avos | 1 pt c/u |
 | Bota de Oro (exacto) | 20 pts |
 | Balón de Oro (exacto) | 15 pts |
 | Guante de Oro (exacto) | 12 pts |
