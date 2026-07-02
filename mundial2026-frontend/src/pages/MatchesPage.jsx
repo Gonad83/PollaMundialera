@@ -514,7 +514,7 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
   const showPred   = apostado && hasPred && !isFinished && !isLive
   const showResult = apostado && hasPred && isFinished
   const result     = showResult ? predResult(pred) : null
-  const hasBonus   = showPred && (pred.predBtts !== null || pred.predOverUnder !== null)
+  const hasBonus   = showPred && (pred.predBtts !== null || pred.predOverUnder !== null || pred.predPenalties !== null)
 
   // En REAL mode el card no es clickeable — solo se puede apostar desde APOSTADO
   const Wrapper = apostado
@@ -631,6 +631,12 @@ function MatchRow({ match, pred, groupId, apostado = false }) {
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
                 <CheckCircle2 size={9} />
                 ¿Marcan ambos? <strong>{pred.predBtts ? 'SÍ' : 'NO'}</strong>
+              </span>
+            )}
+            {pred.predPenalties !== null && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-bold">
+                <CheckCircle2 size={9} />
+                Habra penales: <strong>{pred.predPenalties ? 'SI' : 'NO'}</strong>
               </span>
             )}
             {pred.predOverUnder !== null && (
