@@ -137,7 +137,7 @@ export default function RulesPage() {
               { icon: '🥈', label: 'Finalista (cada uno)',        pts: 15 },
               { icon: '⬆️', label: 'Semifinalista (cada uno)',    pts: 8  },
               { icon: '📋', label: 'Cuartofinalista (cada uno)',  pts: 4  },
-              { icon: '🎟️', label: 'Clasificado a 8vos (c/u)',    pts: 1  },
+              { icon: '🎟️', label: 'Clasificado a 8vos (c/u)',    pts: 2  },
               { icon: '🗂️', label: 'Clasificado a 16avos (c/u)',  pts: 1  },
               { icon: '👟', label: 'Goleador del torneo',         pts: 20, hot: true },
               { icon: '⭐', label: 'Balón de Oro (mejor jugador)',pts: 15 },

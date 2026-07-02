@@ -124,7 +124,7 @@ const calculateTournamentPoints = async (pick, actuals) => {
   }
   if (actuals.semifinalistIds?.length) pts.ptsSemifinals = countHits(pick.semifinalists, actuals.semifinalistIds) * 8;
   if (actuals.quarterfinalistIds?.length) pts.ptsQuarters = countHits(pick.quarterfinalists, actuals.quarterfinalistIds) * 4;
-  if (actuals.round16TeamIds?.length) pts.ptsRound16 = countHits(pick.round16Teams, actuals.round16TeamIds) * 1;
+  if (actuals.round16TeamIds?.length) pts.ptsRound16 = countHits(pick.round16Teams, actuals.round16TeamIds) * 2;
   if (actuals.round32TeamIds?.length) pts.ptsRound32 = countHits(pick.round32Teams, actuals.round32TeamIds) * 1;
   if (actuals.groupQualifierIds?.length) pts.ptsGroups = countHits(pick.groupQualifiers, actuals.groupQualifierIds) * 1;
 
@@ -624,7 +624,7 @@ const setTournamentAwards = async (req, res) => {
 
     pts.ptsRound16      = (pick.round16Teams || []).filter(
       (id) => (round16TeamIds || []).includes(id)
-    ).length * 1;
+    ).length * 2;
 
     pts.ptsSemifinals   = (pick.semifinalists || []).filter(
       (id) => (semifinalistIds || []).includes(id)
