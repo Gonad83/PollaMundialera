@@ -787,17 +787,12 @@ function GroupChips({ label, teams, compact = false }) {
         <span className="text-[9px] font-black text-mundial-gold">{teams.length}</span>
       </div>
       <div className={`grid gap-1.5 ${compact ? 'grid-cols-3 sm:grid-cols-4' : 'grid-cols-2'}`}>
-        {teams.slice(0, compact ? 8 : 4).map(team => (
+        {teams.map(team => (
           <div key={team.id} className="flex items-center gap-1.5 rounded-lg bg-white/5 px-2 py-1.5 min-w-0">
             <Flag url={team.flagUrl} name={teamEsp(team)} className="w-5 h-3.5 object-contain shrink-0" />
             <span className="text-[9px] font-black uppercase text-zinc-400 truncate">{teamEsp(team)}</span>
           </div>
         ))}
-        {teams.length > (compact ? 8 : 4) && (
-          <div className="flex items-center justify-center rounded-lg bg-white/5 px-2 py-1.5">
-            <span className="text-[9px] font-black uppercase text-zinc-600">+{teams.length - (compact ? 8 : 4)} más</span>
-          </div>
-        )}
       </div>
     </div>
   )

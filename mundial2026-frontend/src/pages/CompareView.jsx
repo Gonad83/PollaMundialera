@@ -1001,16 +1001,13 @@ function CompareChips({ label, teams }) {
         <span className="text-[9px] font-black uppercase tracking-widest text-mundial-gold">{teams.length}</span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {teams.slice(0, 12).map(team => (
+        {teams.map(team => (
           <div key={team.id} className="flex min-w-0 items-center gap-2 rounded-lg bg-white/5 px-2 py-1.5">
             <TeamFlag team={team} />
             <span className="truncate text-[9px] font-black uppercase text-zinc-400">{teamEsp(team)}</span>
           </div>
         ))}
       </div>
-      {teams.length > 12 && (
-        <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-zinc-600">+{teams.length - 12} más</p>
-      )}
     </div>
   )
 }
