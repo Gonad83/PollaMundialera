@@ -71,9 +71,8 @@ function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16Sco
 
   if (isLoading) {
     return (
-      <div className="flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
+      <div className="flex min-h-[40px] min-w-[58px] items-center justify-center rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
         <span className="text-[10px] font-black text-mundial-gold/40">...</span>
-        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-700">{label}</span>
       </div>
     )
   }
@@ -88,18 +87,14 @@ function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16Sco
     <Wrapper
       type={onClick ? 'button' : undefined}
       onClick={onClick}
-      title={onClick ? 'Ver equipos que sumaron puntos' : undefined}
-      className={`flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border px-2 py-1.5 transition-all ${
+      title={onClick ? `Ver equipos que sumaron puntos en ${label}` : undefined}
+      className={`flex min-h-[40px] min-w-[58px] items-center justify-center rounded-lg border px-2 py-1.5 transition-all ${
       hasPts ? 'border-mundial-gold/30 bg-mundial-gold/10' : 'border-white/8 bg-white/5'
     } ${onClick ? 'cursor-pointer hover:border-mundial-gold/60 hover:bg-mundial-gold/15 hover:shadow-[0_0_18px_rgba(255,215,0,0.10)]' : ''}`}
     >
-      <span className={`font-display text-sm leading-none ${hasPts ? 'text-mundial-gold' : 'text-zinc-700'}`}>
+      <span className={`font-display text-base leading-none ${hasPts ? 'text-mundial-gold' : 'text-zinc-700'}`}>
         +{points}
       </span>
-      <span className="text-[8px] font-black uppercase tracking-widest leading-none text-zinc-500">{label}</span>
-      {hasPts && (
-        <span className="text-[8px] font-black uppercase tracking-widest leading-none text-emerald-300">{label} +{points}</span>
-      )}
     </Wrapper>
   )
 }
