@@ -150,6 +150,13 @@ export default function CompareView({ groupId, members = [] }) {
       .filter(Boolean)
     return [...new Set(ids)]
   }, [allWcMatches])
+  const actualRound16TeamIds = useMemo(() => {
+    const ids = allWcMatches
+      .filter(m => m.phase === 'R32' && m.status === 'FINISHED' && m.winnerId && !isNonWorldCupMatch(m))
+      .map(m => m.winnerId)
+      .filter(Boolean)
+    return [...new Set(ids)]
+  }, [allWcMatches])
 
   // Deduplicar partidos y ordenarlos por fecha
   const matches = useMemo(() => {
@@ -349,7 +356,7 @@ export default function CompareView({ groupId, members = [] }) {
           { bg: 'bg-mundial-red/8',   border: 'border-mundial-red/15',  text: 'text-red-400/70',      label: 'Fallo',       icon: null },
           { bg: 'bg-white/5',         border: 'border-white/10',        text: 'text-zinc-400',        label: 'Pendiente',   icon: <Clock size={9} /> },
           { bg: 'bg-amber-500/8',     border: 'border-amber-500/20',    text: 'text-amber-500/80',    label: 'Sin resultado', icon: null },
-          { bg: 'bg-mundial-gold/10', border: 'border-mundial-gold/30', text: 'text-mundial-gold',    label: 'Torneo 16avos', icon: <Trophy size={9} /> },
+          { bg: 'bg-mundial-gold/10', border: 'border-mundial-gold/30', text: 'text-mundial-gold',    label: 'Torneo', icon: <Trophy size={9} /> },
         ].map(({ bg, border, text, label, icon }) => (
           <span key={label} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border ${bg} ${border} text-[9px] font-black uppercase tracking-widest ${text}`}>
             {icon}{label}
@@ -375,7 +382,7 @@ export default function CompareView({ groupId, members = [] }) {
                         <div className="flex flex-col items-center gap-1">
                           <Trophy size={13} className="text-mundial-gold" />
                           <span className="text-[8px] font-black uppercase tracking-widest text-mundial-gold">Torneo</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">16avos</span>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">16avos + 8vos</span>
                         </div>
                       </th>
                     )
@@ -519,6 +526,7 @@ export default function CompareView({ groupId, members = [] }) {
           <TournamentBreakdownModal
             data={tournamentBreakdown}
             actualRound32TeamIds={actualRound32TeamIds}
+            actualRound16TeamIds={actualRound16TeamIds}
             teamById={teamById}
             round16ScoringOpen={round16ScoringOpen}
             onClose={() => setTournamentBreakdown(null)}
@@ -598,15 +606,20 @@ function BreakdownModal({ data, onClose }) {
   )
 }
 
-function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round16ScoringOpen, onClose }) {
+function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, teamById, round16ScoringOpen, onClose }) {
   const { member, picks } = data
-  const actualSet = new Set(actualRound32TeamIds || [])
+  const actualRound32Set = new Set(actualRound32TeamIds || [])
+  const actualRound16Set = new Set(actualRound16TeamIds || [])
   const pickedRound32 = picks?.round32Teams || []
-  const hitIds = pickedRound32.filter(id => actualSet.has(id))
-  const missIds = pickedRound32.filter(id => !actualSet.has(id))
+  const pickedRound16 = picks?.round16Teams || []
+  const hitIds = pickedRound32.filter(id => actualRound32Set.has(id))
+  const missIds = pickedRound32.filter(id => !actualRound32Set.has(id))
+  const round16HitIds = round16ScoringOpen ? pickedRound16.filter(id => actualRound16Set.has(id)) : []
+  const round16MissIds = round16ScoringOpen ? pickedRound16.filter(id => !actualRound16Set.has(id)) : []
   const round32Pts = picks?.ptsRound32 || hitIds.length
   const effectiveRound16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const visibleMissIds = missIds.slice(0, 12)
+  const visibleRound16MissIds = round16MissIds.slice(0, 8)
 
   return (
     <motion.div
@@ -622,7 +635,7 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round1
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.22em] text-mundial-gold">Detalle torneo</p>
-            <h3 className="mt-1 font-display text-2xl uppercase leading-none text-white">16avos</h3>
+            <h3 className="mt-1 font-display text-2xl uppercase leading-none text-white">Torneo</h3>
           </div>
           <button onClick={onClose} className="text-zinc-500 transition-colors hover:text-white"><X size={16} /></button>
         </div>
@@ -635,7 +648,7 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round1
             <div>
               <p className="text-[11px] font-black leading-none text-white">{member.user?.username}</p>
               <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-                {hitIds.length} equipos acertados
+                {hitIds.length + round16HitIds.length} equipos acertados
               </p>
             </div>
           </div>
@@ -647,7 +660,7 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round1
 
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">Equipos que generaron puntos</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">16avos que generaron puntos</span>
             <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+1 c/u</span>
           </div>
           {hitIds.length > 0 ? (
@@ -684,9 +697,36 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, teamById, round1
           </p>
         )}
         {effectiveRound16Pts > 0 && (
-          <div className="flex items-center justify-between rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2">
-            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">8vos</span>
-            <span className="font-display text-lg text-emerald-200">+{effectiveRound16Pts}</span>
+          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">8vos que generaron puntos</span>
+              <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+{effectiveRound16Pts}</span>
+            </div>
+            {round16HitIds.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {round16HitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
+              </div>
+            ) : (
+              <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                Sin equipos acertados en 8vos
+              </p>
+            )}
+          </div>
+        )}
+        {round16ScoringOpen && visibleRound16MissIds.length > 0 && (
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">8vos pronosticados sin punto</span>
+              <span className="text-[9px] font-black text-zinc-600">{round16MissIds.length}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {visibleRound16MissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
+            </div>
+            {round16MissIds.length > visibleRound16MissIds.length && (
+              <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                +{round16MissIds.length - visibleRound16MissIds.length} mas
+              </p>
+            )}
           </div>
         )}
       </motion.div>
