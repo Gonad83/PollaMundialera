@@ -28,11 +28,15 @@ function isAwaitingResult(match) {
   return match.status !== 'FINISHED' && match.status !== 'LIVE' && new Date(match.dateUtc) < new Date()
 }
 
+function isNoPickBonusMatch(match) {
+  return match.status === 'FINISHED' || match.status === 'LIVE' || isAwaitingResult(match)
+}
+
 function PointsBadge({ pred, match }) {
   const matchFinished = match.status === 'FINISHED'
   if (!pred) {
-    // Partido finalizado sin pronóstico → +1 punto no-pick
-    if (matchFinished) {
+    // Partido cerrado sin pronóstico → +1 punto no-pick
+    if (isNoPickBonusMatch(match)) {
       return (
         <div className="flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg border border-zinc-700/30 bg-zinc-800/30 min-w-[46px]">
           <span className="text-zinc-600 text-[10px]">—</span>
@@ -120,7 +124,6 @@ export default function CompareView({ groupId, members = [] }) {
     refetchOnWindowFocus: true,
   })
   const rawPreds = compareData?.predictions ?? []
-  const finishedMatchCount = compareData?.finishedMatchCount ?? 0
 
   const { data: teams = [] } = useQuery({
     queryKey: ['teams'],
@@ -175,6 +178,7 @@ export default function CompareView({ groupId, members = [] }) {
 
   const finishedMatches = useMemo(() => matches.filter(m => m.status === 'FINISHED'), [matches])
   const pendingMatches  = useMemo(() => matches.filter(m => m.status !== 'FINISHED'), [matches])
+  const noPickBonusMatches = useMemo(() => matches.filter(isNoPickBonusMatch), [matches])
   const round16ScoringOpen = useMemo(() => {
     const r32 = allWcMatches.filter(match => match.phase === 'R32' && !isNonWorldCupMatch(match))
     return r32.length >= 16 && r32.every(match => match.status === 'FINISHED' && match.winnerId)
@@ -185,9 +189,9 @@ export default function CompareView({ groupId, members = [] }) {
     const filtered = members.filter(m => m.user?.role !== 'SUPER_ADMIN')
     return filtered.map(m => {
       const predPts = matches.reduce((acc, match) => acc + (predMap[m.userId]?.[match.id]?.pointsTotal ?? 0), 0)
-      // 1 punto por cada partido finalizado sin pronóstico en este grupo
-      const finishedPredCount = finishedMatches.filter(match => predMap[m.userId]?.[match.id]).length
-      const noPickPts = Math.max(finishedMatchCount - finishedPredCount, 0)
+      // 1 punto por cada partido cerrado/visible sin pronóstico en este grupo
+      const noPickPredCount = noPickBonusMatches.filter(match => predMap[m.userId]?.[match.id]).length
+      const noPickPts = Math.max(noPickBonusMatches.length - noPickPredCount, 0)
       return {
         ...m,
         matchCompPts: predPts + noPickPts,
@@ -196,7 +200,7 @@ export default function CompareView({ groupId, members = [] }) {
         pendingPredCount: pendingMatches.filter(match => predMap[m.userId]?.[match.id]).length,
       }
     }).sort((a, b) => b.totalCompPts - a.totalCompPts)
-  }, [members, matches, predMap, finishedMatches, finishedMatchCount])
+  }, [members, matches, predMap, noPickBonusMatches])
 
   const teamById = useMemo(() => {
     const map = new Map()
@@ -523,7 +527,7 @@ export default function CompareView({ groupId, members = [] }) {
       </div>
 
       <p className="text-[9px] text-zinc-700 font-mono text-center px-2">
-        Se muestran pronosticos de partidos con apuesta cerrada · El puntaje usa marcador de 90 min; alargue no suma · Torneo 16avos se suma al total antes de CAN-RSA · "Pend." = partido sin resultado aun
+        Se muestran pronosticos de partidos con apuesta cerrada · Sin pronostico suma +1 · El puntaje usa marcador de 90 min; alargue no suma · "Pend." = partido sin resultado aun
       </p>
         </>
       )}
