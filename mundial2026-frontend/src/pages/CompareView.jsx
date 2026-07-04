@@ -66,19 +66,22 @@ function PointsBadge({ pred, match }) {
   )
 }
 
-function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen, onClick }) {
+function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16ScoringOpen, onClick }) {
+  const label = round === 'round16' ? '8vos' : '16avos'
+
   if (isLoading) {
     return (
       <div className="flex min-w-[58px] flex-col items-center gap-0.5 rounded-lg border border-mundial-gold/10 bg-mundial-gold/5 px-2 py-1.5">
         <span className="text-[10px] font-black text-mundial-gold/40">...</span>
-        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-700">16avos</span>
+        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-700">{label}</span>
       </div>
     )
   }
 
   const round32Pts = picks?.ptsRound32 || 0
   const round16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
-  const hasPts = round32Pts > 0 || round16Pts > 0
+  const points = round === 'round16' ? round16Pts : round32Pts
+  const hasPts = points > 0
   const Wrapper = onClick ? 'button' : 'div'
 
   return (
@@ -91,11 +94,11 @@ function TournamentPointsBadge({ picks, isLoading, round16ScoringOpen, onClick }
     } ${onClick ? 'cursor-pointer hover:border-mundial-gold/60 hover:bg-mundial-gold/15 hover:shadow-[0_0_18px_rgba(255,215,0,0.10)]' : ''}`}
     >
       <span className={`font-display text-sm leading-none ${hasPts ? 'text-mundial-gold' : 'text-zinc-700'}`}>
-        +{round32Pts}
+        +{points}
       </span>
-      <span className="text-[8px] font-black uppercase tracking-widest leading-none text-zinc-500">16avos</span>
-      {round16Pts > 0 && (
-        <span className="text-[8px] font-black uppercase tracking-widest leading-none text-emerald-300">8vos +{round16Pts}</span>
+      <span className="text-[8px] font-black uppercase tracking-widest leading-none text-zinc-500">{label}</span>
+      {hasPts && (
+        <span className="text-[8px] font-black uppercase tracking-widest leading-none text-emerald-300">{label} +{points}</span>
       )}
     </Wrapper>
   )
@@ -273,13 +276,22 @@ export default function CompareView({ groupId, members = [] }) {
   ), [tournamentCompare.data, round16ScoringOpen])
 
   const tableColumns = useMemo(() => {
-    const columns = matches.map(match => ({ type: 'match', id: match.id, match }))
-    const tournamentColumn = { type: 'tournament', id: 'tournament-round32' }
-    const canRsaIndex = columns.findIndex(({ match }) => {
-      const codes = [match.teamHome?.code, match.teamAway?.code].map(code => code?.toUpperCase())
-      return codes.includes('CAN') && codes.includes('RSA')
+    const columns = []
+    let insertedRound32 = false
+    let insertedRound16 = false
+
+    matches.forEach(match => {
+      if (!insertedRound32 && match.phase === 'R32') {
+        columns.push({ type: 'tournament', id: 'tournament-round32', round: 'round32', label: '16avos' })
+        insertedRound32 = true
+      }
+      if (!insertedRound16 && match.phase === 'R16') {
+        columns.push({ type: 'tournament', id: 'tournament-round16', round: 'round16', label: '8vos' })
+        insertedRound16 = true
+      }
+      columns.push({ type: 'match', id: match.id, match })
     })
-    columns.splice(canRsaIndex >= 0 ? canRsaIndex : columns.length, 0, tournamentColumn)
+
     return columns
   }, [matches])
 
@@ -382,7 +394,7 @@ export default function CompareView({ groupId, members = [] }) {
                         <div className="flex flex-col items-center gap-1">
                           <Trophy size={13} className="text-mundial-gold" />
                           <span className="text-[8px] font-black uppercase tracking-widest text-mundial-gold">Torneo</span>
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">16avos + 8vos</span>
+                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{column.label}</span>
                         </div>
                       </th>
                     )
@@ -473,8 +485,9 @@ export default function CompareView({ groupId, members = [] }) {
                               <TournamentPointsBadge
                                 picks={picks}
                                 isLoading={tournamentCompare.isLoading}
+                                round={column.round}
                                 round16ScoringOpen={round16ScoringOpen}
-                                onClick={() => setTournamentBreakdown({ member, picks })}
+                                onClick={() => setTournamentBreakdown({ member, picks, round: column.round })}
                               />
                             </div>
                           </td>
@@ -608,6 +621,8 @@ function BreakdownModal({ data, onClose }) {
 
 function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, teamById, round16ScoringOpen, onClose }) {
   const { member, picks } = data
+  const focusRound = data.round || 'round32'
+  const focusLabel = focusRound === 'round16' ? '8vos' : '16avos'
   const actualRound32Set = new Set(actualRound32TeamIds || [])
   const actualRound16Set = new Set(actualRound16TeamIds || [])
   const pickedRound32 = picks?.round32Teams || []
@@ -618,6 +633,8 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
   const round16MissIds = round16ScoringOpen ? pickedRound16.filter(id => !actualRound16Set.has(id)) : []
   const round32Pts = picks?.ptsRound32 || hitIds.length
   const effectiveRound16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
+  const focusHits = focusRound === 'round16' ? round16HitIds.length : hitIds.length
+  const focusPts = focusRound === 'round16' ? effectiveRound16Pts : round32Pts
   const visibleMissIds = missIds.slice(0, 12)
   const visibleRound16MissIds = round16MissIds.slice(0, 8)
 
@@ -635,7 +652,7 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.22em] text-mundial-gold">Detalle torneo</p>
-            <h3 className="mt-1 font-display text-2xl uppercase leading-none text-white">Torneo</h3>
+            <h3 className="mt-1 font-display text-2xl uppercase leading-none text-white">Torneo {focusLabel}</h3>
           </div>
           <button onClick={onClose} className="text-zinc-500 transition-colors hover:text-white"><X size={16} /></button>
         </div>
@@ -648,13 +665,13 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
             <div>
               <p className="text-[11px] font-black leading-none text-white">{member.user?.username}</p>
               <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-                {hitIds.length + round16HitIds.length} equipos acertados
+                {focusHits} equipos acertados en {focusLabel}
               </p>
             </div>
           </div>
           <div className="text-right">
             <span className="block text-[8px] font-black uppercase tracking-widest text-zinc-500">sumo</span>
-            <span className="font-display text-xl leading-none text-mundial-gold">+{round32Pts}</span>
+            <span className="font-display text-xl leading-none text-mundial-gold">+{focusPts}</span>
           </div>
         </div>
 
