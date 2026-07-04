@@ -178,9 +178,9 @@ export default function CompareView({ groupId, members = [] }) {
   const finishedMatches = useMemo(() => matches.filter(m => m.status === 'FINISHED'), [matches])
   const pendingMatches  = useMemo(() => matches.filter(m => m.status !== 'FINISHED'), [matches])
   const round16ScoringOpen = useMemo(() => {
-    const r32 = matches.filter(match => match.phase === 'R32')
+    const r32 = allWcMatches.filter(match => match.phase === 'R32' && !isNonWorldCupMatch(match))
     return r32.length >= 16 && r32.every(match => match.status === 'FINISHED' && match.winnerId)
-  }, [matches])
+  }, [allWcMatches])
 
   // Filtrar SUPER_ADMIN y ordenar por puntos totales en el comparativo
   const visibleMembers = useMemo(() => {
