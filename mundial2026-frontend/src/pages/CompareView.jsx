@@ -686,9 +686,41 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
   const effectiveQuarterPts = picks?.ptsQuarters || 0
   const focusHits = focusRound === 'quarters' ? quarterHitIds.length : focusRound === 'round16' ? round16HitIds.length : hitIds.length
   const focusPts = focusRound === 'quarters' ? effectiveQuarterPts : focusRound === 'round16' ? effectiveRound16Pts : round32Pts
-  const visibleMissIds = missIds.slice(0, 12)
-  const visibleRound16MissIds = round16MissIds.slice(0, 8)
-  const visibleQuarterMissIds = quarterMissIds.slice(0, 8)
+  const roundDetail = {
+    round32: {
+      hitIds,
+      missIds,
+      pickedIds: pickedRound32,
+      scoringVisible: true,
+      title: '16avos que generaron puntos',
+      missTitle: '16avos pronosticados sin punto',
+      pointLabel: '+1 c/u',
+      emptyText: 'Sin equipos acertados en 16avos',
+    },
+    round16: {
+      hitIds: round16HitIds,
+      missIds: round16MissIds,
+      pickedIds: pickedRound16,
+      scoringVisible: round16ScoringOpen,
+      lockedText: '8vos bloqueado hasta que terminen todos los 16avos',
+      title: '8vos que generaron puntos',
+      missTitle: '8vos pronosticados sin punto',
+      pointLabel: `+${effectiveRound16Pts}`,
+      emptyText: 'Sin equipos acertados en 8vos',
+    },
+    quarters: {
+      hitIds: quarterHitIds,
+      missIds: quarterMissIds,
+      pickedIds: pickedQuarters,
+      scoringVisible: quarterPointsVisible,
+      lockedText: '4tos bloqueado hasta que terminen todos los 8vos',
+      title: '4tos que generaron puntos',
+      missTitle: '4tos pronosticados sin punto',
+      pointLabel: `+${effectiveQuarterPts}`,
+      emptyText: 'Sin equipos acertados en 4tos',
+    },
+  }[focusRound] || {}
+  const visibleCurrentMissIds = (roundDetail.missIds || []).slice(0, 12)
 
   return (
     <motion.div
@@ -727,106 +759,60 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
           </div>
         </div>
 
-        <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">16avos que generaron puntos</span>
-            <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+1 c/u</span>
-          </div>
-          {hitIds.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {hitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
-            </div>
-          ) : (
-            <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
-              Sin equipos acertados cargados todavia
-            </p>
-          )}
-        </div>
-
-        {missIds.length > 0 && (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Pronosticados sin punto</span>
-              <span className="text-[9px] font-black text-zinc-600">{missIds.length}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {visibleMissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
-            </div>
-            {missIds.length > visibleMissIds.length && (
-              <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                +{missIds.length - visibleMissIds.length} mas
-              </p>
-            )}
-          </div>
-        )}
-
-        {!round16ScoringOpen && (picks?.ptsRound16 || 0) > 0 && (
+        {!roundDetail.scoringVisible && roundDetail.lockedText && (
           <p className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-amber-200">
-            8vos bloqueado hasta que terminen todos los 16avos
+            {roundDetail.lockedText}
           </p>
         )}
-        {effectiveRound16Pts > 0 && (
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">8vos que generaron puntos</span>
-              <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+{effectiveRound16Pts}</span>
+
+        {roundDetail.scoringVisible ? (
+          <>
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">{roundDetail.title}</span>
+                <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">{roundDetail.pointLabel}</span>
+              </div>
+              {(roundDetail.hitIds || []).length > 0 ? (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {roundDetail.hitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                  {roundDetail.emptyText}
+                </p>
+              )}
             </div>
-            {round16HitIds.length > 0 ? (
+
+            {(roundDetail.missIds || []).length > 0 && (
+              <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{roundDetail.missTitle}</span>
+                  <span className="text-[9px] font-black text-zinc-600">{roundDetail.missIds.length}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {visibleCurrentMissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
+                </div>
+                {roundDetail.missIds.length > visibleCurrentMissIds.length && (
+                  <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
+                    +{roundDetail.missIds.length - visibleCurrentMissIds.length} mas
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{focusLabel} pronosticados</span>
+              <span className="text-[9px] font-black text-zinc-600">{(roundDetail.pickedIds || []).length}</span>
+            </div>
+            {(roundDetail.pickedIds || []).length > 0 ? (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {round16HitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
+                {roundDetail.pickedIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
               </div>
             ) : (
               <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                Sin equipos acertados en 8vos
-              </p>
-            )}
-          </div>
-        )}
-        {round16ScoringOpen && visibleRound16MissIds.length > 0 && (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">8vos pronosticados sin punto</span>
-              <span className="text-[9px] font-black text-zinc-600">{round16MissIds.length}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {visibleRound16MissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
-            </div>
-            {round16MissIds.length > visibleRound16MissIds.length && (
-              <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                +{round16MissIds.length - visibleRound16MissIds.length} mas
-              </p>
-            )}
-          </div>
-        )}
-        {effectiveQuarterPts > 0 && (
-          <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">4tos que generaron puntos</span>
-              <span className="rounded-lg bg-emerald-400/10 px-2 py-1 text-[9px] font-black text-emerald-200">+{effectiveQuarterPts}</span>
-            </div>
-            {quarterHitIds.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {quarterHitIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="hit" />)}
-              </div>
-            ) : (
-              <p className="rounded-xl border border-white/8 bg-white/5 px-3 py-3 text-center text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                Sin equipos acertados en 4tos
-              </p>
-            )}
-          </div>
-        )}
-        {quarterPointsVisible && visibleQuarterMissIds.length > 0 && (
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">4tos pronosticados sin punto</span>
-              <span className="text-[9px] font-black text-zinc-600">{quarterMissIds.length}</span>
-            </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {visibleQuarterMissIds.map(id => <TournamentTeamChip key={id} team={teamById.get(id)} tone="miss" />)}
-            </div>
-            {quarterMissIds.length > visibleQuarterMissIds.length && (
-              <p className="mt-2 text-center text-[9px] font-black uppercase tracking-widest text-zinc-600">
-                +{quarterMissIds.length - visibleQuarterMissIds.length} mas
+                Sin equipos pronosticados en {focusLabel}
               </p>
             )}
           </div>
