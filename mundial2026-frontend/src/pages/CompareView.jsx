@@ -32,6 +32,31 @@ function isNoPickBonusMatch(match) {
   return match.status === 'FINISHED' || match.status === 'LIVE' || isAwaitingResult(match)
 }
 
+function getVisibleTournamentPoints(picks, { round16ScoringOpen } = {}) {
+  if (!picks) return 0
+
+  const visibleRound16Pts = round16ScoringOpen ? (picks.ptsRound16 || 0) : 0
+  const explicitTotal = Math.max((picks.pointsTotal || 0) - (round16ScoringOpen ? 0 : (picks.ptsRound16 || 0)), 0)
+  const fieldTotal = [
+    picks.ptsChampion,
+    picks.ptsFinalists,
+    picks.ptsRound32,
+    visibleRound16Pts,
+    picks.ptsSemifinals,
+    picks.ptsQuarters,
+    picks.ptsGroups,
+    picks.ptsTopScorer,
+    picks.ptsBestPlayer,
+    picks.ptsBestKeeper,
+    picks.ptsBestYoung,
+    picks.ptsTotalGoals,
+    picks.ptsTeamStats,
+    picks.ptsHostFurthest,
+  ].reduce((sum, value) => sum + (value || 0), 0)
+
+  return Math.max(explicitTotal, fieldTotal)
+}
+
 function PointsBadge({ pred, match }) {
   const matchFinished = match.status === 'FINISHED'
   if (!pred) {
@@ -264,8 +289,7 @@ export default function CompareView({ groupId, members = [] }) {
   const displayMembers = useMemo(() => (
     visibleMembers.map(member => {
       const picks = tournamentByUser.get(member.userId)
-      const blockedRound16Pts = round16ScoringOpen ? 0 : (picks?.ptsRound16 || 0)
-      const tournamentPts = Math.max((picks?.pointsTotal || 0) - blockedRound16Pts, 0)
+      const tournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen })
       return {
         ...member,
         tournamentPts,
@@ -281,9 +305,7 @@ export default function CompareView({ groupId, members = [] }) {
     (tournamentCompare.data || [])
       .slice()
       .sort((a, b) => {
-        const aBlocked = round16ScoringOpen ? 0 : (a.picks?.ptsRound16 || 0)
-        const bBlocked = round16ScoringOpen ? 0 : (b.picks?.ptsRound16 || 0)
-        return Math.max((b.picks?.pointsTotal || 0) - bBlocked, 0) - Math.max((a.picks?.pointsTotal || 0) - aBlocked, 0)
+        return getVisibleTournamentPoints(b.picks, { round16ScoringOpen }) - getVisibleTournamentPoints(a.picks, { round16ScoringOpen })
       })
   ), [tournamentCompare.data, round16ScoringOpen])
 
@@ -972,8 +994,7 @@ function TournamentCompare({ rows, isLoading, teamById, round16ScoringOpen }) {
 function TournamentOpponentCard({ member, picks, error, teamById, round16ScoringOpen }) {
   const byId = (id) => teamById.get(id)
   const list = (ids = []) => ids.map(byId).filter(Boolean)
-  const blockedRound16Pts = round16ScoringOpen ? 0 : (picks?.ptsRound16 || 0)
-  const effectiveTournamentPts = Math.max((picks?.pointsTotal || 0) - blockedRound16Pts, 0)
+  const effectiveTournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen })
 
   return (
     <article className="card overflow-hidden bg-white/5 border border-white/5">
@@ -1040,7 +1061,7 @@ function TournamentScoreSummary({ picks, round16ScoringOpen }) {
   const effectiveRound16Pts = round16ScoringOpen ? (picks.ptsRound16 || 0) : 0
   const blockedRound16Pts = round16ScoringOpen ? 0 : (picks.ptsRound16 || 0)
   const effectiveQuarterPts = picks.ptsQuarters || 0
-  const effectiveTotal = Math.max((picks.pointsTotal || 0) - blockedRound16Pts, 0)
+  const effectiveTotal = getVisibleTournamentPoints(picks, { round16ScoringOpen })
   const rows = [
     { label: 'Total torneo', value: effectiveTotal, strong: true },
     { label: '16avos', value: picks.ptsRound32 || 0 },
