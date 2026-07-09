@@ -830,6 +830,8 @@ export default function SimulatorPage() {
   const [justSaved, setJustSaved] = useState(false)
   const [groupPairOrders, setGroupPairOrders] = useState({}) // { A: [[i,j],...], ... } orden real de partidos
   const [savedAt, setSavedAt] = useState(null)              // timestamp último guardado
+  const [realSyncedAt, setRealSyncedAt] = useState(null)
+  const [autoBracketSyncEnabled, setAutoBracketSyncEnabled] = useState(false)
 
   // Cargar grupos reales del API (idénticos a la página de Partidos)
   const { data: groupMatches = [] } = useQuery({
@@ -844,6 +846,8 @@ export default function SimulatorPage() {
     if (!raw) return
     try {
       const s = JSON.parse(raw)
+      if (s.groups)        setGroups(s.groups)
+      if (s.groupPairOrders) setGroupPairOrders(s.groupPairOrders)
       if (s.scores)        setScores(s.scores)
       if (s.phase)         setPhase(s.phase)
       if (s.bracket)       setBracket(s.bracket)
@@ -910,6 +914,7 @@ export default function SimulatorPage() {
 
   // Cambia un score de grupo
   const handleGroupScore = useCallback((letter, mi, side, val) => {
+    setAutoBracketSyncEnabled(true)
     setScores(prev => {
       const next = { ...prev, [letter]: prev[letter].map((s, i) => i === mi ? (side === 0 ? [val, s[1]] : [s[0], val]) : s) }
       return next
@@ -932,11 +937,12 @@ export default function SimulatorPage() {
     setPenaltyWinners({})
     setBracketView('bracket')
     setPhase('bracket')
+    setAutoBracketSyncEnabled(false)
   }, [standings])
 
   // Regenerar automáticamente el bracket cuando cambien los standings (si ya existe un bracket)
   useEffect(() => {
-    if (!bracket) return
+    if (!bracket || !autoBracketSyncEnabled) return
 
     const { matches, labels, descs, thirds } = buildR32(standings)
     const currentR32 = JSON.stringify(bracket.r32 || [])
@@ -948,7 +954,7 @@ export default function SimulatorPage() {
       setBracketScores(createEmptyBracketScores(matches))
       setPenaltyWinners({})
     }
-  }, [standings]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [standings, autoBracketSyncEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Ganador de un partido (empate → usar penaltyWinner si existe)
   const resolve = (tA, tB, sA, sB, pw) => {
@@ -1021,8 +1027,94 @@ export default function SimulatorPage() {
       const pairs = groupPairOrders[letter] || MATCH_PAIRS
       newScores[letter] = pairs.map(([i, j]) => simMatch(teams[i], teams[j]).map(String))
     })
+    setAutoBracketSyncEnabled(true)
     setScores(newScores)
   }, [groups, scores, groupPairOrders])
+
+  const realGroupResultsCount = useMemo(() =>
+    groupMatches.filter(m =>
+      m.status === 'FINISHED' &&
+      Number.isFinite(Number(m.scoreHome)) &&
+      Number.isFinite(Number(m.scoreAway))
+    ).length
+  , [groupMatches])
+
+  const makeSavedState = useCallback((overrides = {}) => ({
+    groups,
+    groupPairOrders,
+    scores,
+    phase,
+    bracket,
+    bracketScores,
+    penaltyWinners,
+    bracketView,
+    savedAt: savedAt || new Date().toISOString(),
+    ...overrides,
+  }), [groups, groupPairOrders, scores, phase, bracket, bracketScores, penaltyWinners, bracketView, savedAt])
+
+  const persistSimulation = useCallback((state) => {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
+    setSavedAt(state.savedAt)
+    setJustSaved(true)
+    window.setTimeout(() => setJustSaved(false), 2000)
+  }, [])
+
+  const handleApplyRealGroupResults = useCallback(() => {
+    if (!groupMatches.length) return
+
+    const nextScores = Object.fromEntries(
+      Object.keys(groups).map(l => [l, (groupPairOrders[l] || MATCH_PAIRS).map(() => ['', ''])])
+    )
+
+    groupMatches.forEach(m => {
+      if (
+        m.status !== 'FINISHED' ||
+        !m.groupLetter ||
+        !nextScores[m.groupLetter] ||
+        !Number.isFinite(Number(m.scoreHome)) ||
+        !Number.isFinite(Number(m.scoreAway))
+      ) return
+
+      const teams = groups[m.groupLetter] || []
+      const pairs = groupPairOrders[m.groupLetter] || MATCH_PAIRS
+      const homeEsp = CODE_TO_ESP[m.teamHome?.code?.toUpperCase()] || m.teamHome?.name
+      const awayEsp = CODE_TO_ESP[m.teamAway?.code?.toUpperCase()] || m.teamAway?.name
+      const hi = teams.indexOf(homeEsp)
+      const ai = teams.indexOf(awayEsp)
+      const scoreIndex = pairs.findIndex(([h, a]) => h === hi && a === ai)
+      if (scoreIndex === -1) return
+      nextScores[m.groupLetter][scoreIndex] = [String(m.scoreHome), String(m.scoreAway)]
+    })
+
+    const nextStandings = Object.fromEntries(
+      Object.entries(groups).map(([l, teams]) => [
+        l,
+        computeStandings(teams, nextScores[l], groupPairOrders[l] || MATCH_PAIRS)
+      ])
+    )
+    const { matches, labels, descs, thirds } = buildR32(nextStandings)
+    const nextBracket = { r32: matches, r32labels: labels, r32descs: descs, thirds }
+    const nextBracketScores = createEmptyBracketScores(matches)
+    const ts = new Date().toISOString()
+
+    setScores(nextScores)
+    setBracket(nextBracket)
+    setBracketScores(nextBracketScores)
+    setPenaltyWinners({})
+    setBracketView('bracket')
+    setPhase('bracket')
+    setRealSyncedAt(ts)
+    setAutoBracketSyncEnabled(false)
+    persistSimulation(makeSavedState({
+      scores: nextScores,
+      phase: 'bracket',
+      bracket: nextBracket,
+      bracketScores: nextBracketScores,
+      penaltyWinners: {},
+      bracketView: 'bracket',
+      savedAt: ts,
+    }))
+  }, [groupMatches, groups, groupPairOrders, makeSavedState, persistSimulation])
 
   // Simular ronda de bracket (guarda penales si empate)
   const simBracketRound = useCallback((round) => {
@@ -1090,23 +1182,21 @@ export default function SimulatorPage() {
   // Guardar simulación en localStorage
   const handleSave = useCallback(() => {
     const ts = new Date().toISOString()
-    const state = { scores, phase, bracket, bracketScores, penaltyWinners, bracketView, savedAt: ts }
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state))
-    setSavedAt(ts)
-    setJustSaved(true)
-    window.setTimeout(() => setJustSaved(false), 2000)
-  }, [scores, phase, bracket, bracketScores, penaltyWinners, bracketView])
+    persistSimulation(makeSavedState({ savedAt: ts }))
+  }, [makeSavedState, persistSimulation])
 
   // Reset (borra guardado)
   const handleReset = () => {
     localStorage.removeItem(SAVE_KEY)
     setSavedAt(null)
+    setRealSyncedAt(null)
     setJustSaved(false)
     setScores(Object.fromEntries(Object.keys(groups).map(l => [l, MATCH_PAIRS.map(() => ['', ''])])))
     setBracket(null)
     setBracketScores(null)
     setPenaltyWinners({})
     setPhase('groups')
+    setAutoBracketSyncEnabled(false)
   }
 
   const champion = bracketTeams?.champion
@@ -1129,10 +1219,27 @@ export default function SimulatorPage() {
           ) : (
             <p className="text-[10px] text-zinc-500 mt-1">Sin guardar — usa el botón para conservar tu simulación</p>
           )}
+          {realSyncedAt && (
+            <p className="text-[10px] text-green-400/80 mt-1 flex items-center gap-1">
+              <CheckCircle2 size={10} /> Grupos cuadrados con resultados reales
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={handleSimAll} className="btn-gold px-4 py-2.5 text-xs gap-2 justify-center">
             <Zap size={14} /> Simular Grupos
+          </button>
+          <button
+            onClick={handleApplyRealGroupResults}
+            disabled={!realGroupResultsCount}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest gap-2 justify-center inline-flex items-center border transition-all ${
+              realGroupResultsCount
+                ? 'bg-green-400/10 border-green-400/40 text-green-300 hover:bg-green-400/20 hover:text-green-200'
+                : 'bg-white/3 border-white/8 text-zinc-600 cursor-not-allowed'
+            }`}
+            title={realGroupResultsCount ? `${realGroupResultsCount} resultados reales de grupos disponibles` : 'Aún no hay resultados reales de grupos'}
+          >
+            <CheckCircle2 size={14} /> Resultados reales
           </button>
           <button
             onClick={handleSave}
