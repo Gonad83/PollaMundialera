@@ -147,6 +147,7 @@ export default function CompareView({ groupId, members = [] }) {
     queryKey: ['group-compare', groupId],
     queryFn: () => predictionApi.compare(groupId).then(r => r.data),
     staleTime: 0,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true,
   })
   const rawPreds = compareData?.predictions ?? []
@@ -163,7 +164,9 @@ export default function CompareView({ groupId, members = [] }) {
   const { data: allWcMatches = [] } = useQuery({
     queryKey: ['matches-all'],
     queryFn: () => matchApi.list({}).then(r => r.data),
-    staleTime: 3 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     gcTime: 60 * 60 * 1000,
   })
   const tournamentFinished = useMemo(
@@ -260,7 +263,9 @@ export default function CompareView({ groupId, members = [] }) {
   const tournamentCompare = useQuery({
     queryKey: ['tournament-compare', groupId, visibleMembers.map(m => m.userId).join('|')],
     enabled: !!groupId && visibleMembers.length > 0,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const results = await Promise.allSettled(
         visibleMembers.map(member =>

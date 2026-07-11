@@ -174,6 +174,9 @@ export default function GroupDetailPage() {
   const { data: rawLeaderboard = [] } = useQuery({
     queryKey: ['group-leaderboard', id],
     queryFn: () => leaderboardApi.group(id).then(r => r.data),
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 
   // Excluir SUPER_ADMIN del ranking competitivo
@@ -232,6 +235,17 @@ export default function GroupDetailPage() {
       localStorage.setItem(lastReadKey, Date.now().toString())
     }
   }, [activeTab, messages, lastReadKey])
+
+  useEffect(() => {
+    if (activeTab === 'comparar') {
+      qc.invalidateQueries({ queryKey: ['group-compare', id] })
+      qc.invalidateQueries({ queryKey: ['tournament-compare', id] })
+      qc.refetchQueries({ queryKey: ['matches-all'] })
+    }
+    if (activeTab === 'ranking') {
+      qc.invalidateQueries({ queryKey: ['group-leaderboard', id] })
+    }
+  }, [activeTab, id, qc])
 
   // Inyectar botones Mensajes + Ajustes en el header — sin cleanup aquí para evitar parpadeo
   useEffect(() => {
