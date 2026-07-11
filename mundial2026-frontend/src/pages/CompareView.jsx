@@ -142,9 +142,10 @@ export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
   const [breakdown, setBreakdown] = useState(null) // celda clickeada → modal de desglose de puntos
   const [tournamentBreakdown, setTournamentBreakdown] = useState(null)
+  const compareDataVersion = 'manual-qf-2026-07-11'
 
   const { data: compareData, isLoading } = useQuery({
-    queryKey: ['group-compare', groupId],
+    queryKey: ['group-compare', groupId, compareDataVersion],
     queryFn: () => predictionApi.compare(groupId).then(r => r.data),
     staleTime: 0,
     refetchOnMount: 'always',
@@ -162,7 +163,7 @@ export default function CompareView({ groupId, members = [] }) {
   // Todos los partidos del torneo (para mostrar cuántos quedan por jugar de verdad,
   // no solo los de la comparativa). Reusa la caché de la página de Partidos.
   const { data: allWcMatches = [] } = useQuery({
-    queryKey: ['matches-all'],
+    queryKey: ['matches-all', compareDataVersion],
     queryFn: () => matchApi.list({}).then(r => r.data),
     staleTime: 0,
     refetchOnMount: 'always',

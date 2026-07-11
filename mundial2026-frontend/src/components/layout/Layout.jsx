@@ -1,7 +1,9 @@
 import { useEffect, useState, Component } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useSocket } from '../../context/SocketContext'
+import { leaderboardApi } from '../../lib/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calendar, Trophy, BookOpen, Settings, LogOut, Bell, BellOff, BellRing, X, Zap, ArrowUp, Crown, Users, Wifi, WifiOff, Download, Star, AlertTriangle, BarChart3, MessageSquare } from 'lucide-react'
 import { useHeaderActions } from '../../context/HeaderActionsContext'
@@ -102,6 +104,16 @@ export default function Layout() {
     : []
   const effectiveHeaderActions = headerActions.length > 0 ? headerActions : fallbackHeaderActions
   const isAdminPanelActive = pathname.startsWith('/admin') || (currentGroupId && new URLSearchParams(search).get('tab') === 'config')
+  const { data: headerLeaderboard = [] } = useQuery({
+    queryKey: ['group-leaderboard', currentGroupId],
+    queryFn: () => leaderboardApi.group(currentGroupId).then(r => r.data),
+    enabled: !!currentGroupId && !!user?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  })
+  const currentGroupPoints = headerLeaderboard.find(entry => entry.userId === user?.id)?.totalPoints
+  const headerPoints = currentGroupPoints ?? user?.totalPoints ?? 0
 
   useEffect(() => {
     if (routeGroupId) {
@@ -334,7 +346,7 @@ export default function Layout() {
               <div className="hidden lg:flex flex-col items-start gap-1">
                 <p className="text-xs font-bold text-white leading-none">{user?.username}</p>
                 <div className="flex items-center gap-2">
-                  <p className="text-[10px] text-mundial-gold font-mono tracking-tighter">{user?.totalPoints || 0} PTS</p>
+                  <p className="text-[10px] text-mundial-gold font-mono tracking-tighter">{headerPoints} PTS</p>
                   <PlanBadge plan={user?.plan || 'FREE'} size="sm" />
                 </div>
               </div>
