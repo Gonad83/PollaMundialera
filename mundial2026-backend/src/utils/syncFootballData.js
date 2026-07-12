@@ -46,6 +46,23 @@ function applyOfficialResultOverride(data, homeTeam, awayTeam) {
     };
   }
 
+  // NOR-ENG (QF) se definio 1-2 en prorroga, pero el calculo usa 1-1 en 90 min.
+  if (data.phase === 'QF' &&
+      ((homeCode === 'NOR' && awayCode === 'ENG') || (homeCode === 'ENG' && awayCode === 'NOR'))) {
+    const englandIsHome = homeCode === 'ENG';
+    return {
+      ...data,
+      scoreHome: 1,
+      scoreAway: 1,
+      extraTimeHome: englandIsHome ? 2 : 1,
+      extraTimeAway: englandIsHome ? 1 : 2,
+      wentToPenalties: false,
+      penaltyHome: null,
+      penaltyAway: null,
+      winnerId: englandIsHome ? homeTeam.id : awayTeam.id,
+    };
+  }
+
   return data;
 }
 
