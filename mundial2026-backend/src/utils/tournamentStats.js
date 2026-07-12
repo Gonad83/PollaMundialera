@@ -41,11 +41,11 @@ async function computeGoalStats() {
   let totalGoals = 0;
   const perTeam = new Map();
 
-  const addGoals = (team, goals) => {
+  const getTeam = (team) => {
     if (!perTeam.has(team.id)) {
-      perTeam.set(team.id, { id: team.id, name: team.name, code: team.code, flagUrl: team.flagUrl, goalsFor: 0 });
+      perTeam.set(team.id, { id: team.id, name: team.name, code: team.code, flagUrl: team.flagUrl, goalsFor: 0, cleanSheets: 0 });
     }
-    perTeam.get(team.id).goalsFor += goals;
+    return perTeam.get(team.id);
   };
 
   for (const m of matches) {
@@ -53,15 +53,21 @@ async function computeGoalStats() {
     const away = m.extraTimeAway ?? m.scoreAway;
     if (home == null || away == null) continue;
     totalGoals += home + away;
-    addGoals(m.teamHome, home);
-    addGoals(m.teamAway, away);
+    getTeam(m.teamHome).goalsFor += home;
+    getTeam(m.teamAway).goalsFor += away;
+    // Valla invicta: el rival no le convirtió ningún gol en ese partido.
+    if (away === 0) getTeam(m.teamHome).cleanSheets += 1;
+    if (home === 0) getTeam(m.teamAway).cleanSheets += 1;
   }
 
   const teams = [...perTeam.values()].sort((a, b) => b.goalsFor - a.goalsFor);
   const mostGoalsTeam = teams[0] || null;
   const leastGoalsTeam = teams.length ? teams[teams.length - 1] : null;
+  const mostCleanSheetsTeam = teams.length
+    ? [...teams].sort((a, b) => b.cleanSheets - a.cleanSheets)[0]
+    : null;
 
-  return { totalGoals, mostGoalsTeam, leastGoalsTeam };
+  return { totalGoals, mostGoalsTeam, leastGoalsTeam, mostCleanSheetsTeam };
 }
 
 async function syncTournamentStats() {
@@ -85,6 +91,7 @@ async function syncTournamentStats() {
     totalGoals: goalStats.totalGoals,
     mostGoalsTeam: goalStats.mostGoalsTeam,
     leastGoalsTeam: goalStats.leastGoalsTeam,
+    mostCleanSheetsTeam: goalStats.mostCleanSheetsTeam,
     topScorers,
     updatedAt: new Date().toISOString(),
   };

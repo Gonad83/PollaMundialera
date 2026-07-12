@@ -171,12 +171,12 @@ function TournamentStatsPanel({ stats, isLoading }) {
         </div>
 
         <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
-          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Menos goles</p>
-          {stats.leastGoalsTeam ? (
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Más vallas invictas</p>
+          {stats.mostCleanSheetsTeam ? (
             <div className="flex items-center gap-2 mt-1.5">
-              <TeamFlag team={stats.leastGoalsTeam} size="md" />
-              <span className="font-display text-sm text-white truncate">{stats.leastGoalsTeam.name}</span>
-              <span className="text-zinc-400 text-xs font-black ml-auto shrink-0">{stats.leastGoalsTeam.goalsFor}</span>
+              <TeamFlag team={stats.mostCleanSheetsTeam} size="md" />
+              <span className="font-display text-sm text-white truncate">{stats.mostCleanSheetsTeam.name}</span>
+              <span className="text-zinc-400 text-xs font-black ml-auto shrink-0">{stats.mostCleanSheetsTeam.cleanSheets}</span>
             </div>
           ) : <p className="text-zinc-700 text-xs mt-1.5">—</p>}
         </div>

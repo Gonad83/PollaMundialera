@@ -190,7 +190,7 @@ const getDeadlineInfo = async (req, res) => {
 // GET /api/tournament/stats — Goles totales, equipo con mas/menos goles, top 5 goleadores (público)
 const getTournamentStats = async (req, res) => {
   const stats = await readTournamentStats();
-  return res.json(stats || { totalGoals: 0, mostGoalsTeam: null, leastGoalsTeam: null, topScorers: [], updatedAt: null });
+  return res.json(stats || { totalGoals: 0, mostGoalsTeam: null, leastGoalsTeam: null, mostCleanSheetsTeam: null, topScorers: [], updatedAt: null });
 };
 
 module.exports = { getMyPicks, savePicks, getUserPicks, getDeadlineInfo, getTournamentStats };
