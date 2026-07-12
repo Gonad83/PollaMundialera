@@ -11,7 +11,6 @@ const {
   getBracketReopenAllowedGroupNames,
   setBracketReopen,
 } = require('../utils/tournamentDeadlineStore');
-const { getTournamentStats } = require('../utils/tournamentStats');
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
@@ -85,90 +84,27 @@ const getRound32TeamIds = async () => {
   return unique(matches.flatMap((m) => [m.teamHomeId, m.teamAwayId]));
 };
 
-// Equipo de los 3 anfitriones (USA/México/Canadá) que llega más lejos en el fixture real.
-// "Llegar" a una fase = haber jugado un partido FINALIZADO en esa fase (ganado o perdido).
-// Si dos anfitriones empatan en la fase más lejana alcanzada, no hay ganador claro todavía.
-const HOST_CODES = ['USA', 'MEX', 'CAN'];
-const PHASE_ORDER = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'THIRD', 'FINAL'];
-
-const getHostFurthestId = async () => {
-  const hostMatches = await prisma.match.findMany({
-    where: {
-      status: 'FINISHED',
-      OR: [
-        { teamHome: { code: { in: HOST_CODES } } },
-        { teamAway: { code: { in: HOST_CODES } } },
-      ],
-    },
-    select: {
-      phase: true,
-      teamHome: { select: { id: true, code: true } },
-      teamAway: { select: { id: true, code: true } },
-    },
-  });
-
-  const furthestByTeam = new Map(); // teamId -> phaseIdx más alto alcanzado
-  for (const m of hostMatches) {
-    const phaseIdx = PHASE_ORDER.indexOf(m.phase);
-    if (phaseIdx === -1) continue;
-    for (const team of [m.teamHome, m.teamAway]) {
-      if (!HOST_CODES.includes(team.code)) continue;
-      const current = furthestByTeam.get(team.id);
-      if (current === undefined || phaseIdx > current) furthestByTeam.set(team.id, phaseIdx);
-    }
-  }
-
-  if (furthestByTeam.size === 0) return null;
-  const entries = [...furthestByTeam.entries()].sort((a, b) => b[1] - a[1]);
-  if (entries.length > 1 && entries[0][1] === entries[1][1]) return null; // empate
-  return entries[0][0];
-};
-
-// Goles totales, equipo con más/menos goles y goleador: ya calculados y cacheados
-// por syncTournamentStats() en cada sincronización (ver utils/tournamentStats.js).
-const getAutoStatsActuals = async () => {
-  const stats = await getTournamentStats();
-  if (!stats) return {};
-  let topScorerTeamId = null;
-  if (stats.topScorers?.[0]?.code) {
-    const team = await prisma.team.findUnique({ where: { code: stats.topScorers[0].code } });
-    topScorerTeamId = team?.id || null;
-  }
-  return {
-    totalGoals: stats.totalGoals,
-    mostGoalsTeamId: stats.mostGoalsTeam?.id || null,
-    leastGoalsTeamId: stats.leastGoalsTeam?.id || null,
-    topScorerId: topScorerTeamId,
-  };
-};
-
-const getTournamentActuals = async (overrides = {}) => {
-  const round32TeamIds = hasArray(overrides.round32TeamIds) ? unique(overrides.round32TeamIds) : await getRound32TeamIds();
-  const [auto, hostFurthestIdAuto] = await Promise.all([getAutoStatsActuals(), getHostFurthestId()]);
-
-  return {
-    championId: overrides.championId ?? (await getWinnerIdsIfPhaseComplete('FINAL', 1))[0],
-    finalistIds: hasArray(overrides.finalistIds)
-      ? unique(overrides.finalistIds)
-      : unique([overrides.finalist1Id, overrides.finalist2Id].filter(Boolean).length
-          ? [overrides.finalist1Id, overrides.finalist2Id]
-          : await getWinnerIdsIfPhaseComplete('SF', 2)),
-    semifinalistIds: hasArray(overrides.semifinalistIds) ? unique(overrides.semifinalistIds) : await getWinnerIdsIfPhaseComplete('QF', 4),
-    quarterfinalistIds: hasArray(overrides.quarterfinalistIds) ? unique(overrides.quarterfinalistIds) : await getWinnerIdsIfPhaseComplete('R16', 8),
-    round16TeamIds: hasArray(overrides.round16TeamIds) ? unique(overrides.round16TeamIds) : await getWinnerIdsIfPhaseComplete('R32', 16),
-    round32TeamIds,
-    // Clasificados de grupo = equipos que llegaron a 16avos (misma lista, calculada sola).
-    groupQualifierIds: hasArray(overrides.groupQualifierIds) ? unique(overrides.groupQualifierIds) : round32TeamIds,
-    topScorerId: overrides.topScorerId ?? auto.topScorerId,
-    bestPlayerId: overrides.bestPlayerId,
-    bestKeeperId: overrides.bestKeeperId,
-    bestYoungId: overrides.bestYoungId,
-    totalGoals: overrides.totalGoals ?? auto.totalGoals,
-    mostGoalsTeamId: overrides.mostGoalsTeamId ?? auto.mostGoalsTeamId,
-    leastGoalsTeamId: overrides.leastGoalsTeamId ?? auto.leastGoalsTeamId,
-    hostFurthestId: overrides.hostFurthestId ?? hostFurthestIdAuto,
-  };
-};
+const getTournamentActuals = async (overrides = {}) => ({
+  championId: overrides.championId ?? (await getWinnerIdsIfPhaseComplete('FINAL', 1))[0],
+  finalistIds: hasArray(overrides.finalistIds)
+    ? unique(overrides.finalistIds)
+    : unique([overrides.finalist1Id, overrides.finalist2Id].filter(Boolean).length
+        ? [overrides.finalist1Id, overrides.finalist2Id]
+        : await getWinnerIdsIfPhaseComplete('SF', 2)),
+  semifinalistIds: hasArray(overrides.semifinalistIds) ? unique(overrides.semifinalistIds) : await getWinnerIdsIfPhaseComplete('QF', 4),
+  quarterfinalistIds: hasArray(overrides.quarterfinalistIds) ? unique(overrides.quarterfinalistIds) : await getWinnerIdsIfPhaseComplete('R16', 8),
+  round16TeamIds: hasArray(overrides.round16TeamIds) ? unique(overrides.round16TeamIds) : await getWinnerIdsIfPhaseComplete('R32', 16),
+  round32TeamIds: hasArray(overrides.round32TeamIds) ? unique(overrides.round32TeamIds) : await getRound32TeamIds(),
+  groupQualifierIds: hasArray(overrides.groupQualifierIds) ? unique(overrides.groupQualifierIds) : null,
+  topScorerId: overrides.topScorerId,
+  bestPlayerId: overrides.bestPlayerId,
+  bestKeeperId: overrides.bestKeeperId,
+  bestYoungId: overrides.bestYoungId,
+  totalGoals: overrides.totalGoals,
+  mostGoalsTeamId: overrides.mostGoalsTeamId,
+  leastGoalsTeamId: overrides.leastGoalsTeamId,
+  hostFurthestId: overrides.hostFurthestId,
+});
 
 const calculateTournamentPoints = async (pick, actuals) => {
   const pts = {};
@@ -752,12 +688,7 @@ const sameTeam = async (playerId1, playerId2) => {
     prisma.player.findUnique({ where: { id: playerId1 }, select: { teamId: true } }),
     prisma.player.findUnique({ where: { id: playerId2 }, select: { teamId: true } }),
   ]);
-  // Sin esto, cuando ninguno de los dos IDs es un jugador real (la tabla Player
-  // está vacía: la app compara equipos, no jugadores) ambas consultas devuelven
-  // null y "undefined === undefined" daba true, regalando puntaje parcial a
-  // cualquier pronóstico equivocado.
-  if (!p1 || !p2) return false;
-  return p1.teamId === p2.teamId;
+  return p1?.teamId === p2?.teamId;
 };
 
 const { syncMatches: syncMatchesUtil } = require('../utils/syncFootballData');
