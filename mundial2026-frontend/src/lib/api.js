@@ -100,6 +100,7 @@ export const tournamentApi = {
   savePicks: (data) => api.put('/tournament/picks', data),
   userPicks: (id, params) => api.get(`/tournament/picks/${id}`, { params }),
   deadline:  (params) => api.get('/tournament/deadline', { params }),
+  stats:     () => api.get('/tournament/stats'),
 }
 
 export const leaderboardApi = {

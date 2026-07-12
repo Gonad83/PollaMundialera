@@ -116,6 +116,12 @@ app.post('/sync-matches', async (req, res) => {
         console.error('[sync-matches] rebuildLeaderboard falló:', e.message);
       }
     }
+    try {
+      const { syncTournamentStats } = require('./utils/tournamentStats');
+      await syncTournamentStats();
+    } catch (e) {
+      console.error('[sync-matches] tournamentStats falló:', e.message);
+    }
     return res.json({ ok: true, ...result });
   } catch (err) {
     console.error('Sync error:', err.message);
@@ -250,6 +256,13 @@ async function startServer() {
         await rebuildLeaderboard();
       } catch (e) {
         console.error(`[sync ${label}] rebuild error:`, e.message);
+      }
+      // Estadísticas del torneo (goles totales, equipo con mas/menos goles, top goleadores).
+      try {
+        const { syncTournamentStats } = require('./utils/tournamentStats');
+        await syncTournamentStats();
+      } catch (e) {
+        console.error(`[sync ${label}] tournamentStats error:`, e.message);
       }
     };
     // Primer sync poco después de arrancar (deja respirar al server) + periódico.

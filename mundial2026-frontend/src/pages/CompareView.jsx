@@ -138,6 +138,70 @@ function TeamFlag({ team, size = 'sm' }) {
   return null
 }
 
+// Estadísticas reales del Mundial (goles, equipo con mas/menos goles, goleadores).
+// Se actualizan solas con cada sincronización automática (cada ~15 min).
+function TournamentStatsPanel({ stats, isLoading }) {
+  if (isLoading) {
+    return <div className="card p-4 bg-white/5 border border-white/5 animate-pulse h-28" />
+  }
+  if (!stats) return null
+
+  return (
+    <div className="card p-4 bg-white/5 border border-white/5">
+      <div className="flex items-center gap-2 mb-3">
+        <Trophy size={14} className="text-mundial-gold" />
+        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Estadísticas del Mundial</span>
+        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-700 ml-auto">Sin contar penales</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Goles totales</p>
+          <p className="font-display text-2xl text-white mt-1">{stats.totalGoals ?? 0}</p>
+        </div>
+
+        <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Más goles</p>
+          {stats.mostGoalsTeam ? (
+            <div className="flex items-center gap-2 mt-1.5">
+              <TeamFlag team={stats.mostGoalsTeam} size="md" />
+              <span className="font-display text-sm text-white truncate">{stats.mostGoalsTeam.name}</span>
+              <span className="text-mundial-gold text-xs font-black ml-auto shrink-0">{stats.mostGoalsTeam.goalsFor}</span>
+            </div>
+          ) : <p className="text-zinc-700 text-xs mt-1.5">—</p>}
+        </div>
+
+        <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600">Menos goles</p>
+          {stats.leastGoalsTeam ? (
+            <div className="flex items-center gap-2 mt-1.5">
+              <TeamFlag team={stats.leastGoalsTeam} size="md" />
+              <span className="font-display text-sm text-white truncate">{stats.leastGoalsTeam.name}</span>
+              <span className="text-zinc-400 text-xs font-black ml-auto shrink-0">{stats.leastGoalsTeam.goalsFor}</span>
+            </div>
+          ) : <p className="text-zinc-700 text-xs mt-1.5">—</p>}
+        </div>
+
+        <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3 col-span-2 sm:col-span-1">
+          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-600 mb-1.5">Goleadores</p>
+          <div className="space-y-1">
+            {(stats.topScorers ?? []).slice(0, 5).map((s, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-[11px]">
+                <span className="text-zinc-600 font-black shrink-0">{i + 1}.</span>
+                <TeamFlag team={s} size="sm" />
+                <span className="text-zinc-300 truncate">{s.name}</span>
+                <span className="text-mundial-gold font-black ml-auto shrink-0">{s.goals}</span>
+              </div>
+            ))}
+            {(!stats.topScorers || stats.topScorers.length === 0) && (
+              <p className="text-zinc-700 text-xs">Sin datos aún</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
   const [breakdown, setBreakdown] = useState(null) // celda clickeada → modal de desglose de puntos
@@ -158,6 +222,14 @@ export default function CompareView({ groupId, members = [] }) {
     queryFn: () => matchApi.teams().then(r => r.data),
     staleTime: Infinity,
     gcTime: 24 * 60 * 60 * 1000,
+  })
+
+  // Estadísticas reales del Mundial (goles, equipo con mas/menos goles, goleadores)
+  const { data: tournamentStats, isLoading: tournamentStatsLoading } = useQuery({
+    queryKey: ['tournament-stats'],
+    queryFn: () => tournamentApi.stats().then(r => r.data),
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
   })
 
   // Todos los partidos del torneo (para mostrar cuántos quedan por jugar de verdad,
@@ -383,6 +455,8 @@ export default function CompareView({ groupId, members = [] }) {
           </div>
         </div>
       </div>
+
+      <TournamentStatsPanel stats={tournamentStats} isLoading={tournamentStatsLoading} />
 
       {mode === 'tournament' && (
         <TournamentCompare rows={tournamentRows} isLoading={tournamentCompare.isLoading} teamById={teamById} round16ScoringOpen={round16ScoringOpen} />

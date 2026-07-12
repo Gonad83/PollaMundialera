@@ -30,6 +30,7 @@ const tournRouter = require('express').Router();
 const tc = require('../controllers/tournamentController');
 
 tournRouter.get('/deadline',        optionalAuthenticate, tc.getDeadlineInfo);
+tournRouter.get('/stats',           tc.getTournamentStats);
 tournRouter.use(authenticate);
 tournRouter.get('/picks',          tc.getMyPicks);
 tournRouter.put('/picks',          tc.savePicks);

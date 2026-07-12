@@ -8,6 +8,7 @@ const {
   getBracketReopenAllowedEmails,
   getBracketReopenAllowedGroupNames,
 } = require('../utils/tournamentDeadlineStore');
+const { getTournamentStats: readTournamentStats } = require('../utils/tournamentStats');
 
 // Únicos campos editables durante la reapertura acotada: de 4tos en adelante (nada más).
 // Los 8vos (round16Teams) NO se pueden cambiar.
@@ -186,4 +187,10 @@ const getDeadlineInfo = async (req, res) => {
   });
 };
 
-module.exports = { getMyPicks, savePicks, getUserPicks, getDeadlineInfo };
+// GET /api/tournament/stats — Goles totales, equipo con mas/menos goles, top 5 goleadores (público)
+const getTournamentStats = async (req, res) => {
+  const stats = await readTournamentStats();
+  return res.json(stats || { totalGoals: 0, mostGoalsTeam: null, leastGoalsTeam: null, topScorers: [], updatedAt: null });
+};
+
+module.exports = { getMyPicks, savePicks, getUserPicks, getDeadlineInfo, getTournamentStats };
