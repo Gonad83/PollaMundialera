@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
   Trophy, Users, Shield, Zap, Target,
@@ -137,7 +137,8 @@ const PLAN_CARD_STYLE = {
 
 // ── Component ─────────────────────────────────────────────────────────
 export default function LandingPage() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+  const { hash } = useLocation()
   const [time, setTime] = useState(getTimeLeft())
   const [activeFaq, setActiveFaq] = useState(null)
   const [scrolled, setScrolled] = useState(false)
@@ -148,6 +149,10 @@ export default function LandingPage() {
     window.addEventListener('scroll', onScroll)
     return () => { clearInterval(tick); window.removeEventListener('scroll', onScroll) }
   }, [])
+
+  // Usuario logueado → directo a elegir su polla, sin pasar por el landing.
+  // Excepción: si viene con hash (ej. /#planes desde el botón "Subir"), se queda.
+  if (!loading && user && !hash) return <Navigate to="/groups" replace />
 
   function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
@@ -188,7 +193,7 @@ export default function LandingPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {user ? (
-            <Link to="/matches" style={{
+            <Link to="/groups" style={{
               display: 'flex', alignItems: 'center', gap: 8,
               background: '#FFD700', color: '#0f172a', padding: '10px 20px',
               borderRadius: 999, fontSize: 10, fontWeight: 900, textTransform: 'uppercase',

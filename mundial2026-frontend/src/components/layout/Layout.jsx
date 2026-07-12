@@ -467,7 +467,7 @@ export default function Layout() {
                     </span>
                     {user?.plan === 'FREE' && !isSuperAdmin && (
                       <NavLink
-                        to="/"
+                        to="/#planes"
                         className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-mundial-gold hover:text-white transition-colors border border-mundial-gold/30 rounded-full px-2 py-0.5 bg-mundial-gold/5"
                       >
                         <ArrowUp size={8} /> Subir
