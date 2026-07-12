@@ -96,7 +96,7 @@ function PointsBadge({ pred, match }) {
 }
 
 function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16ScoringOpen, onClick }) {
-  const label = round === 'quarters' ? '4tos' : round === 'round16' ? '8vos' : '16avos'
+  const label = round === 'semis' ? 'Semis' : round === 'quarters' ? '4tos' : round === 'round16' ? '8vos' : '16avos'
 
   if (isLoading) {
     return (
@@ -109,7 +109,8 @@ function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16Sco
   const round32Pts = picks?.ptsRound32 || 0
   const round16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const quarterPts = picks?.ptsQuarters || 0
-  const points = round === 'quarters' ? quarterPts : round === 'round16' ? round16Pts : round32Pts
+  const semiPts = picks?.ptsSemifinals || 0
+  const points = round === 'semis' ? semiPts : round === 'quarters' ? quarterPts : round === 'round16' ? round16Pts : round32Pts
   const hasPts = points > 0
   const Wrapper = onClick ? 'button' : 'div'
 
@@ -206,7 +207,7 @@ export default function CompareView({ groupId, members = [] }) {
   const [mode, setMode] = useState('matches')
   const [breakdown, setBreakdown] = useState(null) // celda clickeada → modal de desglose de puntos
   const [tournamentBreakdown, setTournamentBreakdown] = useState(null)
-  const compareDataVersion = 'manual-qf-2026-07-11'
+  const compareDataVersion = 'manual-sf-2026-07-12'
 
   const { data: compareData, isLoading } = useQuery({
     queryKey: ['group-compare', groupId, compareDataVersion],
@@ -263,6 +264,13 @@ export default function CompareView({ groupId, members = [] }) {
   const actualQuarterfinalistIds = useMemo(() => {
     const ids = allWcMatches
       .filter(m => m.phase === 'R16' && m.status === 'FINISHED' && m.winnerId && !isNonWorldCupMatch(m))
+      .map(m => m.winnerId)
+      .filter(Boolean)
+    return [...new Set(ids)]
+  }, [allWcMatches])
+  const actualSemifinalistIds = useMemo(() => {
+    const ids = allWcMatches
+      .filter(m => m.phase === 'QF' && m.status === 'FINISHED' && m.winnerId && !isNonWorldCupMatch(m))
       .map(m => m.winnerId)
       .filter(Boolean)
     return [...new Set(ids)]
@@ -392,6 +400,7 @@ export default function CompareView({ groupId, members = [] }) {
     let insertedRound32 = false
     let insertedRound16 = false
     let insertedQuarters = false
+    let insertedSemis = false
 
     matches.forEach(match => {
       if (!insertedRound32 && match.phase === 'R32') {
@@ -406,11 +415,18 @@ export default function CompareView({ groupId, members = [] }) {
         columns.push({ type: 'tournament', id: 'tournament-quarters', round: 'quarters', label: '4tos' })
         insertedQuarters = true
       }
+      if (!insertedSemis && match.phase === 'SF') {
+        columns.push({ type: 'tournament', id: 'tournament-semis', round: 'semis', label: 'Semis' })
+        insertedSemis = true
+      }
       columns.push({ type: 'match', id: match.id, match })
     })
 
     if (!insertedQuarters && insertedRound16) {
       columns.push({ type: 'tournament', id: 'tournament-quarters', round: 'quarters', label: '4tos' })
+    }
+    if (!insertedSemis && insertedQuarters) {
+      columns.push({ type: 'tournament', id: 'tournament-semis', round: 'semis', label: 'Semis' })
     }
 
     return columns
@@ -664,6 +680,7 @@ export default function CompareView({ groupId, members = [] }) {
             actualRound32TeamIds={actualRound32TeamIds}
             actualRound16TeamIds={actualRound16TeamIds}
             actualQuarterfinalistIds={actualQuarterfinalistIds}
+            actualSemifinalistIds={actualSemifinalistIds}
             teamById={teamById}
             round16ScoringOpen={round16ScoringOpen}
             quarterScoringOpen={quarterScoringOpen}
@@ -744,28 +761,34 @@ function BreakdownModal({ data, onClose }) {
   )
 }
 
-function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, actualQuarterfinalistIds, teamById, round16ScoringOpen, quarterScoringOpen, onClose }) {
+function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, actualQuarterfinalistIds, actualSemifinalistIds, teamById, round16ScoringOpen, quarterScoringOpen, onClose }) {
   const { member, picks } = data
   const focusRound = data.round || 'round32'
-  const focusLabel = focusRound === 'quarters' ? '4tos' : focusRound === 'round16' ? '8vos' : '16avos'
+  const focusLabel = focusRound === 'semis' ? 'Semis' : focusRound === 'quarters' ? '4tos' : focusRound === 'round16' ? '8vos' : '16avos'
   const actualRound32Set = new Set(actualRound32TeamIds || [])
   const actualRound16Set = new Set(actualRound16TeamIds || [])
   const actualQuarterSet = new Set(actualQuarterfinalistIds || [])
+  const actualSemiSet = new Set(actualSemifinalistIds || [])
   const pickedRound32 = picks?.round32Teams || []
   const pickedRound16 = picks?.round16Teams || []
   const pickedQuarters = picks?.quarterfinalists || []
+  const pickedSemis = picks?.semifinalists || []
   const quarterPointsVisible = quarterScoringOpen || (picks?.ptsQuarters || 0) > 0
+  const semiPointsVisible = actualSemiSet.size >= 4 || (picks?.ptsSemifinals || 0) > 0
   const hitIds = pickedRound32.filter(id => actualRound32Set.has(id))
   const missIds = pickedRound32.filter(id => !actualRound32Set.has(id))
   const round16HitIds = round16ScoringOpen ? pickedRound16.filter(id => actualRound16Set.has(id)) : []
   const round16MissIds = round16ScoringOpen ? pickedRound16.filter(id => !actualRound16Set.has(id)) : []
   const quarterHitIds = quarterPointsVisible ? pickedQuarters.filter(id => actualQuarterSet.has(id)) : []
   const quarterMissIds = quarterPointsVisible ? pickedQuarters.filter(id => !actualQuarterSet.has(id)) : []
+  const semiHitIds = semiPointsVisible ? pickedSemis.filter(id => actualSemiSet.has(id)) : []
+  const semiMissIds = semiPointsVisible ? pickedSemis.filter(id => !actualSemiSet.has(id)) : []
   const round32Pts = picks?.ptsRound32 || hitIds.length
   const effectiveRound16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const effectiveQuarterPts = picks?.ptsQuarters || 0
-  const focusHits = focusRound === 'quarters' ? quarterHitIds.length : focusRound === 'round16' ? round16HitIds.length : hitIds.length
-  const focusPts = focusRound === 'quarters' ? effectiveQuarterPts : focusRound === 'round16' ? effectiveRound16Pts : round32Pts
+  const effectiveSemiPts = picks?.ptsSemifinals || 0
+  const focusHits = focusRound === 'semis' ? semiHitIds.length : focusRound === 'quarters' ? quarterHitIds.length : focusRound === 'round16' ? round16HitIds.length : hitIds.length
+  const focusPts = focusRound === 'semis' ? effectiveSemiPts : focusRound === 'quarters' ? effectiveQuarterPts : focusRound === 'round16' ? effectiveRound16Pts : round32Pts
   const roundDetail = {
     round32: {
       hitIds,
@@ -798,6 +821,17 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
       missTitle: '4tos pronosticados sin punto',
       pointLabel: `+${effectiveQuarterPts}`,
       emptyText: 'Sin equipos acertados en 4tos',
+    },
+    semis: {
+      hitIds: semiHitIds,
+      missIds: semiMissIds,
+      pickedIds: pickedSemis,
+      scoringVisible: semiPointsVisible,
+      lockedText: 'Semis bloqueado hasta que terminen todos los 4tos',
+      title: 'Semis que generaron puntos',
+      missTitle: 'Semis pronosticadas sin punto',
+      pointLabel: `+${effectiveSemiPts}`,
+      emptyText: 'Sin equipos acertados en semis',
     },
   }[focusRound] || {}
   const visibleCurrentMissIds = (roundDetail.missIds || []).slice(0, 12)
