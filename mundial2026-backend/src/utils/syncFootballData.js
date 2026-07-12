@@ -157,15 +157,19 @@ async function syncMatches() {
 
     if (!homeTeam?.id || !awayTeam?.id) { skipped++; continue; }
 
+    const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
+    const existing = await prisma.match.findFirst({ where: { venue: externalId } });
+
     const phase         = STAGE_MAP[m.stage] || 'GROUP';
-    const status        = STATUS_MAP[m.status] || 'SCHEDULED';
+    // Nunca "des-finalizar" un partido: si la API devuelve un status inesperado
+    // o ausente en algún ciclo (glitch puntual), no debe pisar un FINISHED ya guardado.
+    const status        = existing?.status === 'FINISHED' ? 'FINISHED' : (STATUS_MAP[m.status] || 'SCHEDULED');
     // Normalize group: "GROUP_A" → "A", "Group A" → "A", "A" → "A"
     const rawGroup      = m.group || null;
     const groupLetter   = rawGroup
       ? (rawGroup.replace(/^GROUP_/i, '').replace(/^Group\s*/i, '').trim().charAt(0) || null)
       : null;
     const dateUtc       = new Date(m.utcDate);
-    const externalId    = String(m.id); // guardamos el ID externo en venue como fallback
     const isShootout    = m.score?.duration === 'PENALTY_SHOOTOUT';
 
     // El marcador que PUNTUA es el de los 90 minutos. Alargue y penales no suman
@@ -218,11 +222,13 @@ async function syncMatches() {
         winnerId = extraTimeHome > extraTimeAway ? homeTeam.id : awayTeam.id;
       }
     }
+    // Si el status se mantuvo FINISHED por la guarda de arriba pero este ciclo no
+    // trajo winner (glitch de la API), no perder el winnerId ya guardado.
+    if (status === 'FINISHED' && winnerId === null && existing?.winnerId) {
+      winnerId = existing.winnerId;
+    }
 
     const wentToPenalties = isShootout;
-
-    // Buscar si ya existe por externalId guardado en el venue field
-    const existing = await prisma.match.findFirst({ where: { venue: externalId } });
 
     const data = applyOfficialResultOverride({
       phase,
