@@ -25,6 +25,12 @@ const PHASES = [
   { value: 'FINAL', label: 'Final' },
 ]
 
+const phaseMatches = (match, selectedPhase) => {
+  if (!selectedPhase) return true
+  if (selectedPhase === 'FINAL') return ['THIRD', 'FINAL'].includes(match?.phase)
+  return match?.phase === selectedPhase
+}
+
 const isFriendlyMatch = (match) =>
   match?.phase === 'GROUP' && !match?.groupLetter && match?.city !== 'World'
 
@@ -132,7 +138,7 @@ export default function MatchesPage({ groupId, initialViewMode = 'apostado', hid
 
   // List view always uses raw match data; predictions shown via pred prop in MatchRow
   const listMatches = phase
-    ? worldCupMatches.filter(m => m.phase === phase)
+    ? worldCupMatches.filter(m => phaseMatches(m, phase))
     : worldCupMatches
 
   // Fase actual del Mundial: la primera (en orden) que todavía tiene partidos por jugar.
@@ -140,11 +146,11 @@ export default function MatchesPage({ groupId, initialViewMode = 'apostado', hid
     const order = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'FINAL']
     const real = worldCupMatches.filter(m => !isFriendlyMatch(m))
     for (const ph of order) {
-      const inPhase = real.filter(m => m.phase === ph)
+      const inPhase = real.filter(m => phaseMatches(m, ph))
       if (inPhase.length && inPhase.some(m => m.status !== 'FINISHED')) return ph
     }
     for (let i = order.length - 1; i >= 0; i--) {
-      if (real.some(m => m.phase === order[i])) return order[i]
+      if (real.some(m => phaseMatches(m, order[i]))) return order[i]
     }
     return ''
   }, [worldCupMatches])
@@ -718,7 +724,15 @@ function FixtureBracketSports({ matches }) {
     if (!match || match.status !== 'FINISHED' || !match.winnerId) return null
     return match.winnerId === match.teamHomeId ? match.teamAway : match.teamHome
   }
-  const third = { teamA: semifinalLoser(left.sf[0]), teamB: semifinalLoser(right.sf[0]), match: null, winner: null }
+  const thirdTeamA = semifinalLoser(left.sf[0])
+  const thirdTeamB = semifinalLoser(right.sf[0])
+  const thirdMatch = findMatch('THIRD', thirdTeamA, thirdTeamB) || real.find(m => m.phase === 'THIRD') || null
+  const third = {
+    teamA: thirdMatch?.teamHome || thirdTeamA,
+    teamB: thirdMatch?.teamAway || thirdTeamB,
+    match: thirdMatch,
+    winner: teamWinner(thirdMatch),
+  }
 
   const H = 620
   const SLOT_W = 154
@@ -936,7 +950,15 @@ function FixtureBracket({ matches }) {
     if (!m || m.status !== 'FINISHED' || !m.winnerId) return null
     return m.winnerId === m.teamHomeId ? m.teamAway : m.teamHome
   }
-  const third = { teamA: sfLoser(Ls.sf[0]), teamB: sfLoser(Rs.sf[0]), match: null, winner: null }
+  const thirdTeamA = sfLoser(Ls.sf[0])
+  const thirdTeamB = sfLoser(Rs.sf[0])
+  const thirdMatch = findMatch('THIRD', thirdTeamA, thirdTeamB) || real.find(m => m.phase === 'THIRD') || null
+  const third = {
+    teamA: thirdMatch?.teamHome || thirdTeamA,
+    teamB: thirdMatch?.teamAway || thirdTeamB,
+    match: thirdMatch,
+    winner: teamWinner(thirdMatch),
+  }
 
   // ── Líneas conectoras (estilo árbol). Cada llave va en un wrapper flex-1: como todas las
   // rondas reparten parejo en la misma altura, cada cruce queda exactamente centrado entre sus
