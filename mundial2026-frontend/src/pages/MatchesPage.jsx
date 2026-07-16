@@ -22,12 +22,12 @@ const PHASES = [
   { value: 'R16', label: '8vos' },
   { value: 'QF', label: '4tos' },
   { value: 'SF', label: 'Semis' },
+  { value: 'THIRD', label: '3ero y 4to' },
   { value: 'FINAL', label: 'Final' },
 ]
 
 const phaseMatches = (match, selectedPhase) => {
   if (!selectedPhase) return true
-  if (selectedPhase === 'FINAL') return ['THIRD', 'FINAL'].includes(match?.phase)
   return match?.phase === selectedPhase
 }
 
@@ -143,7 +143,7 @@ export default function MatchesPage({ groupId, initialViewMode = 'apostado', hid
 
   // Fase actual del Mundial: la primera (en orden) que todavía tiene partidos por jugar.
   const currentPhase = useMemo(() => {
-    const order = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'FINAL']
+    const order = ['GROUP', 'R32', 'R16', 'QF', 'SF', 'THIRD', 'FINAL']
     const real = worldCupMatches.filter(m => !isFriendlyMatch(m))
     for (const ph of order) {
       const inPhase = real.filter(m => phaseMatches(m, ph))
