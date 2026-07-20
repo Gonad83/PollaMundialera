@@ -49,14 +49,24 @@ function getEffectiveFinalistPoints(picks, { actualFinalistIds = [], finalScorin
   return Math.max(stored, derived)
 }
 
-function getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen } = {}) {
+function getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen = false } = {}) {
+  if (!picks) return 0
+
+  const stored = picks.ptsChampion || 0
+  const derived = championScoringOpen && actualChampionId && picks.champion === actualChampionId ? 30 : 0
+
+  return Math.max(stored, derived)
+}
+
+function getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen } = {}) {
   if (!picks) return 0
 
   const visibleRound16Pts = round16ScoringOpen ? (picks.ptsRound16 || 0) : 0
   const visibleFinalistPts = getEffectiveFinalistPoints(picks, { actualFinalistIds, finalScoringOpen })
+  const visibleChampionPts = getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen })
   const explicitTotal = Math.max((picks.pointsTotal || 0) - (round16ScoringOpen ? 0 : (picks.ptsRound16 || 0)), 0)
   const fieldTotal = [
-    picks.ptsChampion,
+    visibleChampionPts,
     visibleFinalistPts,
     picks.ptsRound32,
     visibleRound16Pts,
@@ -113,8 +123,8 @@ function PointsBadge({ pred, match }) {
   )
 }
 
-function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16ScoringOpen, actualFinalistIds, finalScoringOpen, onClick }) {
-  const label = round === 'finalists' ? 'Finalistas' : round === 'semis' ? 'Semis' : round === 'quarters' ? '4tos' : round === 'round16' ? '8vos' : '16avos'
+function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen, onClick }) {
+  const label = round === 'champion' ? 'Campeón' : round === 'finalists' ? 'Finalistas' : round === 'semis' ? 'Semis' : round === 'quarters' ? '4tos' : round === 'round16' ? '8vos' : '16avos'
 
   if (isLoading) {
     return (
@@ -129,7 +139,8 @@ function TournamentPointsBadge({ picks, isLoading, round = 'round32', round16Sco
   const quarterPts = picks?.ptsQuarters || 0
   const semiPts = picks?.ptsSemifinals || 0
   const finalistPts = getEffectiveFinalistPoints(picks, { actualFinalistIds, finalScoringOpen })
-  const points = round === 'finalists' ? finalistPts : round === 'semis' ? semiPts : round === 'quarters' ? quarterPts : round === 'round16' ? round16Pts : round32Pts
+  const championPts = getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen })
+  const points = round === 'champion' ? championPts : round === 'finalists' ? finalistPts : round === 'semis' ? semiPts : round === 'quarters' ? quarterPts : round === 'round16' ? round16Pts : round32Pts
   const hasPts = points > 0
   const Wrapper = onClick ? 'button' : 'div'
 
@@ -301,6 +312,10 @@ export default function CompareView({ groupId, members = [] }) {
       .filter(Boolean)
     return [...new Set(ids)]
   }, [allWcMatches])
+  const actualChampionId = useMemo(() => {
+    const finalMatch = allWcMatches.find(m => m.phase === 'FINAL' && m.status === 'FINISHED' && m.winnerId && !isNonWorldCupMatch(m))
+    return finalMatch?.winnerId || null
+  }, [allWcMatches])
 
   // Deduplicar partidos y ordenarlos por fecha
   const matches = useMemo(() => {
@@ -334,6 +349,7 @@ export default function CompareView({ groupId, members = [] }) {
     const sf = allWcMatches.filter(match => match.phase === 'SF' && !isNonWorldCupMatch(match))
     return sf.length >= 2 && sf.every(match => match.status === 'FINISHED' && match.winnerId)
   }, [allWcMatches])
+  const championScoringOpen = !!actualChampionId
 
   // Filtrar SUPER_ADMIN y ordenar por puntos totales en el comparativo
   const visibleMembers = useMemo(() => {
@@ -405,7 +421,7 @@ export default function CompareView({ groupId, members = [] }) {
   const displayMembers = useMemo(() => (
     visibleMembers.map(member => {
       const picks = tournamentByUser.get(member.userId)
-      const tournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen })
+      const tournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen })
       return {
         ...member,
         tournamentPts,
@@ -413,18 +429,19 @@ export default function CompareView({ groupId, members = [] }) {
         round16Pts: picks?.ptsRound16 || 0,
         quarterPts: picks?.ptsQuarters || 0,
         finalistPts: getEffectiveFinalistPoints(picks, { actualFinalistIds, finalScoringOpen }),
+        championPts: getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen }),
         totalCompPts: member.matchCompPts + tournamentPts,
       }
     }).sort((a, b) => b.totalCompPts - a.totalCompPts)
-  ), [visibleMembers, tournamentByUser, round16ScoringOpen, actualFinalistIds, finalScoringOpen])
+  ), [visibleMembers, tournamentByUser, round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen])
 
   const tournamentRows = useMemo(() => (
     (tournamentCompare.data || [])
       .slice()
       .sort((a, b) => {
-        return getVisibleTournamentPoints(b.picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen }) - getVisibleTournamentPoints(a.picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen })
+        return getVisibleTournamentPoints(b.picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen }) - getVisibleTournamentPoints(a.picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen })
       })
-  ), [tournamentCompare.data, round16ScoringOpen, actualFinalistIds, finalScoringOpen])
+  ), [tournamentCompare.data, round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen])
 
   const tableColumns = useMemo(() => {
     const columns = []
@@ -468,6 +485,8 @@ export default function CompareView({ groupId, members = [] }) {
     if (!insertedFinalists && insertedSemis) {
       columns.push({ type: 'tournament', id: 'tournament-finalists', round: 'finalists', label: 'Final' })
     }
+
+    columns.push({ type: 'tournament', id: 'tournament-champion', round: 'champion', label: 'Campeón' })
 
     return columns
   }, [matches])
@@ -522,6 +541,8 @@ export default function CompareView({ groupId, members = [] }) {
           round16ScoringOpen={round16ScoringOpen}
           actualFinalistIds={actualFinalistIds}
           finalScoringOpen={finalScoringOpen}
+          actualChampionId={actualChampionId}
+          championScoringOpen={championScoringOpen}
         />
       )}
 
@@ -675,6 +696,8 @@ export default function CompareView({ groupId, members = [] }) {
                                 round16ScoringOpen={round16ScoringOpen}
                                 actualFinalistIds={actualFinalistIds}
                                 finalScoringOpen={finalScoringOpen}
+                                actualChampionId={actualChampionId}
+                                championScoringOpen={championScoringOpen}
                                 onClick={() => setTournamentBreakdown({ member, picks, round: column.round })}
                               />
                             </div>
@@ -731,10 +754,12 @@ export default function CompareView({ groupId, members = [] }) {
             actualQuarterfinalistIds={actualQuarterfinalistIds}
             actualSemifinalistIds={actualSemifinalistIds}
             actualFinalistIds={actualFinalistIds}
+            actualChampionId={actualChampionId}
             teamById={teamById}
             round16ScoringOpen={round16ScoringOpen}
             quarterScoringOpen={quarterScoringOpen}
             finalScoringOpen={finalScoringOpen}
+            championScoringOpen={championScoringOpen}
             onClose={() => setTournamentBreakdown(null)}
           />
         )}
@@ -812,10 +837,10 @@ function BreakdownModal({ data, onClose }) {
   )
 }
 
-function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, actualQuarterfinalistIds, actualSemifinalistIds, actualFinalistIds, teamById, round16ScoringOpen, quarterScoringOpen, finalScoringOpen, onClose }) {
+function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16TeamIds, actualQuarterfinalistIds, actualSemifinalistIds, actualFinalistIds, actualChampionId, teamById, round16ScoringOpen, quarterScoringOpen, finalScoringOpen, championScoringOpen, onClose }) {
   const { member, picks } = data
   const focusRound = data.round || 'round32'
-  const focusLabel = focusRound === 'finalists' ? 'Finalistas' : focusRound === 'semis' ? 'Semis' : focusRound === 'quarters' ? '4tos' : focusRound === 'round16' ? '8vos' : '16avos'
+  const focusLabel = focusRound === 'champion' ? 'Campeón' : focusRound === 'finalists' ? 'Finalistas' : focusRound === 'semis' ? 'Semis' : focusRound === 'quarters' ? '4tos' : focusRound === 'round16' ? '8vos' : '16avos'
   const actualRound32Set = new Set(actualRound32TeamIds || [])
   const actualRound16Set = new Set(actualRound16TeamIds || [])
   const actualQuarterSet = new Set(actualQuarterfinalistIds || [])
@@ -826,9 +851,11 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
   const pickedQuarters = picks?.quarterfinalists || []
   const pickedSemis = picks?.semifinalists || []
   const pickedFinalists = [picks?.finalist1, picks?.finalist2].filter(Boolean)
+  const pickedChampion = [picks?.champion].filter(Boolean)
   const quarterPointsVisible = quarterScoringOpen || (picks?.ptsQuarters || 0) > 0
   const semiPointsVisible = actualSemiSet.size >= 4 || (picks?.ptsSemifinals || 0) > 0
   const finalistPointsVisible = finalScoringOpen || (picks?.ptsFinalists || 0) > 0
+  const championPointsVisible = championScoringOpen || (picks?.ptsChampion || 0) > 0
   const hitIds = pickedRound32.filter(id => actualRound32Set.has(id))
   const missIds = pickedRound32.filter(id => !actualRound32Set.has(id))
   const round16HitIds = round16ScoringOpen ? pickedRound16.filter(id => actualRound16Set.has(id)) : []
@@ -839,13 +866,16 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
   const semiMissIds = semiPointsVisible ? pickedSemis.filter(id => !actualSemiSet.has(id)) : []
   const finalistHitIds = finalistPointsVisible ? pickedFinalists.filter(id => actualFinalistSet.has(id)) : []
   const finalistMissIds = finalistPointsVisible ? pickedFinalists.filter(id => !actualFinalistSet.has(id)) : []
+  const championHitIds = championPointsVisible && actualChampionId ? pickedChampion.filter(id => id === actualChampionId) : []
+  const championMissIds = championPointsVisible ? pickedChampion.filter(id => id !== actualChampionId) : []
   const round32Pts = picks?.ptsRound32 || hitIds.length
   const effectiveRound16Pts = round16ScoringOpen ? (picks?.ptsRound16 || 0) : 0
   const effectiveQuarterPts = picks?.ptsQuarters || 0
   const effectiveSemiPts = picks?.ptsSemifinals || 0
   const effectiveFinalistPts = getEffectiveFinalistPoints(picks, { actualFinalistIds, finalScoringOpen })
-  const focusHits = focusRound === 'finalists' ? finalistHitIds.length : focusRound === 'semis' ? semiHitIds.length : focusRound === 'quarters' ? quarterHitIds.length : focusRound === 'round16' ? round16HitIds.length : hitIds.length
-  const focusPts = focusRound === 'finalists' ? effectiveFinalistPts : focusRound === 'semis' ? effectiveSemiPts : focusRound === 'quarters' ? effectiveQuarterPts : focusRound === 'round16' ? effectiveRound16Pts : round32Pts
+  const effectiveChampionPts = getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen })
+  const focusHits = focusRound === 'champion' ? championHitIds.length : focusRound === 'finalists' ? finalistHitIds.length : focusRound === 'semis' ? semiHitIds.length : focusRound === 'quarters' ? quarterHitIds.length : focusRound === 'round16' ? round16HitIds.length : hitIds.length
+  const focusPts = focusRound === 'champion' ? effectiveChampionPts : focusRound === 'finalists' ? effectiveFinalistPts : focusRound === 'semis' ? effectiveSemiPts : focusRound === 'quarters' ? effectiveQuarterPts : focusRound === 'round16' ? effectiveRound16Pts : round32Pts
   const roundDetail = {
     round32: {
       hitIds,
@@ -900,6 +930,17 @@ function TournamentBreakdownModal({ data, actualRound32TeamIds, actualRound16Tea
       missTitle: 'Finalistas pronosticados sin punto',
       pointLabel: `+${effectiveFinalistPts}`,
       emptyText: 'Sin finalistas acertados',
+    },
+    champion: {
+      hitIds: championHitIds,
+      missIds: championMissIds,
+      pickedIds: pickedChampion,
+      scoringVisible: championPointsVisible,
+      lockedText: 'Campeón bloqueado hasta que termine la Final',
+      title: 'Campeón acertado',
+      missTitle: 'Campeón pronosticado sin punto',
+      pointLabel: `+${effectiveChampionPts}`,
+      emptyText: 'Sin campeón acertado',
     },
   }[focusRound] || {}
   const visibleCurrentMissIds = (roundDetail.missIds || []).slice(0, 12)
@@ -1103,7 +1144,7 @@ function MatchProgressSummary({ finished, pending, total, members, tournamentFin
   )
 }
 
-function TournamentCompare({ rows, isLoading, teamById, round16ScoringOpen, actualFinalistIds, finalScoringOpen }) {
+function TournamentCompare({ rows, isLoading, teamById, round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen }) {
   if (isLoading) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -1155,16 +1196,18 @@ function TournamentCompare({ rows, isLoading, teamById, round16ScoringOpen, actu
           round16ScoringOpen={round16ScoringOpen}
           actualFinalistIds={actualFinalistIds}
           finalScoringOpen={finalScoringOpen}
+          actualChampionId={actualChampionId}
+          championScoringOpen={championScoringOpen}
         />
       ))}
     </div>
   )
 }
 
-function TournamentOpponentCard({ member, picks, error, teamById, round16ScoringOpen, actualFinalistIds, finalScoringOpen }) {
+function TournamentOpponentCard({ member, picks, error, teamById, round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen }) {
   const byId = (id) => teamById.get(id)
   const list = (ids = []) => ids.map(byId).filter(Boolean)
-  const effectiveTournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen })
+  const effectiveTournamentPts = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen })
 
   return (
     <article className="card overflow-hidden bg-white/5 border border-white/5">
@@ -1194,6 +1237,8 @@ function TournamentOpponentCard({ member, picks, error, teamById, round16Scoring
             round16ScoringOpen={round16ScoringOpen}
             actualFinalistIds={actualFinalistIds}
             finalScoringOpen={finalScoringOpen}
+            actualChampionId={actualChampionId}
+            championScoringOpen={championScoringOpen}
           />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <CompareBlock title="Copa y final">
@@ -1232,12 +1277,13 @@ function TournamentOpponentCard({ member, picks, error, teamById, round16Scoring
   )
 }
 
-function TournamentScoreSummary({ picks, round16ScoringOpen, actualFinalistIds, finalScoringOpen }) {
+function TournamentScoreSummary({ picks, round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen }) {
   const effectiveRound16Pts = round16ScoringOpen ? (picks.ptsRound16 || 0) : 0
   const blockedRound16Pts = round16ScoringOpen ? 0 : (picks.ptsRound16 || 0)
   const effectiveQuarterPts = picks.ptsQuarters || 0
   const effectiveFinalistPts = getEffectiveFinalistPoints(picks, { actualFinalistIds, finalScoringOpen })
-  const effectiveTotal = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen })
+  const effectiveChampionPts = getEffectiveChampionPoints(picks, { actualChampionId, championScoringOpen })
+  const effectiveTotal = getVisibleTournamentPoints(picks, { round16ScoringOpen, actualFinalistIds, finalScoringOpen, actualChampionId, championScoringOpen })
   const rows = [
     { label: 'Total torneo', value: effectiveTotal, strong: true },
     { label: '16avos', value: picks.ptsRound32 || 0 },
@@ -1245,7 +1291,7 @@ function TournamentScoreSummary({ picks, round16ScoringOpen, actualFinalistIds, 
     { label: '4tos', value: effectiveQuarterPts },
     { label: 'Semis', value: picks.ptsSemifinals || 0 },
     { label: 'Finalistas', value: effectiveFinalistPts },
-    { label: 'Campeon', value: picks.ptsChampion || 0 },
+    { label: 'Campeon', value: effectiveChampionPts },
   ]
 
   return (
