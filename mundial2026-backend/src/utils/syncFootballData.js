@@ -63,6 +63,25 @@ function applyOfficialResultOverride(data, homeTeam, awayTeam) {
     };
   }
 
+  // ESP-ARG (FINAL) se definio 1-0 en prorroga (0-0 en los 90 min), pero la API
+  // devuelve regularTime null y fullTime=extraTime=1-0, asi que el calculo
+  // usaba por error 1-0 tambien en los 90 min.
+  if (data.phase === 'FINAL' &&
+      ((homeCode === 'ESP' && awayCode === 'ARG') || (homeCode === 'ARG' && awayCode === 'ESP'))) {
+    const spainIsHome = homeCode === 'ESP';
+    return {
+      ...data,
+      scoreHome: 0,
+      scoreAway: 0,
+      extraTimeHome: spainIsHome ? 1 : 0,
+      extraTimeAway: spainIsHome ? 0 : 1,
+      wentToPenalties: false,
+      penaltyHome: null,
+      penaltyAway: null,
+      winnerId: spainIsHome ? homeTeam.id : awayTeam.id,
+    };
+  }
+
   return data;
 }
 
