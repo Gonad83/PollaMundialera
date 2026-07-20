@@ -103,7 +103,10 @@ const getTournamentActuals = async (overrides = {}) => ({
   totalGoals: overrides.totalGoals,
   mostGoalsTeamId: overrides.mostGoalsTeamId,
   leastGoalsTeamId: overrides.leastGoalsTeamId,
-  hostFurthestId: overrides.hostFurthestId,
+  // Array para poder premiar un empate entre varios anfitriones (misma ronda alcanzada).
+  hostFurthestIds: hasArray(overrides.hostFurthestIds)
+    ? unique(overrides.hostFurthestIds)
+    : (overrides.hostFurthestId ? [overrides.hostFurthestId] : null),
 });
 
 const calculateTournamentPoints = async (pick, actuals) => {
@@ -150,7 +153,7 @@ const calculateTournamentPoints = async (pick, actuals) => {
     pts.ptsTeamStats = (pick.mostGoalsTeamId === actuals.mostGoalsTeamId ? 6 : 0)
       + (pick.leastGoalsTeamId === actuals.leastGoalsTeamId ? 6 : 0);
   }
-  if (actuals.hostFurthestId) pts.ptsHostFurthest = pick.hostFurthest === actuals.hostFurthestId ? 5 : 0;
+  if (actuals.hostFurthestIds?.length) pts.ptsHostFurthest = actuals.hostFurthestIds.includes(pick.hostFurthest) ? 5 : 0;
 
   pts.pointsTotal = pointTotal(pts);
   return pts;
