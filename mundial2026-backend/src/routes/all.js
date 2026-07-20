@@ -76,6 +76,7 @@ const ac = require('../controllers/adminController');
 adminRouter.use(auth, requireAdmin);
 adminRouter.get('/dashboard',                    ac.getDashboard);
 adminRouter.post('/matches/:matchId/result',     ac.setMatchResult);
+adminRouter.post('/predictions/match/:matchId/user/:userId', ac.setUserPrediction);
 adminRouter.put('/matches/:matchId/status',      ac.setMatchStatus);
 adminRouter.post('/tournament/awards',           ac.setTournamentAwards);
 adminRouter.post('/tournament/recalculate',      ac.manualRecalculateTournament);

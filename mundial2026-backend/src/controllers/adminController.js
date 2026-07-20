@@ -350,6 +350,57 @@ const setMatchResult = async (req, res) => {
     .catch((err) => console.error('[rebuildLeaderboard background]', err.message));
 };
 
+const userPredictionSchema = z.object({
+  groupId: z.string(),
+  predHome: z.number().int().min(0).max(20),
+  predAway: z.number().int().min(0).max(20),
+  predScorerId: z.string().optional().nullable(),
+  predBtts: z.boolean().optional().nullable(),
+  predOverUnder: z.enum(['over', 'under']).optional().nullable(),
+  predPenalties: z.boolean().optional().nullable(),
+  predWinnerId: z.string().optional().nullable(),
+});
+
+/**
+ * POST /api/admin/predictions/match/:matchId/user/:userId
+ * Carga (o corrige) el pronostico de un usuario para un partido puntual —
+ * uso tipico: backfill manual cuando alguien aposto fuera de la app antes
+ * del cierre. Si el partido ya esta FINISHED, calcula los puntos al toque.
+ */
+const setUserPrediction = async (req, res) => {
+  const { matchId, userId } = req.params;
+  const parsed = userPredictionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.errors[0].message });
+  }
+  const { groupId, ...predData } = parsed.data;
+
+  const [match, membership, user] = await Promise.all([
+    prisma.match.findUnique({ where: { id: matchId } }),
+    prisma.groupMember.findFirst({ where: { userId, groupId } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { id: true } }),
+  ]);
+  if (!match) return res.status(404).json({ error: 'Partido no encontrado' });
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (!membership) return res.status(404).json({ error: 'El usuario no pertenece a ese grupo' });
+
+  let prediction = await prisma.prediction.upsert({
+    where: { userId_matchId_groupId: { userId, matchId, groupId } },
+    update: predData,
+    create: { ...predData, userId, matchId, groupId },
+  });
+
+  if (match.status === 'FINISHED') {
+    const pts = calculatePredictionPoints(prediction, match);
+    prediction = await prisma.prediction.update({ where: { id: prediction.id }, data: pts });
+  }
+
+  await recalculateUserTotals(prisma, [userId]);
+  await rebuildLeaderboard();
+
+  return res.json({ message: 'Pronostico guardado', prediction });
+};
+
 // ─── Bonos por racha y día perfecto ──────────────────────────────────────────
 
 const processBonuses = async (matchId) => {
@@ -1023,6 +1074,7 @@ const setBracketReopenStatus = async (req, res) => {
 
 module.exports = {
   setMatchResult,
+  setUserPrediction,
   setMatchStatus,
   setTournamentAwards,
   getTournamentCompletion,
