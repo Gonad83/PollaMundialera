@@ -21,6 +21,7 @@ import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import OnboardingTour from '../components/layout/OnboardingTour'
+import { celebrateChampionOnce } from '../lib/celebrate'
 
 const MEDAL_COLORS = {
   1: 'from-mundial-gold to-yellow-600',
@@ -181,6 +182,11 @@ export default function GroupDetailPage() {
 
   // Excluir SUPER_ADMIN del ranking competitivo
   const leaderboard = rawLeaderboard.filter(e => e.user?.role !== 'SUPER_ADMIN')
+
+  // Torneo terminado: celebrar al campeón de esta liga con confeti al ver el ranking (una vez por sesión)
+  useEffect(() => {
+    if (activeTab === 'ranking' && leaderboard.find(e => e.rank === 1)) celebrateChampionOnce(`group_${id}`)
+  }, [activeTab, id, leaderboard.length])
 
   const { data: myPredictions = [] } = useQuery({
     queryKey: ['my-predictions-group', id],
@@ -1353,8 +1359,17 @@ function PodiumCard({ entry, rank, isMe }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: rank * 0.1 }}
-      className={`flex flex-col items-center ${rank === 1 ? 'z-10 -mx-2' : 'z-0'}`}
+      className={`relative flex flex-col items-center ${rank === 1 ? 'z-10 -mx-2' : 'z-0'}`}
     >
+      {rank === 1 && (
+        <motion.div
+          animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.1, 1] }}
+          transition={{ repeat: Infinity, duration: 4 }}
+          className="absolute -top-5 sm:-top-6 z-20 text-mundial-gold"
+        >
+          <Trophy size={28} fill="currentColor" />
+        </motion.div>
+      )}
       <div className={`relative ${size} mb-4`}>
         <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${MEDAL_COLORS[rank]} shadow-2xl`} />
         <div className="absolute inset-1 rounded-[1.4rem] bg-mundial-navy flex items-center justify-center overflow-hidden">
@@ -1369,6 +1384,15 @@ function PodiumCard({ entry, rank, isMe }) {
       <div className="text-center w-20 sm:w-28">
         <p className={`text-[10px] font-black uppercase tracking-tight truncate ${isMe ? 'text-mundial-gold' : 'text-white'}`}>{entry.user?.username}</p>
         <span className="font-display text-sm sm:text-lg text-white tabular-nums">{entry.totalPoints}</span>
+        {rank === 1 && (
+          <motion.span
+            animate={{ opacity: [1, 0.6, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+            className="mt-1.5 inline-block rounded-full bg-mundial-gold/15 border border-mundial-gold/30 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-mundial-gold"
+          >
+            🏆 Campeón
+          </motion.span>
+        )}
       </div>
     </motion.div>
   )

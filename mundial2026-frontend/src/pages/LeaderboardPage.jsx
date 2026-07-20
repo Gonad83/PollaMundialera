@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../context/SocketContext'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trophy, Star, TrendingUp, ChevronLeft, ChevronRight, Hash, User as UserIcon, Zap, ArrowUp, ArrowDown, Minus } from 'lucide-react'
+import { celebrateChampionOnce } from '../lib/celebrate'
 
 const MEDAL_COLORS = {
   1: 'from-mundial-gold to-yellow-600',
@@ -66,6 +67,12 @@ export default function LeaderboardPage() {
 
   const podium = entries.filter(e => e.rank <= 3)
   const rest = entries.filter(e => e.rank > 3)
+  const champion = podium.find(e => e.rank === 1)
+
+  // Torneo terminado: celebrar al campeón del ranking global con confeti (una vez por sesión)
+  useEffect(() => {
+    if (page === 1 && champion) celebrateChampionOnce('global')
+  }, [page, champion?.userId])
 
   return (
     <div className="max-w-4xl mx-auto pb-20 px-4">
@@ -287,6 +294,15 @@ function PodiumCard({ entry, rank, isMe }) {
           <Star size={10} className="text-mundial-gold" fill="currentColor" />
           <span className="font-display text-sm sm:text-xl text-white tabular-nums">{entry.totalPoints}</span>
         </div>
+        {rank === 1 && (
+          <motion.span
+            animate={{ opacity: [1, 0.6, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+            className="mt-1.5 inline-block rounded-full bg-mundial-gold/15 border border-mundial-gold/30 px-2.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-mundial-gold"
+          >
+            🏆 Campeón
+          </motion.span>
+        )}
       </div>
     </motion.div>
   )
