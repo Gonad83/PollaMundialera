@@ -128,21 +128,19 @@ const calculateTournamentPoints = async (pick, actuals) => {
   if (actuals.round32TeamIds?.length) pts.ptsRound32 = countHits(pick.round32Teams, actuals.round32TeamIds) * 1;
   if (actuals.groupQualifierIds?.length) pts.ptsGroups = countHits(pick.groupQualifiers, actuals.groupQualifierIds) * 1;
 
+  // Los picks de premios son por selección (equipo), no por jugador: no hay
+  // concepto de "mismo equipo" para dar credito parcial, solo acierto exacto.
   if (actuals.topScorerId) {
-    pts.ptsTopScorer = pick.topScorerId === actuals.topScorerId ? 20
-      : (await sameTeam(pick.topScorerId, actuals.topScorerId)) ? 3 : 0;
+    pts.ptsTopScorer = pick.topScorerId === actuals.topScorerId ? 20 : 0;
   }
   if (actuals.bestPlayerId) {
-    pts.ptsBestPlayer = pick.bestPlayerId === actuals.bestPlayerId ? 15
-      : (await sameTeam(pick.bestPlayerId, actuals.bestPlayerId)) ? 4 : 0;
+    pts.ptsBestPlayer = pick.bestPlayerId === actuals.bestPlayerId ? 15 : 0;
   }
   if (actuals.bestKeeperId) {
-    pts.ptsBestKeeper = pick.bestKeeperId === actuals.bestKeeperId ? 12
-      : (await sameTeam(pick.bestKeeperId, actuals.bestKeeperId)) ? 3 : 0;
+    pts.ptsBestKeeper = pick.bestKeeperId === actuals.bestKeeperId ? 12 : 0;
   }
   if (actuals.bestYoungId) {
-    pts.ptsBestYoung = pick.bestYoungId === actuals.bestYoungId ? 10
-      : (await sameTeam(pick.bestYoungId, actuals.bestYoungId)) ? 3 : 0;
+    pts.ptsBestYoung = pick.bestYoungId === actuals.bestYoungId ? 10 : 0;
   }
   if (actuals.totalGoals !== undefined && actuals.totalGoals !== null) {
     const goalDiff = Math.abs((pick.totalGoals || 0) - actuals.totalGoals);
